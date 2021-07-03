@@ -16,6 +16,7 @@ interface PixiNodeEvents {
 }
 
 export class PixiNode extends TypedEmitter<PixiNodeEvents> {
+  nodeStyle: NodeStyle;
   nodeGfx: Container;
   nodeLabelGfx: Container;
   nodePlaceholderGfx: Container;
@@ -23,9 +24,10 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
 
   hovered: boolean = false;
 
-  constructor() {
+  constructor(option: {nodeStyle: NodeStyle}) {
     super();
 
+    this.nodeStyle = option.nodeStyle;
     this.nodeGfx = this.createNode();
     this.nodeLabelGfx = this.createNodeLabel();
     this.nodePlaceholderGfx = new Container();
@@ -41,7 +43,7 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     nodeGfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
     nodeGfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
     nodeGfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
-    createNode(nodeGfx);
+    createNode(nodeGfx, this.nodeStyle);
     return nodeGfx;
   }
 

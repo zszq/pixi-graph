@@ -60,5 +60,5 @@ export function updateNodeLabelVisibility(nodeLabelGfx: Container, zoomStep: num
   
   // nodeLabelGfx -> nodeLabelText
   const nodeLabelText = nodeLabelGfx.getChildByName!(NODE_LABEL_TEXT) as BitmapText;
-  nodeLabelText.visible = nodeLabelText.visible && zoomStep >= 3;
+  nodeLabelText.visible = nodeLabelText.visible && zoomStep >= 2;
 }

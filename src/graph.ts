@@ -28,22 +28,23 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
   node: {
     size: 15,
     color: '#000000',
+    shape: 'circle',
     border: {
       width: 2,
       color: '#ffffff',
     },
     icon: {
       type: TextType.TEXT,
+      content: '',
       fontFamily: 'Arial',
       fontSize: 20,
       color: '#ffffff',
-      content: '',
     },
     label: {
       type: TextType.TEXT,
+      content: '',
       fontFamily: 'Arial',
       fontSize: 12,
-      content: '',
       color: '#333333',
       backgroundColor: 'rgba(0, 0, 0, 0)',
       padding: 4,
@@ -52,6 +53,25 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
   edge: {
     width: 1,
     color: '#cccccc',
+    selefLoop: {
+      radius: 30,
+      cross: 10
+    },
+    gap: 15,
+    bilateralKey: 'brother',
+    arrow: {
+      show: false,
+      size: 15
+    },
+    label: {
+      type: TextType.TEXT,
+      content: '',
+      fontFamily: 'Arial',
+      fontSize: 12,
+      color: '#333333',
+      backgroundColor: 'rgba(0, 0, 0, 0)',
+      padding: 4,
+    },
   },
 };
 
@@ -63,21 +83,24 @@ export interface GraphOptions<NodeAttributes extends BaseNodeAttributes = BaseNo
   style: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   hoverStyle: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   resources?: IAddOptions[];
+  onprogress?: Function;
 }
 
 interface PixiGraphEvents {
-  nodeClick: (event: MouseEvent, nodeKey: string) => void;
-  nodeMousemove: (event: MouseEvent, nodeKey: string) => void;
-  nodeMouseover: (event: MouseEvent, nodeKey: string) => void;
-  nodeMouseout: (event: MouseEvent, nodeKey: string) => void;
-  nodeMousedown: (event: MouseEvent, nodeKey: string) => void;
-  nodeMouseup: (event: MouseEvent, nodeKey: string) => void;
-  edgeClick: (event: MouseEvent, edgeKey: string) => void;
-  edgeMousemove: (event: MouseEvent, edgeKey: string) => void;
-  edgeMouseover: (event: MouseEvent, edgeKey: string) => void;
-  edgeMouseout: (event: MouseEvent, edgeKey: string) => void;
-  edgeMousedown: (event: MouseEvent, edgeKey: string) => void;
-  edgeMouseup: (event: MouseEvent, edgeKey: string) => void;
+  nodeClick: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
+  nodeMousemove: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
+  nodeMouseover: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
+  nodeMouseout: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
+  nodeMousedown: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
+  nodeMouseup: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
+  edgeClick: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
+  edgeMousemove: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
+  edgeMouseover: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
+  edgeMouseout: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
+  edgeMousedown: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
+  edgeMouseup: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
+  viewClick: (event: any) => void;
+  // progress: (percentage: number) => void;
 }
 
 export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> extends TypedEmitter<PixiGraphEvents> {
@@ -86,22 +109,31 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   style: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   hoverStyle: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   resources?: IAddOptions[];
+  onprogress?: Function;
 
   private app: Application;
   private textureCache: TextureCache;
   private viewport: Viewport;
   private resizeObserver: ResizeObserver;
   private edgeLayer: Container;
-  private frontEdgeLayer: Container;
+  private edgeLabelLayer: Container;
+  // private edgeArrowLayer: Container;
+  // private frontEdgeLayer: Container;
+  // private frontEdgeLabelLayer: Container;
+  // private frontEdgeArrowLayer: Container;
   private nodeLayer: Container;
-  private nodeLabelLayer: Container;
-  private frontNodeLayer: Container;
-  private frontNodeLabelLayer: Container;
+  // private nodeLabelLayer: Container;
+  // private frontNodeLayer: Container;
+  // private frontNodeLabelLayer: Container;
   private nodeKeyToNodeObject = new Map<string, PixiNode>();
   private edgeKeyToEdgeObject = new Map<string, PixiEdge>();
 
   private mousedownNodeKey: string | null = null;
-  private mousedownEdgeKey: string | null = null;
+  // private mousedownEdgeKey: string | null = null;
+  private nodeMouseX: number = 0;
+  private nodeMouseY: number = 0;
+  private edgeMouseX: number = 0;
+  private edgeMouseY: number = 0;
 
   private onGraphNodeAddedBound = this.onGraphNodeAdded.bind(this);
   private onGraphEdgeAddedBound = this.onGraphEdgeAdded.bind(this);
@@ -124,6 +156,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.style = options.style;
     this.hoverStyle = options.hoverStyle;
     this.resources = options.resources;
+    this.onprogress = options.onprogress;
 
     if (!(this.container instanceof HTMLElement)) {
       throw new Error('container should be a HTMLElement');
@@ -132,10 +165,13 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // create PIXI application
     this.app = new Application({
       resizeTo: this.container,
-      resolution: window.devicePixelRatio,
-      transparent: true,
+      // resolution: window.devicePixelRatio,
+      resolution: 2,
+      backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
+      powerPreference: "high-performance"
+      // forceCanvas: true
     });
     this.container.appendChild(this.app.view);
 
@@ -153,23 +189,32 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       .drag()
       .pinch()
       .wheel()
-      .decelerate()
-      .clampZoom({ maxScale: 1 });
+      // .decelerate()
+      // .clampZoom({ maxScale: 1 });
+      .clampZoom({ maxScale: 1.8, minScale: 0.1 });
     this.app.stage.addChild(this.viewport);
 
     // create layers
     this.edgeLayer = new Container();
-    this.frontEdgeLayer = new Container();
+    this.edgeLabelLayer = new Container();
+    // this.edgeArrowLayer = new Container();
+    // this.frontEdgeLayer = new Container();
+    // this.frontEdgeLabelLayer = new Container();
+    // this.frontEdgeArrowLayer = new Container();
     this.nodeLayer = new Container();
-    this.nodeLabelLayer = new Container();
-    this.frontNodeLayer = new Container();
-    this.frontNodeLabelLayer = new Container();
+    // this.nodeLabelLayer = new Container();
+    // this.frontNodeLayer = new Container();
+    // this.frontNodeLabelLayer = new Container();
     this.viewport.addChild(this.edgeLayer);
-    this.viewport.addChild(this.frontEdgeLayer);
+    this.viewport.addChild(this.edgeLabelLayer);
+    // this.viewport.addChild(this.edgeArrowLayer);
+    // this.viewport.addChild(this.frontEdgeLayer);
+    // this.viewport.addChild(this.frontEdgeLabelLayer);
+    // this.viewport.addChild(this.frontEdgeArrowLayer);
     this.viewport.addChild(this.nodeLayer);
-    this.viewport.addChild(this.nodeLabelLayer);
-    this.viewport.addChild(this.frontNodeLayer);
-    this.viewport.addChild(this.frontNodeLabelLayer);
+    // this.viewport.addChild(this.nodeLabelLayer);
+    // this.viewport.addChild(this.frontNodeLayer);
+    // this.viewport.addChild(this.frontNodeLabelLayer);
 
     this.resizeObserver = new ResizeObserver(() => {
       this.app.resize();
@@ -203,9 +248,13 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.graph.on('eachNodeAttributesUpdated', this.onGraphEachNodeAttributesUpdatedBound);
       this.graph.on('eachEdgeAttributesUpdated', this.onGraphEachEdgeAttributesUpdatedBound);
 
+      this.viewport.on('clicked', (event) => {
+        this.emit('viewClick', event);
+      });
+
       // initial draw
       this.createGraph();
-      this.resetView();
+      this.resetView(this.graph.nodes());
     });
   }
 
@@ -227,6 +276,9 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.textureCache.destroy();
     this.textureCache = undefined!;
 
+    this.viewport.destroy();
+    this.viewport = null!;
+
     this.app.destroy(true, { children: true, texture: true, baseTexture: true });
     this.app = undefined!;
   }
@@ -242,10 +294,14 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   zoomOut() {
     this.viewport.zoom(this.zoomStep, true);
   }
-
-  resetView() {
-    const nodesX = this.graph.nodes().map(nodeKey => this.graph.getNodeAttribute(nodeKey, 'x'));
-    const nodesY = this.graph.nodes().map(nodeKey => this.graph.getNodeAttribute(nodeKey, 'y'));
+  // 多次实例化，销毁实例无效，会造成内存溢出，临时处理方法：只实例化一次，由外层动态设置位置
+  resetView(nodes: any[]) {
+    if (!nodes.length) { // 设置一个能显示在窗口的，防止外面没调用此函数看不到内容
+      this.viewport.center = new Point(this.container.clientWidth/2, this.container.clientHeight/2);
+      return;
+    }
+    const nodesX = nodes.map(nodeKey => this.graph.getNodeAttribute(nodeKey, 'x'));
+    const nodesY = nodes.map(nodeKey => this.graph.getNodeAttribute(nodeKey, 'y'));
     const minX = Math.min(...nodesX);
     const maxX = Math.max(...nodesX);
     const minY = Math.min(...nodesY);
@@ -331,15 +387,19 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.updateNodeStyleByKey(nodeKey);
 
     // move to front
-    const nodeIndex = this.nodeLayer.getChildIndex(node.nodeGfx);
-    this.nodeLayer.removeChildAt(nodeIndex);
-    this.nodeLabelLayer.removeChildAt(nodeIndex);
-    this.frontNodeLayer.removeChildAt(nodeIndex);
-    this.frontNodeLabelLayer.removeChildAt(nodeIndex);
-    this.nodeLayer.addChild(node.nodePlaceholderGfx);
-    this.nodeLabelLayer.addChild(node.nodeLabelPlaceholderGfx);
-    this.frontNodeLayer.addChild(node.nodeGfx);
-    this.frontNodeLabelLayer.addChild(node.nodeLabelGfx);
+    // const nodeIndex = this.nodeLayer.getChildIndex(node.nodeGfx);
+    // this.nodeLayer.removeChildAt(nodeIndex);
+    // this.nodeLabelLayer.removeChildAt(nodeIndex);
+    // this.frontNodeLayer.removeChildAt(nodeIndex);
+    // this.frontNodeLabelLayer.removeChildAt(nodeIndex);
+    // this.nodeLayer.addChild(node.nodePlaceholderGfx);
+    // this.nodeLabelLayer.addChild(node.nodeLabelPlaceholderGfx);
+    // this.frontNodeLayer.addChild(node.nodeGfx);
+    // this.frontNodeLabelLayer.addChild(node.nodeLabelGfx);
+    
+    const nodeLayerChildrens = this.nodeLayer.children;
+    this.nodeLayer.setChildIndex(node.nodeGfx, nodeLayerChildrens.length - 1);
+    this.nodeLayer.setChildIndex(node.nodeLabelGfx, nodeLayerChildrens.length - 1);
   }
 
   private unhoverNode(nodeKey: string) {
@@ -353,15 +413,15 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.updateNodeStyleByKey(nodeKey);
 
     // move to front
-    const nodeIndex = this.frontNodeLayer.getChildIndex(node.nodeGfx);
-    this.nodeLayer.removeChildAt(nodeIndex);
-    this.nodeLabelLayer.removeChildAt(nodeIndex);
-    this.frontNodeLayer.removeChildAt(nodeIndex);
-    this.frontNodeLabelLayer.removeChildAt(nodeIndex);
-    this.nodeLayer.addChild(node.nodeGfx);
-    this.nodeLabelLayer.addChild(node.nodeLabelGfx);
-    this.frontNodeLayer.addChild(node.nodePlaceholderGfx);
-    this.frontNodeLabelLayer.addChild(node.nodeLabelPlaceholderGfx);
+    // const nodeIndex = this.frontNodeLayer.getChildIndex(node.nodeGfx);
+    // this.nodeLayer.removeChildAt(nodeIndex);
+    // this.nodeLabelLayer.removeChildAt(nodeIndex);
+    // this.frontNodeLayer.removeChildAt(nodeIndex);
+    // this.frontNodeLabelLayer.removeChildAt(nodeIndex);
+    // this.nodeLayer.addChild(node.nodeGfx);
+    // this.nodeLabelLayer.addChild(node.nodeLabelGfx);
+    // this.frontNodeLayer.addChild(node.nodePlaceholderGfx);
+    // this.frontNodeLabelLayer.addChild(node.nodeLabelPlaceholderGfx);
   }
 
   private hoverEdge(edgeKey: string) {
@@ -375,11 +435,25 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.updateEdgeStyleByKey(edgeKey);
 
     // move to front
-    const edgeIndex = this.edgeLayer.getChildIndex(edge.edgeGfx);
-    this.edgeLayer.removeChildAt(edgeIndex);
-    this.frontEdgeLayer.removeChildAt(edgeIndex);
-    this.edgeLayer.addChild(edge.edgePlaceholderGfx);
-    this.frontEdgeLayer.addChild(edge.edgeGfx);
+    // const edgeIndex = this.edgeLayer.getChildIndex(edge.edgeGfx);
+    // this.edgeLayer.removeChildAt(edgeIndex);
+    // this.edgeLabelLayer.removeChildAt(edgeIndex);
+    // this.edgeArrowLayer.removeChildAt(edgeIndex);
+    // this.frontEdgeLayer.removeChildAt(edgeIndex);
+    // this.frontEdgeLabelLayer.removeChildAt(edgeIndex);
+    // this.frontEdgeArrowLayer.removeChildAt(edgeIndex);
+    // this.edgeLayer.addChild(edge.edgePlaceholderGfx);
+    // this.edgeLabelLayer.addChild(edge.edgeLabelPlaceholderGfx);
+    // this.edgeArrowLayer.addChild(edge.edgeArrowPlaceholderGfx);
+    // this.frontEdgeLayer.addChild(edge.edgeGfx);
+    // this.frontEdgeLabelLayer.addChild(edge.edgeLabelGfx);
+    // this.frontEdgeArrowLayer.addChild(edge.edgeArrowGfx);
+
+    const edgeLayerChildrens = this.edgeLayer.children;
+    const edgeLabelLayerChildrens = this.edgeLabelLayer.children;
+    this.edgeLayer.setChildIndex(edge.edgeGfx, edgeLayerChildrens.length - 1);
+    this.edgeLayer.setChildIndex(edge.edgeArrowGfx, edgeLayerChildrens.length - 1);
+    this.edgeLabelLayer.setChildIndex(edge.edgeLabelGfx, edgeLabelLayerChildrens.length - 1);
   }
 
   private unhoverEdge(edgeKey: string) {
@@ -393,11 +467,19 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.updateEdgeStyleByKey(edgeKey);
 
     // move back
-    const edgeIndex = this.frontEdgeLayer.getChildIndex(edge.edgeGfx);
-    this.edgeLayer.removeChildAt(edgeIndex);
-    this.frontEdgeLayer.removeChildAt(edgeIndex);
-    this.edgeLayer.addChild(edge.edgeGfx);
-    this.frontEdgeLayer.addChild(edge.edgePlaceholderGfx);
+    // const edgeIndex = this.frontEdgeLayer.getChildIndex(edge.edgeGfx);
+    // this.edgeLayer.removeChildAt(edgeIndex);
+    // this.edgeLabelLayer.removeChildAt(edgeIndex);
+    // this.edgeArrowLayer.removeChildAt(edgeIndex);
+    // this.frontEdgeLayer.removeChildAt(edgeIndex);
+    // this.frontEdgeLabelLayer.removeChildAt(edgeIndex);
+    // this.frontEdgeArrowLayer.removeChildAt(edgeIndex);
+    // this.edgeLayer.addChild(edge.edgeGfx);
+    // this.edgeLabelLayer.addChild(edge.edgeLabelGfx);
+    // this.edgeArrowLayer.addChild(edge.edgeArrowGfx);
+    // this.frontEdgeLayer.addChild(edge.edgePlaceholderGfx);
+    // this.frontEdgeLabelLayer.addChild(edge.edgeLabelPlaceholderGfx);
+    // this.frontEdgeArrowLayer.addChild(edge.edgeArrowPlaceholderGfx);
   }
 
   private moveNode(nodeKey: string, point: IPointData) {
@@ -431,78 +513,102 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     document.removeEventListener('mousemove', this.onDocumentMouseMoveBound);
 
     this.mousedownNodeKey = null;
-    this.mousedownEdgeKey = null;
+    // this.mousedownEdgeKey = null;
   }
 
   private createGraph() {
+    console.time('render');
+    // this.emit('progress', 0); // 线上使用时不生效
+    this.onprogress && this.onprogress(0);
     this.graph.forEachNode(this.createNode.bind(this));
+    // this.emit('progress', 50);
+    this.onprogress && this.onprogress(50);
     this.graph.forEachEdge(this.createEdge.bind(this));
+    // this.emit('progress', 100);
+    this.onprogress && this.onprogress(100);
+    console.timeEnd('render');
   }
 
   private createNode(nodeKey: string, nodeAttributes: NodeAttributes) {
-    const node = new PixiNode();
+    const nodeStyleDefinitions = [DEFAULT_STYLE.node, this.style.node, undefined];
+    const nodeStyle = resolveStyleDefinitions(nodeStyleDefinitions, nodeAttributes);
+    
+    const node = new PixiNode({nodeStyle});
     node.on('mousemove', (event: MouseEvent) => {
-      this.emit('nodeMousemove', event, nodeKey);
+      this.emit('nodeMousemove', event, nodeKey, nodeStyle);
     });
     node.on('mouseover', (event: MouseEvent) => {
       if (!this.mousedownNodeKey) {
         this.hoverNode(nodeKey);
       }
-      this.emit('nodeMouseover', event, nodeKey);
+      this.emit('nodeMouseover', event, nodeKey, nodeStyle);
     });
     node.on('mouseout', (event: MouseEvent) => {
       if (!this.mousedownNodeKey) {
         this.unhoverNode(nodeKey);
       }
-      this.emit('nodeMouseout', event, nodeKey);
+      this.emit('nodeMouseout', event, nodeKey, nodeStyle);
     });
     node.on('mousedown', (event: MouseEvent) => {
+      this.nodeMouseX = event.offsetX;
+      this.nodeMouseY = event.offsetY;
       this.mousedownNodeKey = nodeKey;
       this.enableNodeDragging();
-      this.emit('nodeMousedown', event, nodeKey);
+      this.emit('nodeMousedown', event, nodeKey, nodeStyle);
     });
     node.on('mouseup', (event: MouseEvent) => {
-      this.emit('nodeMouseup', event, nodeKey);
-      // why native click event doesn't work?
-      if (this.mousedownNodeKey === nodeKey) {
-        this.emit('nodeClick', event, nodeKey);
+      this.emit('nodeMouseup', event, nodeKey, nodeStyle);
+      if (this.nodeMouseX === event.offsetX && this.nodeMouseY === event.offsetY) {
+        this.emit('nodeClick', event, nodeKey, nodeStyle);
       }
     });
-    this.nodeLayer.addChild(node.nodeGfx);
-    this.nodeLabelLayer.addChild(node.nodeLabelGfx);
-    this.frontNodeLayer.addChild(node.nodePlaceholderGfx);
-    this.frontNodeLabelLayer.addChild(node.nodeLabelPlaceholderGfx);
+    this.nodeLayer.addChild(node.nodeGfx, node.nodeLabelGfx);
+    // this.nodeLabelLayer.addChild(node.nodeLabelGfx);
+    // this.frontNodeLayer.addChild(node.nodePlaceholderGfx);
+    // this.frontNodeLabelLayer.addChild(node.nodeLabelPlaceholderGfx);
     this.nodeKeyToNodeObject.set(nodeKey, node);
 
     this.updateNodeStyle(nodeKey, nodeAttributes);
   }
 
   private createEdge(edgeKey: string, edgeAttributes: EdgeAttributes, sourceNodeKey: string, targetNodeKey: string, sourceNodeAttributes: NodeAttributes, targetNodeAttributes: NodeAttributes) {
-    const edge = new PixiEdge();
+    const selfLoop = sourceNodeKey === targetNodeKey;
+    const edgeStyleDefinitions = [DEFAULT_STYLE.edge, this.style.edge, undefined];
+    const edgeStyle = resolveStyleDefinitions(edgeStyleDefinitions, edgeAttributes);
+    const bilateralByKey = edgeAttributes[edgeStyle.bilateralKey];
+    const bilateralByGraph = this.graph.edges(targetNodeKey, sourceNodeKey).length > 1;
+    const bilateral = (bilateralByKey === true ? bilateralByKey : false) || bilateralByGraph;
+
+    const edge = new PixiEdge({selfLoop, bilateral});
     edge.on('mousemove', (event: MouseEvent) => {
-      this.emit('edgeMousemove', event, edgeKey);
+      this.emit('edgeMousemove', event, edgeKey, edgeStyle);
     });
     edge.on('mouseover', (event: MouseEvent) => {
       this.hoverEdge(edgeKey);
-      this.emit('edgeMouseover', event, edgeKey);
+      this.emit('edgeMouseover', event, edgeKey, edgeStyle);
     });
     edge.on('mouseout', (event: MouseEvent) => {
       this.unhoverEdge(edgeKey);
-      this.emit('edgeMouseout', event, edgeKey);
+      this.emit('edgeMouseout', event, edgeKey, edgeStyle);
     });
     edge.on('mousedown', (event: MouseEvent) => {
-      this.mousedownEdgeKey = edgeKey;
-      this.emit('edgeMousedown', event, edgeKey);
+      this.edgeMouseX = event.offsetX;
+      this.edgeMouseY = event.offsetY;
+      // this.mousedownEdgeKey = edgeKey;
+      this.emit('edgeMousedown', event, edgeKey, edgeStyle);
     });
     edge.on('mouseup', (event: MouseEvent) => {
-      this.emit('edgeMouseup', event, edgeKey);
-      // why native click event doesn't work?
-      if (this.mousedownEdgeKey === edgeKey) {
-        this.emit('edgeClick', event, edgeKey);
+      this.emit('edgeMouseup', event, edgeKey, edgeStyle);
+      if (this.edgeMouseX === event.offsetX && this.edgeMouseY === event.offsetY) {
+        this.emit('edgeClick', event, edgeKey, edgeStyle);
       }
     });
-    this.edgeLayer.addChild(edge.edgeGfx);
-    this.frontEdgeLayer.addChild(edge.edgePlaceholderGfx);
+    this.edgeLayer.addChild(edge.edgeGfx, edge.edgeArrowGfx);
+    this.edgeLabelLayer.addChild(edge.edgeLabelGfx);
+    // this.edgeArrowLayer.addChild(edge.edgeArrowGfx);
+    // this.frontEdgeLayer.addChild(edge.edgePlaceholderGfx);
+    // this.frontEdgeLabelLayer.addChild(edge.edgeLabelPlaceholderGfx);
+    // this.frontEdgeArrowLayer.addChild(edge.edgeArrowPlaceholderGfx);
     this.edgeKeyToEdgeObject.set(edgeKey, edge);
 
     this.updateEdgeStyle(edgeKey, edgeAttributes, sourceNodeKey, targetNodeKey, sourceNodeAttributes, targetNodeAttributes);
@@ -511,18 +617,22 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private dropNode(nodeKey: string) {
     const node = this.nodeKeyToNodeObject.get(nodeKey)!;
     
-    this.nodeLayer.removeChild(node.nodeGfx);
-    this.nodeLabelLayer.removeChild(node.nodeLabelGfx);
-    this.frontNodeLayer.removeChild(node.nodePlaceholderGfx);
-    this.frontNodeLabelLayer.removeChild(node.nodeLabelPlaceholderGfx);
+    this.nodeLayer.removeChild(node.nodeGfx, node.nodeLabelGfx);
+    // this.nodeLabelLayer.removeChild(node.nodeLabelGfx);
+    // this.frontNodeLayer.removeChild(node.nodePlaceholderGfx);
+    // this.frontNodeLabelLayer.removeChild(node.nodeLabelPlaceholderGfx);
     this.nodeKeyToNodeObject.delete(nodeKey);
   }
 
   private dropEdge(edgeKey: string) {
     const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
     
-    this.edgeLayer.removeChild(edge.edgeGfx);
-    this.frontEdgeLayer.removeChild(edge.edgePlaceholderGfx);
+    this.edgeLayer.removeChild(edge.edgeGfx, edge.edgeArrowGfx);
+    this.edgeLabelLayer.removeChild(edge.edgeLabelGfx);
+    // this.edgeArrowLayer.removeChild(edge.edgeArrowGfx);
+    // this.frontEdgeLayer.removeChild(edge.edgePlaceholderGfx);
+    // this.frontEdgeLabelLayer.removeChild(edge.edgeLabelPlaceholderGfx);
+    // this.frontEdgeArrowLayer.removeChild(edge.edgeArrowPlaceholderGfx);
     this.edgeKeyToEdgeObject.delete(edgeKey);
   }
 
@@ -553,16 +663,22 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
   private updateEdgeStyle(edgeKey: string, edgeAttributes: EdgeAttributes, _sourceNodeKey: string, _targetNodeKey: string, sourceNodeAttributes: NodeAttributes, targetNodeAttributes: NodeAttributes) {
     const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
-    // const sourceNode = this.nodeKeyToNodeObject.get(sourceNodeKey)!;
-    // const targetNode = this.nodeKeyToNodeObject.get(targetNodeKey)!;
-
-    const sourceNodePosition = { x: sourceNodeAttributes.x, y: sourceNodeAttributes.y };
-    const targetNodePosition = { x: targetNodeAttributes.x, y: targetNodeAttributes.y };
-    edge.updatePosition(sourceNodePosition, targetNodePosition);
-
+    const sourceNode = this.nodeKeyToNodeObject.get(_sourceNodeKey)!;
+    const targetNode = this.nodeKeyToNodeObject.get(_targetNodeKey)!;
+    
     const edgeStyleDefinitions = [DEFAULT_STYLE.edge, this.style.edge, edge.hovered ? this.hoverStyle.edge : undefined];
     const edgeStyle = resolveStyleDefinitions(edgeStyleDefinitions, edgeAttributes);
     edge.updateStyle(edgeStyle, this.textureCache);
+
+    const nodeSourceStyleDefinitions = [DEFAULT_STYLE.node, this.style.node, sourceNode.hovered ? this.hoverStyle.node : undefined];
+    const sourceNodeStyle = resolveStyleDefinitions(nodeSourceStyleDefinitions, sourceNodeAttributes);
+    const nodeTargetStyleDefinitions = [DEFAULT_STYLE.node, this.style.node, targetNode.hovered ? this.hoverStyle.node : undefined];
+    const targetNodeStyle = resolveStyleDefinitions(nodeTargetStyleDefinitions, targetNodeAttributes);
+
+    const sourceNodePosition = { x: sourceNodeAttributes.x, y: sourceNodeAttributes.y };
+    const targetNodePosition = { x: targetNodeAttributes.x, y: targetNodeAttributes.y };
+
+    edge.updatePosition(sourceNodePosition, targetNodePosition, edgeStyle, sourceNodeStyle, targetNodeStyle);
   }
 
   private updateGraphVisibility() {
@@ -577,7 +693,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
     // levels of detail
     const zoom = this.viewport.scale.x;
-    const zoomSteps = [0.1, 0.2, 0.4, Infinity];
+    const zoomSteps = [0.1, 0.2, 0.3, 0.4, 0.5, Infinity];
     const zoomStep = zoomSteps.findIndex(zoomStep => zoom <= zoomStep);
 
     this.graph.forEachNode(nodeKey => {
@@ -590,4 +706,14 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       edge.updateVisibility(zoomStep);
     });
   }
+
+  // // enable viewport dragging
+  // dragEnable() {
+  //   this.viewport.pause = false;
+  // }
+
+  // // disable viewport dragging
+  // dragDisable() {
+  //   this.viewport.pause = true;
+  // }
 }

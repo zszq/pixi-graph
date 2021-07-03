@@ -6,6 +6,7 @@ export interface GraphStyle {
   node: {
     size: number;
     color: string;
+    shape: string,
     border: {
       width: number;
       color: string;
@@ -30,6 +31,25 @@ export interface GraphStyle {
   edge: {
     width: number;
     color: string;
+    selefLoop: {
+      radius: number,
+      cross: number
+    },
+    gap: number,
+    bilateralKey: string,
+    arrow: {
+      show: boolean,
+      size: number
+    },
+    label: {
+      type: TextType.TEXT,
+      fontFamily: 'Arial',
+      fontSize: 12,
+      content: '',
+      color: '#333333',
+      backgroundColor: 'rgba(0, 0, 0, 0)',
+      padding: 4
+    }
   };
 }
 

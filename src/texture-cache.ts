@@ -25,6 +25,19 @@ export class TextureCache {
     return texture;
   }
 
+  getOnly(key: string) {
+    return this.textures.get(key);
+  }
+
+  set(key: string, texture: Texture) {
+    this.textures.set(key, texture);
+  }
+
+  has(key: string) {
+    let texture = this.textures.get(key);
+    return texture ? true : false;
+  }
+  
   delete(key: string) {
     const texture = this.textures.get(key);
     if (!texture) {

@@ -6,6 +6,7 @@ const WHITE = 0xffffff;
 export enum TextType {
   TEXT = 'TEXT',
   BITMAP_TEXT = 'BITMAP_TEXT',
+  IMAGE = 'IMAGE'
   // TODO: SDF_TEXT
   // see https://github.com/PixelsCommander/pixi-sdf-text/issues/12
 }
@@ -23,7 +24,9 @@ export function textToPixi(type: TextType, content: string, style: TextStyle) {
     text = new Text(content, {
       fontFamily: style.fontFamily,
       fontSize: style.fontSize,
-      fill: WHITE
+      fill: WHITE,
+      // wordWrap: true,
+      // wordWrapWidth: 200
     });
   } else if (type === TextType.BITMAP_TEXT) {
     text = new BitmapText(content, {
