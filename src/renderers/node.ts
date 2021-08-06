@@ -7,7 +7,6 @@ import { colorToPixi } from '../utils/color';
 import { NodeStyle } from '../utils/style';
 import { textToPixi, TextType } from '../utils/text';
 import { TextureCache } from '../texture-cache';
-import { Loader } from '@pixi/loaders';
 
 const DELIMETER = '::';
 const WHITE = 0xffffff;
@@ -41,9 +40,9 @@ export function createNode(nodeGfx: Container, nodeStyle: NodeStyle) {
   mask.beginFill(0xFF3333, 0.01);
   mask.drawCircle(0, 0, nodeStyle.size);
   mask.endFill();
-  nodeIcon.mask = mask;
+  // nodeIcon.mask = mask;
 
-  nodeGfx.addChild(mask);
+  // nodeGfx.addChild(mask);
   nodeGfx.addChild(nodeIcon);
 }
 
@@ -82,32 +81,25 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
     const nodeIconTexture = textureCache.get(nodeIconTextureKey, () => {
       const text = textToPixi(nodeStyle.icon.type, nodeStyle.icon.content, {
         fontFamily: nodeStyle.icon.fontFamily,
-        fontSize: nodeStyle.icon.fontSize
+        fontSize: nodeStyle.icon.fontSize,
+        fontWeight: nodeStyle.icon.fontWeight
       });
       return text;
     });
-    // nodeGfx -> nodeIcon
     updataNodeIcon(nodeIconTexture);
   } else {
     if (textureCache.has(nodeIconTextureKey)) {
       const nodeIconTexture = textureCache.getOnly(nodeIconTextureKey);
-      // nodeGfx -> nodeIcon
       updataNodeIcon(nodeIconTexture);
     } else {
-      const loader = new Loader();
-      loader.add(nodeStyle.icon.content);
-      loader.load((loader, resources) => {
-        if (loader) {}
-        const nodeIconTexture = resources[nodeStyle.icon.content].texture;
-        textureCache.set(nodeIconTextureKey, nodeIconTexture);
-        // nodeGfx -> nodeIcon
-        updataNodeIcon(nodeIconTexture);
-      });
+      const nodeIconTexture = Sprite.from(nodeStyle.icon.content).texture;
+      textureCache.set(nodeIconTextureKey, nodeIconTexture);
+      updataNodeIcon(nodeIconTexture);
     }
   }
 
+  // nodeGfx -> nodeIcon
   function updataNodeIcon(nodeIconTexture: any) {
-    // nodeGfx -> nodeIcon
     const nodeIcon = nodeGfx.getChildByName!(NODE_ICON) as Sprite;
     nodeIcon.texture = nodeIconTexture;
     [nodeIcon.tint, nodeIcon.alpha] = colorToPixi(nodeStyle.icon.color);

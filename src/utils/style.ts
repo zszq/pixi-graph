@@ -6,7 +6,7 @@ export interface GraphStyle {
   node: {
     size: number;
     color: string;
-    shape: string,
+    shape: string
     border: {
       width: number;
       color: string;
@@ -16,6 +16,7 @@ export interface GraphStyle {
       type: TextType;
       fontFamily: string;
       fontSize: number;
+      fontWeight: string;
       color: string;
     };
     label: {
@@ -23,6 +24,7 @@ export interface GraphStyle {
       type: TextType;
       fontFamily: string;
       fontSize: number;
+      fontWeight: string;
       color: string;
       backgroundColor: string;
       padding: number;
@@ -45,6 +47,7 @@ export interface GraphStyle {
       type: TextType.TEXT,
       fontFamily: 'Arial',
       fontSize: 12,
+      fontWeight: string,
       content: '',
       color: '#333333',
       backgroundColor: 'rgba(0, 0, 0, 0)',

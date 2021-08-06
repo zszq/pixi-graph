@@ -30,11 +30,12 @@ export function createNodeLabel(nodeLabelGfx: Container) {
 export function updateNodeLabelStyle(nodeLabelGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache) {
   const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
 
-  const nodeLabelTextTextureKey = [NODE_LABEL_TEXT, nodeStyle.label.fontFamily, nodeStyle.label.fontSize, nodeStyle.label.content].join(DELIMETER);
+  const nodeLabelTextTextureKey = [NODE_LABEL_TEXT, nodeStyle.label.fontFamily, nodeStyle.label.fontSize, nodeStyle.label.fontWeight, nodeStyle.label.content].join(DELIMETER);
   const nodeLabelTextTexture = textureCache.get(nodeLabelTextTextureKey, () => {
     const text = textToPixi(nodeStyle.label.type, nodeStyle.label.content, {
       fontFamily: nodeStyle.label.fontFamily,
-      fontSize: nodeStyle.label.fontSize
+      fontSize: nodeStyle.label.fontSize,
+      fontWeight: nodeStyle.label.fontWeight
     });
     return text;
   });

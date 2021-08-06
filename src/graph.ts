@@ -17,6 +17,7 @@ import { BaseNodeAttributes, BaseEdgeAttributes } from './attributes';
 import { TextureCache } from './texture-cache';
 import { PixiNode } from './node';
 import { PixiEdge } from './edge';
+// import '@pixi/filter-fxaa';
 
 Application.registerPlugin(TickerPlugin);
 Application.registerPlugin(AppLoaderPlugin);
@@ -38,6 +39,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       content: '',
       fontFamily: 'Arial',
       fontSize: 20,
+      fontWeight: '400',
       color: '#ffffff',
     },
     label: {
@@ -45,6 +47,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       content: '',
       fontFamily: 'Arial',
       fontSize: 12,
+      fontWeight: '400',
       color: '#333333',
       backgroundColor: 'rgba(0, 0, 0, 0)',
       padding: 4,
@@ -68,6 +71,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       content: '',
       fontFamily: 'Arial',
       fontSize: 12,
+      fontWeight: '400',
       color: '#333333',
       backgroundColor: 'rgba(0, 0, 0, 0)',
       padding: 4,
@@ -93,12 +97,16 @@ interface PixiGraphEvents {
   nodeMouseout: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
   nodeMousedown: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
   nodeMouseup: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
+  nodeRightclick: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
+  
   edgeClick: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
   edgeMousemove: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
   edgeMouseover: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
   edgeMouseout: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
   edgeMousedown: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
   edgeMouseup: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
+  edgeRightclick: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
+  
   viewClick: (event: any) => void;
   // progress: (percentage: number) => void;
 }
@@ -126,7 +134,11 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   // private frontNodeLayer: Container;
   // private frontNodeLabelLayer: Container;
   private nodeKeyToNodeObject = new Map<string, PixiNode>();
+  // private nodeKeyToNodeObjectTemp = new Map<string, PixiNode>();
+  // private nodeTimer: ReturnType<typeof setTimeout> | null = null;
   private edgeKeyToEdgeObject = new Map<string, PixiEdge>();
+  // private edgeKeyToNodeObjectTemp = new Map<string, PixiEdge>();
+  // private edgeTimer: ReturnType<typeof setTimeout> | null = null;
 
   private mousedownNodeKey: string | null = null;
   // private mousedownEdgeKey: string | null = null;
@@ -170,7 +182,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
-      powerPreference: "high-performance"
+      powerPreference: "high-performance",
       // forceCanvas: true
     });
     this.container.appendChild(this.app.view);
@@ -191,7 +203,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       .wheel()
       // .decelerate()
       // .clampZoom({ maxScale: 1 });
-      .clampZoom({ maxScale: 1.8, minScale: 0.1 });
+      .clampZoom({ maxScale: 1.2, minScale: 0.1 });
     this.app.stage.addChild(this.viewport);
 
     // create layers
@@ -562,7 +574,22 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
         this.emit('nodeClick', event, nodeKey, nodeStyle);
       }
     });
+    node.on('rightclick', (event: MouseEvent) => {
+      this.emit('nodeRightclick', event, nodeKey, nodeStyle);
+    });
+
+    // this.nodeKeyToNodeObjectTemp.set(nodeKey, node);
+    // if (this.nodeTimer) clearTimeout(this.nodeTimer);
+    // this.nodeTimer = setTimeout(() => {
+    //   console.time('renderNode');
+    //   this.nodeKeyToNodeObjectTemp.forEach((node) => {
+    //     this.nodeLayer.addChild(node.nodeGfx, node.nodeLabelGfx);
+    //   })
+    //   console.timeEnd('renderNode');
+    //   this.nodeKeyToNodeObjectTemp.clear();
+    // }, 300)
     this.nodeLayer.addChild(node.nodeGfx, node.nodeLabelGfx);
+
     // this.nodeLabelLayer.addChild(node.nodeLabelGfx);
     // this.frontNodeLayer.addChild(node.nodePlaceholderGfx);
     // this.frontNodeLabelLayer.addChild(node.nodeLabelPlaceholderGfx);
@@ -603,8 +630,24 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
         this.emit('edgeClick', event, edgeKey, edgeStyle);
       }
     });
+    edge.on('rightclick', (event: MouseEvent) => {
+      this.emit('edgeRightclick', event, edgeKey, edgeStyle);
+    });
+
+    // this.edgeKeyToNodeObjectTemp.set(edgeKey, edge);
+    // if (this.edgeTimer) clearTimeout(this.edgeTimer);
+    // this.edgeTimer = setTimeout(() => {
+    //   console.time('renderEdge');
+    //   this.edgeKeyToNodeObjectTemp.forEach((edge) => {
+    //     this.edgeLayer.addChild(edge.edgeGfx, edge.edgeArrowGfx);
+    //     this.edgeLabelLayer.addChild(edge.edgeLabelGfx);
+    //   })
+    //   console.timeEnd('renderEdge');
+    //   this.edgeKeyToNodeObjectTemp.clear();
+    // }, 300)
     this.edgeLayer.addChild(edge.edgeGfx, edge.edgeArrowGfx);
     this.edgeLabelLayer.addChild(edge.edgeLabelGfx);
+
     // this.edgeArrowLayer.addChild(edge.edgeArrowGfx);
     // this.frontEdgeLayer.addChild(edge.edgePlaceholderGfx);
     // this.frontEdgeLabelLayer.addChild(edge.edgeLabelPlaceholderGfx);

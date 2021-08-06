@@ -14,6 +14,7 @@ interface PixiEdgeEvents {
   mouseout: (event: MouseEvent) => void;
   mousedown: (event: MouseEvent) => void;
   mouseup: (event: MouseEvent) => void;
+  rightclick: (event: MouseEvent) => void;
 }
 
 export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
@@ -50,6 +51,7 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
     edgeGfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
     edgeGfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
     edgeGfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
+    edgeGfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
     createEdge(edgeGfx, this.isSelfLoop);
     return edgeGfx;
   }
@@ -63,6 +65,7 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
     edgeLabelGfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
     edgeLabelGfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
     edgeLabelGfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
+    edgeLabelGfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
     createEdgeLabel(edgeLabelGfx);
     return edgeLabelGfx;
   }
@@ -76,6 +79,7 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
     edgeArrowGfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
     edgeArrowGfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
     edgeArrowGfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
+    edgeArrowGfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
     createEdgeArrow(edgeArrowGfx, this.isSelfLoop);
     return edgeArrowGfx;
   }

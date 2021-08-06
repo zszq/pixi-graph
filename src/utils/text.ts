@@ -15,6 +15,7 @@ export enum TextType {
 export interface TextStyle {
   fontFamily: string;
   fontSize: number;
+  fontWeight: any;
 }
 
 export function textToPixi(type: TextType, content: string, style: TextStyle) {
@@ -25,6 +26,7 @@ export function textToPixi(type: TextType, content: string, style: TextStyle) {
       fontFamily: style.fontFamily,
       fontSize: style.fontSize,
       fill: WHITE,
+      fontWeight: style.fontWeight,
       // wordWrap: true,
       // wordWrapWidth: 200
     });

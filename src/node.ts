@@ -13,6 +13,7 @@ interface PixiNodeEvents {
   mouseout: (event: MouseEvent) => void;
   mousedown: (event: MouseEvent) => void;
   mouseup: (event: MouseEvent) => void;
+  rightclick: (event: MouseEvent) => void;
 }
 
 export class PixiNode extends TypedEmitter<PixiNodeEvents> {
@@ -43,6 +44,7 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     nodeGfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
     nodeGfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
     nodeGfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
+    nodeGfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
     createNode(nodeGfx, this.nodeStyle);
     return nodeGfx;
   }
@@ -56,6 +58,7 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     nodeLabelGfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
     nodeLabelGfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
     nodeLabelGfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
+    nodeLabelGfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
     createNodeLabel(nodeLabelGfx);
     return nodeLabelGfx;
   }

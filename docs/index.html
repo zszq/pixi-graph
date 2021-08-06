@@ -146,12 +146,34 @@ window.addEventListener('DOMContentLoaded', async () => {
     // icon: 'http://127.0.0.1:8080/docs/images/ok.png',
     icon: 'http://127.0.0.1:8080/docs/images/yz.png',
     // icon: 'http://192.168.224.78:8080/chain/virtual/node/icon/exchange-OkLink.com.png',
+    x: 1,
+    y: 300
+  });
+  graph.addNode('node2', {
+    id: "node2",
+    group: 2,
+    label: "标签2",
+    // icon: 'http://127.0.0.1:8080/docs/images/ok.png',
+    icon: 'http://127.0.0.1:8080/docs/images/bz.jpeg',
+    // icon: 'http://192.168.224.78:8080/chain/virtual/node/icon/exchange-OkLink.com.png',
     x: 300,
-    y: 400
+    y: 2
   });
   graph.addEdgeWithKey(`node0->node1`, 'node0', 'node1', {
     source: "node0",
     target: "node1",
+    label: "交易500元",
+    value: 4
+  });
+  graph.addEdgeWithKey(`node0->node2`, 'node0', 'node2', {
+    source: "node0",
+    target: "node2",
+    label: "交易500元",
+    value: 4
+  });
+  graph.addEdgeWithKey(`node1->node2`, 'node1', 'node2', {
+    source: "node1",
+    target: "node2",
     label: "交易500元",
     value: 4
   });
@@ -180,7 +202,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   //   pixiGraph.viewport.fit(true);
   // }
   
-
   const style = {
     node: {
       size: node => 20,
@@ -191,7 +212,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         color: '#ccc',
       },
       icon: {
-        type: PixiGraph.TextType.IMAGE, // fontIcon or imageIcon
+        type: PixiGraph.TextType.TEXT, // TEXT or IMAGE
         content: (node) => {
           return node.icon;
           // let unicode = '&#xe7f8;';
@@ -209,6 +230,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         type: PixiGraph.TextType.TEXT,
         fontFamily: 'HelveticaRegular',
         fontSize: 10,
+        fontWeight: '400',
         color: '#000',
         backgroundColor: 'rgba(255, 255, 255, 0)',
         padding: 2,
@@ -232,6 +254,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         type: PixiGraph.TextType.TEXT,
         fontFamily: 'HelveticaRegular',
         fontSize: 10,
+        fontWeight: '500',
         color: '#000',
         backgroundColor: 'rgba(255, 255, 255, 0)',
         padding: 2,
@@ -244,8 +267,9 @@ window.addEventListener('DOMContentLoaded', async () => {
         color: COLOR_SELECTED,
       },
       label: {
-        backgroundColor: COLOR_SELECTED,
-        color: '#ffffff',
+        // backgroundColor: COLOR_SELECTED,
+        // color: '#ffffff',
+        fontWeight: 'bolder',
       },
     },
     edge: {
@@ -267,7 +291,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     graph,
     style,
     hoverStyle,
-    resources,
+    // resources,
     onprogress: (percentage) => {console.log(percentage)}
   });
 
@@ -365,9 +389,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     // 可通过graphology-layout-forceatlas2进行布局
     let data = {
       nodes: [
-        {id: "node100", group: 5, label: "标签100", x: nodeAttr.x+50, y: nodeAttr.y+50},
-        {id: "node200", group: 4, label: "标签200", x: nodeAttr.x+100, y: nodeAttr.y+100},
-        {id: "node300", group: 2, label: "标签300", x: nodeAttr.x+150, y: nodeAttr.y+150}
+        {id: "node100", group: 5, label: "标签100", icon: '', x: nodeAttr.x+50, y: nodeAttr.y+50},
+        {id: "node200", group: 4, label: "标签200", icon: '', x: nodeAttr.x+100, y: nodeAttr.y+100},
+        {id: "node300", group: 2, label: "标签300", icon: '', x: nodeAttr.x+150, y: nodeAttr.y+150}
       ],
       links: [
         {source: "node100", target: "node200", label: "交易200元", value: 4, reverse: true},
@@ -412,7 +436,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   pixiGraph.on('nodeClick', (event, nodeKey, nodeStyle) => {
     // pixiGraph.dragEnable();
     console.log('nodeClick', event, nodeKey, nodeStyle);
-    // addLeaf(nodeKey);
+    // style.node.label.fontWeight = 'bolder';
+    addLeaf(nodeKey);
+  });
+  pixiGraph.on('nodeRightclick', (event, nodeKey, nodeStyle) => {
+    // pixiGraph.dragEnable();
+    console.log('nodeRightclick', event, nodeKey, nodeStyle);
   });
   // pixiGraph.on('nodeMousemove', (event, nodeKey) => console.log('nodeMousemove', event, nodeKey));
   // pixiGraph.on('nodeMouseover', (event, nodeKey, nodeStyle) => {
@@ -424,6 +453,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   pixiGraph.on('edgeClick', (event, edgeKey, edgeStyle) => {
     // pixiGraph.dragDisable();
     console.log('edgeClick', event, edgeKey, edgeStyle);
+  });
+  pixiGraph.on('edgeRightclick', (event, edgeKey, edgeStyle) => {
+    // pixiGraph.dragDisable();
+    console.log('edgeRightclick', event, edgeKey, edgeStyle);
   });
   // pixiGraph.on('edgeMousemove', (event, edgeKey) => console.log('edgeMousemove', event, edgeKey));
   // pixiGraph.on('edgeMouseover', (event, edgeKey) => console.log('edgeMouseover', event, edgeKey));
