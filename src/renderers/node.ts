@@ -2,6 +2,7 @@ import { Container } from '@pixi/display';
 import { Circle } from '@pixi/math';
 import { Sprite } from '@pixi/sprite';
 import { Graphics } from '@pixi/graphics';
+import { Texture } from '@pixi/core';
 import '@pixi/mixin-get-child-by-name';
 import { colorToPixi } from '../utils/color';
 import { NodeStyle } from '../utils/style';
@@ -92,7 +93,7 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
       const nodeIconTexture = textureCache.getOnly(nodeIconTextureKey);
       updataNodeIcon(nodeIconTexture);
     } else {
-      const nodeIconTexture = Sprite.from(nodeStyle.icon.content).texture;
+      const nodeIconTexture = Texture.from(nodeStyle.icon.content);
       textureCache.set(nodeIconTextureKey, nodeIconTexture);
       updataNodeIcon(nodeIconTexture);
     }
@@ -104,13 +105,15 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
     nodeIcon.texture = nodeIconTexture;
     [nodeIcon.tint, nodeIcon.alpha] = colorToPixi(nodeStyle.icon.color);
 
-    if (nodeStyle.shape === 'circle') {
-      nodeIcon.width = nodeStyle.size * 2;
-      nodeIcon.height = nodeStyle.size * 2;
-    }
-    if (nodeStyle.shape === 'rect') {
-      nodeIcon.width = nodeStyle.size;
-      nodeIcon.height = nodeStyle.size;
+    if (nodeStyle.icon.type === TextType.IMAGE) {
+      if (nodeStyle.shape === 'circle') {
+        nodeIcon.width = nodeStyle.size * 2;
+        nodeIcon.height = nodeStyle.size * 2;
+      }
+      if (nodeStyle.shape === 'rect') {
+        nodeIcon.width = nodeStyle.size;
+        nodeIcon.height = nodeStyle.size;
+      }
     }
     
     nodeGfx.addChild(nodeIcon);

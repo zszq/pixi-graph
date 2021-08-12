@@ -26,6 +26,7 @@
     "@pixi/constants": "^6.0.4",
     "@pixi/core": "^6.0.2",
     "@pixi/display": "^6.0.2",
+    "@pixi/extract": "^6.1.1",
     "@pixi/filter-fxaa": "^6.0.4",
     "@pixi/graphics": "^6.0.2",
     "@pixi/interaction": "^6.0.2",

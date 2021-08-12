@@ -4,6 +4,7 @@ import { AppLoaderPlugin, Loader } from '@pixi/loaders';
 import { BitmapFontLoader } from '@pixi/text-bitmap';
 import { Renderer, BatchRenderer } from '@pixi/core';
 import { InteractionManager } from '@pixi/interaction';
+import { Extract } from '@pixi/extract';
 import { Container } from '@pixi/display';
 import { Point, IPointData } from '@pixi/math';
 import { Viewport } from 'pixi-viewport';
@@ -24,6 +25,7 @@ Application.registerPlugin(AppLoaderPlugin);
 Loader.registerPlugin(BitmapFontLoader);
 Renderer.registerPlugin('batch', BatchRenderer);
 Renderer.registerPlugin('interaction', InteractionManager);
+Renderer.registerPlugin('extract', Extract);
 
 const DEFAULT_STYLE: GraphStyleDefinition = {
   node: {
@@ -203,7 +205,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       .wheel()
       // .decelerate()
       // .clampZoom({ maxScale: 1 });
-      .clampZoom({ maxScale: 1.2, minScale: 0.1 });
+      .clampZoom({ maxScale: 1.5, minScale: 0.1 });
     this.app.stage.addChild(this.viewport);
 
     // create layers
@@ -332,6 +334,11 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.viewport.setZoom(1); // otherwise scale is 0 when initialized in React useEffect
     this.viewport.center = graphCenter;
     this.viewport.fit(true);
+  }
+
+  extract() {
+    const image = this.app.renderer.plugins.extract.image(this.app.stage);
+    return image;
   }
 
   private onGraphNodeAdded(data: { key: string, attributes: NodeAttributes }) {
@@ -748,15 +755,18 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
       edge.updateVisibility(zoomStep);
     });
+    // 处理隐藏线之后拖拽放大后线不显示问题
+    if (zoomStep === 1) {
+      this.onGraphEachEdgeAttributesUpdated();
+    }
   }
 
-  // // enable viewport dragging
-  // dragEnable() {
-  //   this.viewport.pause = false;
-  // }
-
-  // // disable viewport dragging
-  // dragDisable() {
-  //   this.viewport.pause = true;
-  // }
+  // 激活拖拽
+  dragEnable() {
+    this.viewport.pause = false;
+  }
+  // 暂停拖拽
+  dragDisable() {
+    this.viewport.pause = true;
+  }
 }
