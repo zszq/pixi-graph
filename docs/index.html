@@ -55,6 +55,8 @@
   <div id="controls">
     <button id="add-node">Add Node</button>
     <button id="extract">extract</button>
+    <button id="add-group">add group</button>
+    <button id="drop-group">drop group</button>
     <!-- <button id="add-edge">Add Edge</button>
     <button id="drop-node">Drop Node</button>
     <button id="drop-edge">Drop Edge</button>
@@ -149,7 +151,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // // });
   graph.addNode('node0', {
     id: "node0",
-    group: 4,
+    group: [0, 1, 2, 3, 4, 5, 6, 7],
     label: "标签0",
     icon: 'http://127.0.0.1:8080/docs/images/ba.png',
     // icon: 'http://127.0.0.1:8080/docs/images/bz.jpeg',
@@ -158,7 +160,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   graph.addNode('node1', {
     id: "node1",
-    group: 1,
+    group: [1, 5],
     label: "标签1",
     // icon: 'http://127.0.0.1:8080/docs/images/ok.png',
     icon: 'http://127.0.0.1:8080/docs/images/yz.png',
@@ -168,7 +170,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   graph.addNode('node2', {
     id: "node2",
-    group: 2,
+    group: [1],
     label: "标签2",
     // icon: 'http://127.0.0.1:8080/docs/images/ok.png',
     icon: 'http://127.0.0.1:8080/docs/images/bz.jpeg',
@@ -223,20 +225,16 @@ window.addEventListener('DOMContentLoaded', async () => {
     node: {
       size: node => 20,
       color: node => NODE_COLOR_NORMAL,
-      shape: node => {
-        if (node) {
-          return 'circle';
-        }
-      }, // circle or rect
+      shape: node => 'circle', // circle or rect
       border: {
         width: 2,
         color: '#ccc',
       },
       icon: {
-        type: PixiGraph.TextType.TEXT, // TEXT or IMAGE
+        type: PixiGraph.TextType.IMAGE, // TEXT or IMAGE
         content: (node) => {
-          return node.id;
-          // return node.icon; // 使用图片方法(PixiGraph.TextType.IMAGE，返回相应图片路径)
+          // return node.id;
+          return node.icon; // 使用图片方法(PixiGraph.TextType.IMAGE，返回相应图片路径)
           // 使用字体图表的方法(导入相关字体文件后使用);
           // let unicode = '&#xe7f8;';
           // if (unicode === "") return "";
@@ -258,6 +256,32 @@ window.addEventListener('DOMContentLoaded', async () => {
         backgroundColor: 'rgba(255, 255, 255, 0)',
         padding: 2,
       },
+      attach: {
+        group: node => node.group ? node.group : [1, 2, 3],
+        shape: 'rect', // circle or rect
+        size: 15,
+        colors: node => ({
+          0: '#F08BB4',
+          1: '#5B8FF9',
+          2: '#61DDAA',
+          3: '#65789B',
+          4: '#F6BD16',
+          5: '#7262FD',
+          6: '#78D3F8',
+          7: '#9661BC',
+          8: '#BF5600',
+          9: '#008685'
+        }),
+        text: {
+          type: PixiGraph.TextType.TEXT, // TEXT
+          // fontFamily: 'iconfont',
+          fontSize: node => 12,
+          color: '#fff',
+        },
+        colGap: 4, // 分组图标之间的左右间距
+        rowGap: 4, // 行之间的上下间距
+        crevice: 5 // 与点之间的上下距离
+      }
     },
     edge: {
       width: edge => 2,
@@ -413,9 +437,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     // 可通过graphology-layout-forceatlas2进行布局
     let data = {
       nodes: [
-        {id: "node100", group: 5, label: "标签100", icon: '', x: nodeAttr.x+50, y: nodeAttr.y+50},
-        {id: "node200", group: 4, label: "标签200", icon: '', x: nodeAttr.x+100, y: nodeAttr.y+100},
-        {id: "node300", group: 2, label: "标签300", icon: '', x: nodeAttr.x+150, y: nodeAttr.y+150}
+        {id: "node100", group: [5, 6], label: "标签100", icon: '', x: nodeAttr.x+50, y: nodeAttr.y+50},
+        {id: "node200", group: [4, 5], label: "标签200", icon: '', x: nodeAttr.x+100, y: nodeAttr.y+100},
+        {id: "node300", group: [2], label: "标签300", icon: '', x: nodeAttr.x+150, y: nodeAttr.y+150}
       ],
       links: [
         {source: "node100", target: "node200", label: "交易200元", value: 4, reverse: true},
@@ -456,12 +480,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   // pixiGraph.on('viewClick', (event) => {
   //   console.log('viewClick', event, pixiGraph.viewport.center);
   // });
-  
+  // 加载下一级
   pixiGraph.on('nodeClick', (event, nodeKey, nodeStyle) => {
     // pixiGraph.dragEnable();
     console.log('nodeClick', event, nodeKey, nodeStyle);
     // style.node.label.fontWeight = 'bolder';
-    addLeaf(nodeKey);
+    // addLeaf(nodeKey);
   });
   pixiGraph.on('nodeRightclick', (event, nodeKey, nodeStyle) => {
     // pixiGraph.dragEnable();
@@ -502,7 +526,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   //   graph.addNode(node.id, node);
     graph.addNode('node5', {
       id: "node5",
-      group: 4,
+      group: [4],
       label: "标签5",
       icon: 'http://127.0.0.1:8080/docs/images/ba.png',
       x: 100,
@@ -510,7 +534,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
     graph.addNode('node6', {
       id: "node6",
-      group: 1,
+      group: [1],
       label: "标签6",
       icon: 'http://127.0.0.1:8080/docs/images/ok.png',
       x: 500,
@@ -524,6 +548,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
     pixiGraph.resetView(graph.nodes());
   };
+  // 新增节点
   document.getElementById('add-node').addEventListener('click', addNode);
   // 提取图片
   document.getElementById('extract').addEventListener('click', () => {
@@ -532,6 +557,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     let thumbnail_img = document.querySelector('#thumbnail img');
     if (thumbnail_img) thumbnail_box.removeChild(thumbnail_img);
     thumbnail_box.appendChild(img);
+  });
+  // 新增分组
+  document.getElementById('add-group').addEventListener('click', () => {
+    graph.setNodeAttribute('node0', 'group', [0, 1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+  // 删除分组
+  document.getElementById('drop-group').addEventListener('click', () => {
+    graph.setNodeAttribute('node0', 'group', [0, 1, 2, 3, 4, 5, 6]);
   });
   
 

@@ -8,7 +8,7 @@ import { NodeStyle } from '../utils/style';
 import { textToPixi } from '../utils/text';
 import { TextureCache } from '../texture-cache';
 
-const DELIMETER = '::';
+const DELIMITER = '::';
 
 const NODE_LABEL_BACKGROUND = 'NODE_LABEL_BACKGROUND';
 const NODE_LABEL_TEXT = 'NODE_LABEL_TEXT';
@@ -30,7 +30,7 @@ export function createNodeLabel(nodeLabelGfx: Container) {
 export function updateNodeLabelStyle(nodeLabelGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache) {
   const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
 
-  const nodeLabelTextTextureKey = [NODE_LABEL_TEXT, nodeStyle.label.fontFamily, nodeStyle.label.fontSize, nodeStyle.label.fontWeight, nodeStyle.label.content].join(DELIMETER);
+  const nodeLabelTextTextureKey = [NODE_LABEL_TEXT, nodeStyle.label.fontFamily, nodeStyle.label.fontSize, nodeStyle.label.fontWeight, nodeStyle.label.content].join(DELIMITER);
   const nodeLabelTextTexture = textureCache.get(nodeLabelTextTextureKey, () => {
     const text = textToPixi(nodeStyle.label.type, nodeStyle.label.content, {
       fontFamily: nodeStyle.label.fontFamily,

@@ -9,7 +9,7 @@ import { NodeStyle } from '../utils/style';
 import { textToPixi, TextType } from '../utils/text';
 import { TextureCache } from '../texture-cache';
 
-const DELIMETER = '::';
+const DELIMITER = '::';
 const WHITE = 0xffffff;
 
 const NODE_CIRCLE = 'NODE_CIRCLE';
@@ -50,7 +50,7 @@ export function createNode(nodeGfx: Container, nodeStyle: NodeStyle) {
 export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache) {
   const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
   
-  const nodeCircleTextureKey = [NODE_CIRCLE, nodeStyle.size].join(DELIMETER);
+  const nodeCircleTextureKey = [NODE_CIRCLE, nodeStyle.size].join(DELIMITER);
   const nodeCircleTexture = textureCache.get(nodeCircleTextureKey, () => {
     const graphics = new Graphics();
     graphics.beginFill(WHITE);
@@ -63,7 +63,7 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
     return graphics;
   });
 
-  const nodeCircleBorderTextureKey = [NODE_CIRCLE_BORDER, nodeStyle.size, nodeStyle.border.width].join(DELIMETER);
+  const nodeCircleBorderTextureKey = [NODE_CIRCLE_BORDER, nodeStyle.size, nodeStyle.border.width].join(DELIMITER);
   const nodeCircleBorderTexture = textureCache.get(nodeCircleBorderTextureKey, () => {
     const graphics = new Graphics();
     // graphics.lineStyle(nodeStyle.border.width, WHITE);
@@ -77,7 +77,7 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
     return graphics;
   });
 
-  const nodeIconTextureKey = [NODE_ICON, nodeStyle.icon.fontFamily, nodeStyle.icon.fontSize, nodeStyle.icon.content].join(DELIMETER);
+  const nodeIconTextureKey = [NODE_ICON, nodeStyle.icon.fontFamily, nodeStyle.icon.fontSize, nodeStyle.icon.content].join(DELIMITER);
   if (nodeStyle.icon.type !== TextType.IMAGE) {
     const nodeIconTexture = textureCache.get(nodeIconTextureKey, () => {
       const text = textToPixi(nodeStyle.icon.type, nodeStyle.icon.content, {

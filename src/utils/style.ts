@@ -29,6 +29,22 @@ export interface GraphStyle {
       backgroundColor: string;
       padding: number;
     };
+    attach: {
+      group: [],
+      shape: string,
+      size: number,
+      colors: {},
+      text: {
+        type: TextType,
+        fontFamily: string,
+        fontSize: number,
+        fontWeight: string,
+        color: string,
+      },
+      colGap: number,
+      rowGap: number,
+      crevice: number
+    }
   };
   edge: {
     width: number;
@@ -44,14 +60,14 @@ export interface GraphStyle {
       size: number
     },
     label: {
-      type: TextType.TEXT,
-      fontFamily: 'Arial',
-      fontSize: 12,
+      type: TextType,
+      fontFamily: string,
+      fontSize: number,
       fontWeight: string,
-      content: '',
-      color: '#333333',
-      backgroundColor: 'rgba(0, 0, 0, 0)',
-      padding: 4
+      content: string,
+      color: string,
+      backgroundColor: string,
+      padding: number
     }
   };
 }

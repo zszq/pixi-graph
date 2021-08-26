@@ -8,7 +8,7 @@ import { EdgeStyle } from '../utils/style';
 import { textToPixi } from '../utils/text';
 import { TextureCache } from '../texture-cache';
 
-const DELIMETER = '::';
+const DELIMITER = '::';
 
 const EDGE_LABEL_BACKGROUND = 'EDGE_LABEL_BACKGROUND';
 const EDGE_LABEL_TEXT = 'EDGE_LABEL_TEXT';
@@ -28,7 +28,7 @@ export function createEdgeLabel(edgeLabelGfx: Container) {
 }
 
 export function updateEdgeLabelStyle(edgeLabelGfx: Container, edgeStyle: EdgeStyle, textureCache: TextureCache) {
-  const edgeLabelTextTextureKey = [EDGE_LABEL_TEXT, edgeStyle.label.fontFamily, edgeStyle.label.fontSize, edgeStyle.label.fontWeight, edgeStyle.label.content].join(DELIMETER);
+  const edgeLabelTextTextureKey = [EDGE_LABEL_TEXT, edgeStyle.label.fontFamily, edgeStyle.label.fontSize, edgeStyle.label.fontWeight, edgeStyle.label.content].join(DELIMITER);
   const edgeLabelTextTexture = textureCache.get(edgeLabelTextTextureKey, () => {
     const text = textToPixi(edgeStyle.label.type, edgeStyle.label.content, {
       fontFamily: edgeStyle.label.fontFamily,

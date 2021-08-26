@@ -8,7 +8,7 @@ import { colorToPixi } from '../utils/color';
 import { EdgeStyle } from '../utils/style';
 import { TextureCache } from '../texture-cache';
 
-const DELIMETER = '::';
+const DELIMITER = '::';
 const WHITE = 0xffffff;
 
 const EDGE_LINE = 'EDGE_LINE';
@@ -43,7 +43,7 @@ export function updateEdgeStyle(edgeGfx: Container, edgeStyle: EdgeStyle, _textu
   if (isSelfLoop) {
     const edgeOuterSize = edgeStyle.selefLoop.radius + edgeStyle.width;
 
-    const edgeCircleTextureKey = [EDGE_LINE, edgeStyle.selefLoop.radius].join(DELIMETER);
+    const edgeCircleTextureKey = [EDGE_LINE, edgeStyle.selefLoop.radius].join(DELIMITER);
     const edgeCircleTexture = _textureCache.get(edgeCircleTextureKey, () => {
       const graphics = new Graphics();
       graphics.beginFill(WHITE);
@@ -51,7 +51,7 @@ export function updateEdgeStyle(edgeGfx: Container, edgeStyle: EdgeStyle, _textu
       return graphics;
     });
 
-    const edgeCircleBorderTextureKey = [EDGE_CIRCLE_BORDER, edgeStyle.selefLoop.radius, edgeStyle.width].join(DELIMETER);
+    const edgeCircleBorderTextureKey = [EDGE_CIRCLE_BORDER, edgeStyle.selefLoop.radius, edgeStyle.width].join(DELIMITER);
     const edgeCircleBorderTexture = _textureCache.get(edgeCircleBorderTextureKey, () => {
       const graphics = new Graphics();
       graphics.lineStyle(edgeStyle.width, WHITE);

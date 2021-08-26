@@ -6,7 +6,7 @@ import { colorToPixi } from '../utils/color';
 import { EdgeStyle } from '../utils/style';
 import { TextureCache } from '../texture-cache';
 
-const DELIMETER = '::';
+const DELIMITER = '::';
 const WHITE = 0xffffff;
 
 const EDGE_ARROW = 'EDGE_ARROW';
@@ -29,7 +29,7 @@ export function updateEdgeArrowStyle(edgeArrowGfx: Container, edgeStyle: EdgeSty
     return;
   }
 
-  const edgeArrowTextureKey = [EDGE_ARROW, edgeStyle.arrow.size].join(DELIMETER);
+  const edgeArrowTextureKey = [EDGE_ARROW, edgeStyle.arrow.size].join(DELIMITER);
   const edgeArrowTexture = textureCache.get(edgeArrowTextureKey, () => {
     const arrowSize = edgeStyle.arrow.size % 2 === 0 ? edgeStyle.arrow.size : edgeStyle.arrow.size + 1;
     const graphics = new Graphics();

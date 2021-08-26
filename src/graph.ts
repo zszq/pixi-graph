@@ -54,6 +54,22 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       backgroundColor: 'rgba(0, 0, 0, 0)',
       padding: 4,
     },
+    attach: {
+      group: [],
+      shape: 'rect', // circle or rect
+      size: 20,
+      colors: {},
+      text: {
+        type: TextType.TEXT, // TEXT or IMAGE
+        fontFamily: 'Arial',
+        fontSize: 12,
+        fontWeight: '400',
+        color: '#333333',
+      },
+      colGap: 5, // 分组图标之间的左右间距
+      rowGap: 5, // 行之间的上下间距
+      crevice: 10 // 与点之间的上下距离
+    }
   },
   edge: {
     width: 1,
@@ -419,6 +435,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     const nodeLayerChildrens = this.nodeLayer.children;
     this.nodeLayer.setChildIndex(node.nodeGfx, nodeLayerChildrens.length - 1);
     this.nodeLayer.setChildIndex(node.nodeLabelGfx, nodeLayerChildrens.length - 1);
+    this.nodeLayer.setChildIndex(node.nodeAttachGfx, nodeLayerChildrens.length - 1);
   }
 
   private unhoverNode(nodeKey: string) {
@@ -595,7 +612,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     //   console.timeEnd('renderNode');
     //   this.nodeKeyToNodeObjectTemp.clear();
     // }, 300)
-    this.nodeLayer.addChild(node.nodeGfx, node.nodeLabelGfx);
+    this.nodeLayer.addChild(node.nodeGfx, node.nodeLabelGfx, node.nodeAttachGfx);
 
     // this.nodeLabelLayer.addChild(node.nodeLabelGfx);
     // this.frontNodeLayer.addChild(node.nodePlaceholderGfx);
@@ -667,7 +684,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private dropNode(nodeKey: string) {
     const node = this.nodeKeyToNodeObject.get(nodeKey)!;
     
-    this.nodeLayer.removeChild(node.nodeGfx, node.nodeLabelGfx);
+    this.nodeLayer.removeChild(node.nodeGfx, node.nodeLabelGfx, node.nodeAttachGfx);
     // this.nodeLabelLayer.removeChild(node.nodeLabelGfx);
     // this.frontNodeLayer.removeChild(node.nodePlaceholderGfx);
     // this.frontNodeLabelLayer.removeChild(node.nodeLabelPlaceholderGfx);
@@ -755,10 +772,10 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
       edge.updateVisibility(zoomStep);
     });
-    // 处理隐藏线之后拖拽放大后线不显示问题
-    if (zoomStep === 1) {
-      this.onGraphEachEdgeAttributesUpdated();
-    }
+    // 处理隐藏线之后拖拽放大后线不显示问题(大量数据缩放会很卡)
+    // if (zoomStep === 1) {
+    //   this.onGraphEachEdgeAttributesUpdated();
+    // }
   }
 
   // 激活拖拽
