@@ -4,7 +4,7 @@ import { IPointData } from '@pixi/math';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import { createNode, updateNodeStyle, updateNodeVisibility } from './renderers/node';
 import { createNodeLabel, updateNodeLabelStyle, updateNodeLabelVisibility } from './renderers/node-label';
-import { updateNodeAttachVisibility, updateNodeAttachGroup } from './renderers/node-attach';
+import { createNodeAttach, updateNodeAttachVisibility, updateNodeAttachGroup } from './renderers/node-attach';
 import { NodeStyle } from './utils/style';
 import { TextureCache } from './texture-cache';
 
@@ -68,14 +68,15 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
 
    createNodeAttach() {
     const nodeAttachGfx = new Container();
-    nodeAttachGfx.interactive = true;
-    nodeAttachGfx.buttonMode = true;
-    nodeAttachGfx.on('mousemove', (event: InteractionEvent) => this.emit('mousemove', event.data.originalEvent as MouseEvent));
-    nodeAttachGfx.on('mouseover', (event: InteractionEvent) => this.emit('mouseover', event.data.originalEvent as MouseEvent));
-    nodeAttachGfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
-    nodeAttachGfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
-    nodeAttachGfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
-    nodeAttachGfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
+    // nodeAttachGfx.interactive = true;
+    // nodeAttachGfx.buttonMode = true;
+    // nodeAttachGfx.on('mousemove', (event: InteractionEvent) => this.emit('mousemove', event.data.originalEvent as MouseEvent));
+    // nodeAttachGfx.on('mouseover', (event: InteractionEvent) => this.emit('mouseover', event.data.originalEvent as MouseEvent));
+    // nodeAttachGfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
+    // nodeAttachGfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
+    // nodeAttachGfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
+    // nodeAttachGfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
+    createNodeAttach(nodeAttachGfx);
     return nodeAttachGfx;
   }
 

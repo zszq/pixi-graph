@@ -14,9 +14,16 @@ const WHITE = 0xffffff;
 const NODE_ATTACH = 'NODE_ATTACH';
 const NODE_ATTACH_TEXT = 'NODE_ATTACH_TEXT';
 
+// 临时处理：必须初始化至少一个子元素，不然group为空时添加不显示（拖拽和缩放才会显示）
+export function createNodeAttach(nodeAttachGfx: Container) {
+  // nodeAttachGfx -> nodeInitAttach
+  const nodeInitAttach = new Sprite();
+  nodeAttachGfx.addChild(nodeInitAttach);
+}
+
 export function updateNodeAttachGroup(nodeAttachGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache) {
   const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
-  let group = nodeStyle.attach.group;
+  let newGroup = nodeStyle.attach.group;
   let childrens = nodeAttachGfx.children;
   let oldGroup: number[] = [];
 
@@ -27,12 +34,16 @@ export function updateNodeAttachGroup(nodeAttachGfx: Container, nodeStyle: NodeS
       oldGroup.push(Number(name));
     }
   })
-  let diffGroup = arrayComplement(group, oldGroup);
-  
+  let diffGroup = arrayComplement(newGroup, oldGroup);
+
   if (diffGroup.length > 0) {
     nodeAttachGfx.removeChildren(0);
 
-    group.forEach((g, i) => {
+    const nodeInitAttach = new Sprite();
+    let children_sprites: Sprite[] = [];
+    children_sprites.push(nodeInitAttach); // （同上创建注释）至少有一个子元素，否则清空后不能新增
+    
+    newGroup.forEach((g, i) => {
       const nodeAttachTextTextureKey = [`${NODE_ATTACH_TEXT}_${g}`, nodeStyle.attach.text.fontFamily, nodeStyle.attach.text.fontSize, nodeStyle.attach.text.fontWeight].join(DELIMITER);
       const nodeAttachTextTexture = textureCache.get(nodeAttachTextTextureKey, () => {
         const text = textToPixi(nodeStyle.attach.text.type, g, {
@@ -61,21 +72,22 @@ export function updateNodeAttachGroup(nodeAttachGfx: Container, nodeStyle: NodeS
       nodeAttach.name = `${NODE_ATTACH}_${g}`;
       nodeAttach.anchor.set(0.5);
       nodeAttach.texture = nodeCircleTexture;
-      nodeAttach.x = setAttachItemX(group, i, nodeStyle.attach.size, nodeStyle.attach.colGap);
-      nodeAttach.y = setAttachItemY(nodeOuterSize, group, i, nodeStyle.attach.size, nodeStyle.attach.crevice, nodeStyle.attach.rowGap);
+      nodeAttach.x = setAttachItemX(newGroup, i, nodeStyle.attach.size, nodeStyle.attach.colGap);
+      nodeAttach.y = setAttachItemY(nodeOuterSize, newGroup, i, nodeStyle.attach.size, nodeStyle.attach.crevice, nodeStyle.attach.rowGap);
       [nodeAttach.tint, nodeAttach.alpha] = colorToPixi(nodeStyle.attach.colors[g]);
-      nodeAttachGfx.addChild(nodeAttach);
+      children_sprites.push(nodeAttach);
 
       // nodeAttachGfx -> nodeAttachText
       const nodeAttachText = new Sprite();
       nodeAttachText.name = `${NODE_ATTACH_TEXT}_${g}`;
       nodeAttachText.anchor.set(0.5);
       nodeAttachText.texture = nodeAttachTextTexture;
-      nodeAttachText.x = setAttachItemX(group, i, nodeStyle.attach.size, nodeStyle.attach.colGap);
-      nodeAttachText.y = setAttachItemY(nodeOuterSize, group, i, nodeStyle.attach.size, nodeStyle.attach.crevice, nodeStyle.attach.rowGap);
+      nodeAttachText.x = setAttachItemX(newGroup, i, nodeStyle.attach.size, nodeStyle.attach.colGap);
+      nodeAttachText.y = setAttachItemY(nodeOuterSize, newGroup, i, nodeStyle.attach.size, nodeStyle.attach.crevice, nodeStyle.attach.rowGap);
       [nodeAttachText.tint, nodeAttachText.alpha] = colorToPixi(nodeStyle.attach.text.color);
-      nodeAttachGfx.addChild(nodeAttachText);
+      children_sprites.push(nodeAttachText);
     })
+    nodeAttachGfx.addChild(...children_sprites);
   }
 
   // 设置x坐标
