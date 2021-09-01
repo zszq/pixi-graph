@@ -43,8 +43,8 @@
       right: 10px;
     }
     #thumbnail img {
-      /* width: 300px; */
-      /* height: 200px; */
+      width: 300px;
+      height: 200px;
       background-color: #fff;
       border: 1px solid #eee;
     }
@@ -124,78 +124,80 @@ window.addEventListener('DOMContentLoaded', async () => {
     multi: true,
     type: 'undirected'
   });
-  // // const { nodes, links } = await (await fetch('miserables.json')).json();
-  // const { nodes, links } = await (await fetch('data1-1.json')).json();
-  // // const { nodes, links } = await (await fetch('socfb-Caltech36.json')).json();
-  // nodes.forEach(node => {
-  //   graph.addNode(node.id, {...node});
-  // });
-  // links.forEach(link => {
-  //   // graph.addEdge(link.source, link.target, {...link});
-  //   graph.addEdgeWithKey(`${link.source}->${link.target}`, link.source, link.target, {...link});
-  // });
+  // const { nodes, links } = await (await fetch('miserables.json')).json();
+  const { nodes, links } = await (await fetch('data500-1000.json')).json();
+  // const { nodes, links } = await (await fetch('socfb-Caltech36.json')).json();
+  nodes.forEach(node => {
+    graph.addNode(node.id, {...node});
+  });
+  links.forEach(link => {
+    if (!graph.hasEdge(`${link.source}->${link.target}`)) {
+      // graph.addEdge(link.source, link.target, {...link});
+      graph.addEdgeWithKey(`${link.source}->${link.target}`, link.source, link.target, {...link});
+    }
+  });
 
-  // // layout
+  // layout
+  graph.forEachNode(node => {
+    graph.setNodeAttribute(node, 'x', Math.random());
+    graph.setNodeAttribute(node, 'y', Math.random());
+  });
+  console.time('compute');
+  forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 80 }});
+  console.timeEnd('compute');
+  // const positions = await (await fetch('position2.json')).json();
   // graph.forEachNode(node => {
-  //   graph.setNodeAttribute(node, 'x', Math.random());
-  //   graph.setNodeAttribute(node, 'y', Math.random());
+  //   const position = positions[node];
+  //   graph.setNodeAttribute(node, 'x', position.x);
+  //   graph.setNodeAttribute(node, 'y', position.y);
   // });
-  // console.time('compute');
-  // forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 80 }});
-  // console.timeEnd('compute');
-  // // const positions = await (await fetch('position2.json')).json();
-  // // graph.forEachNode(node => {
-  // //   const position = positions[node];
-  // //   graph.setNodeAttribute(node, 'x', position.x);
-  // //   graph.setNodeAttribute(node, 'y', position.y);
-  // // });
-  graph.addNode('node0', {
-    id: "node0",
-    group: [],
-    label: "标签0",
-    icon: 'http://127.0.0.1:8080/docs/images/ba.png',
-    // icon: 'http://127.0.0.1:8080/docs/images/bz.jpeg',
-    x: 1,
-    y: 2
-  });
-  graph.addNode('node1', {
-    id: "node1",
-    group: [1, 5],
-    label: "标签1",
-    // icon: 'http://127.0.0.1:8080/docs/images/ok.png',
-    icon: 'http://127.0.0.1:8080/docs/images/yz.png',
-    // icon: 'http://192.168.224.78:8080/chain/virtual/node/icon/exchange-OkLink.com.png',
-    x: 1,
-    y: 300
-  });
-  graph.addNode('node2', {
-    id: "node2",
-    group: [1],
-    label: "标签2",
-    // icon: 'http://127.0.0.1:8080/docs/images/ok.png',
-    icon: 'http://127.0.0.1:8080/docs/images/bz.jpeg',
-    // icon: 'http://192.168.224.78:8080/chain/virtual/node/icon/exchange-OkLink.com.png',
-    x: 300,
-    y: 2
-  });
-  graph.addEdgeWithKey(`node0->node1`, 'node0', 'node1', {
-    source: "node0",
-    target: "node1",
-    label: "交易500元",
-    value: 4
-  });
-  graph.addEdgeWithKey(`node0->node2`, 'node0', 'node2', {
-    source: "node0",
-    target: "node2",
-    label: "交易500元",
-    value: 4
-  });
-  graph.addEdgeWithKey(`node1->node2`, 'node1', 'node2', {
-    source: "node1",
-    target: "node2",
-    label: "交易500元",
-    value: 4
-  });
+  // graph.addNode('node0', {
+  //   id: "node0",
+  //   group: [],
+  //   label: "标签0",
+  //   icon: 'http://127.0.0.1:8080/docs/images/ba.png',
+  //   // icon: 'http://127.0.0.1:8080/docs/images/bz.jpeg',
+  //   x: 1,
+  //   y: 2
+  // });
+  // graph.addNode('node1', {
+  //   id: "node1",
+  //   group: [1, 5],
+  //   label: "标签1",
+  //   icon: 'http://127.0.0.1:8080/docs/images/ok.png',
+  //   // icon: 'http://127.0.0.1:8080/docs/images/yz.png',
+  //   // icon: 'http://192.168.224.78:8080/chain/virtual/node/icon/exchange-OkLink.com.png',
+  //   x: 1,
+  //   y: 300
+  // });
+  // graph.addNode('node2', {
+  //   id: "node2",
+  //   group: [1],
+  //   label: "标签2",
+  //   icon: 'http://127.0.0.1:8080/docs/images/ok.png',
+  //   // icon: 'http://127.0.0.1:8080/docs/images/bz.jpeg',
+  //   // icon: 'http://192.168.224.78:8080/chain/virtual/node/icon/exchange-OkLink.com.png',
+  //   x: 300,
+  //   y: 2
+  // });
+  // graph.addEdgeWithKey(`node0->node1`, 'node0', 'node1', {
+  //   source: "node0",
+  //   target: "node1",
+  //   label: "交易500元",
+  //   value: 4
+  // });
+  // graph.addEdgeWithKey(`node0->node2`, 'node0', 'node2', {
+  //   source: "node0",
+  //   target: "node2",
+  //   label: "交易500元",
+  //   value: 4
+  // });
+  // graph.addEdgeWithKey(`node1->node2`, 'node1', 'node2', {
+  //   source: "node1",
+  //   target: "node2",
+  //   label: "交易500元",
+  //   value: 4
+  // });
   // graph.clear();
   // function setCenter() {
   //   const WORLD_PADDING = 100;
@@ -227,14 +229,14 @@ window.addEventListener('DOMContentLoaded', async () => {
       color: node => NODE_COLOR_NORMAL,
       shape: node => 'circle', // circle or rect
       border: {
-        width: 2,
+        width: 4,
         color: '#ccc',
       },
       icon: {
         type: PixiGraph.TextType.IMAGE, // TEXT or IMAGE
         content: (node) => {
           // return node.id;
-          return node.icon; // 使用图片方法(PixiGraph.TextType.IMAGE，返回相应图片路径)
+          return node.icon ? node.icon : 'http://127.0.0.1:8080/docs/images/bz.jpeg'; // 使用图片方法(PixiGraph.TextType.IMAGE，返回相应图片路径)
           // 使用字体图表的方法(导入相关字体文件后使用);
           // let unicode = '&#xe7f8;';
           // if (unicode === "") return "";
@@ -253,11 +255,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         fontSize: 10,
         fontWeight: '400',
         color: '#000',
-        backgroundColor: 'rgba(255, 255, 255, 0)',
+        backgroundColor: 'rgba(255, 255, 255, 0.75)',
         padding: 2,
       },
       attach: {
-        group: node => node.group ? node.group : [1, 2, 3],
+        group: node => node.group ? node.group : [],
         shape: 'rect', // circle or rect
         size: 15,
         colors: node => ({
@@ -284,7 +286,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     },
     edge: {
-      width: edge => 2,
+      width: edge => 1,
       color: edge => '#000',
       selefLoop: { // 自循环线的样式
         radius: 30,  // 圆环半径
@@ -303,7 +305,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         fontSize: 10,
         fontWeight: '500',
         color: '#000',
-        backgroundColor: 'rgba(255, 255, 255, 0)',
+        backgroundColor: 'rgba(255, 255, 255, 0.75)',
         padding: 2,
       },
     },
@@ -425,10 +427,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   //   updateNodes();
   //   updateEdges();
   // };
-
-
-
-
   
 
 
@@ -552,7 +550,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('add-node').addEventListener('click', addNode);
   // 提取图片
   document.getElementById('extract').addEventListener('click', () => {
-    let img = pixiGraph.extract();
+    let src = pixiGraph.extract();
+    let img = document.createElement('img');
+    img.src = src;
     let thumbnail_box = document.querySelector('#thumbnail');
     let thumbnail_img = document.querySelector('#thumbnail img');
     if (thumbnail_img) thumbnail_box.removeChild(thumbnail_img);

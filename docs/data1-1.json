@@ -2,18 +2,21 @@
   "nodes": [
     {
       "id": "node0",
-      "group": 4,
-      "label": "标签0"
+      "group": [4],
+      "label": "标签0",
+      "icon": "http://127.0.0.1:8080/docs/images/ba.png"
     },
     {
       "id": "node1",
       "group": 0,
-      "label": "标签1"
+      "label": "标签1",
+      "icon": "http://127.0.0.1:8080/docs/images/ba.png"
     },
     {
       "id": "node2",
       "group": 4,
-      "label": "标签2"
+      "label": "标签2",
+      "icon": "http://127.0.0.1:8080/docs/images/ba.png"
     }
   ],
   "links": [

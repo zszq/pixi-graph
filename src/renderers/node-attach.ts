@@ -22,8 +22,12 @@ export function createNodeAttach(nodeAttachGfx: Container) {
 }
 
 export function updateNodeAttachGroup(nodeAttachGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache) {
-  const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
   let newGroup = nodeStyle.attach.group;
+  if (!newGroup || !Array.isArray(newGroup)) {
+    console.error('group 应该是一个数组！');
+    return false;
+  };
+  const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
   let childrens = nodeAttachGfx.children;
   let oldGroup: number[] = [];
 

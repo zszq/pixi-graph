@@ -140,6 +140,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private app: Application;
   private textureCache: TextureCache;
   private viewport: Viewport;
+  private cull: Cull;
   private resizeObserver: ResizeObserver;
   private edgeLayer: Container;
   private edgeLabelLayer: Container;
@@ -223,6 +224,9 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       // .clampZoom({ maxScale: 1 });
       .clampZoom({ maxScale: 1.5, minScale: 0.1 });
     this.app.stage.addChild(this.viewport);
+
+    // create cull
+    this.cull = new Cull();
 
     // create layers
     this.edgeLayer = new Container();
@@ -351,12 +355,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.viewport.center = graphCenter;
     this.viewport.fit(true);
   }
-
-  extract() {
-    const image = this.app.renderer.plugins.extract.image(this.app.stage);
-    return image;
-  }
-
+  
   private onGraphNodeAdded(data: { key: string, attributes: NodeAttributes }) {
     const nodeKey = data.key;
     const nodeAttributes = data.attributes;
@@ -749,14 +748,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
 
   private updateGraphVisibility() {
-    // culling
-    const cull = new Cull();
-    cull.addAll((this.viewport.children as Container[]).map(layer => layer.children).flat());
-    cull.cull(this.app.renderer.screen);
-    // console.log(
-    //   Array.from((cull as any)._targetList as Set<DisplayObject>).filter(x => x.visible === true).length,
-    //   Array.from((cull as any)._targetList as Set<DisplayObject>).filter(x => x.visible === false).length
-    // );
+    this.culling();
 
     // levels of detail
     const zoom = this.viewport.scale.x;
@@ -778,6 +770,22 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // }
   }
 
+  // 剔除
+  culling() {
+    this.cull.addAll((this.viewport.children as Container[]).map(layer => layer.children).flat());
+    this.cull.cull(this.app.renderer.screen);
+  }
+  // 取消剔除
+  uncull() {
+    this.cull.uncull();
+  }
+
+  // 提取图片
+  extract() {
+    this.uncull();
+    return this.app.renderer.plugins.extract.base64(this.viewport);
+  }
+  
   // 激活拖拽
   dragEnable() {
     this.viewport.pause = false;
