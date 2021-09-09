@@ -57,9 +57,9 @@ export function updateNodeLabelStyle(nodeLabelGfx: Container, nodeStyle: NodeSty
 export function updateNodeLabelVisibility(nodeLabelGfx: Container, zoomStep: number) {
   // nodeLabelGfx -> nodeLabelBackground
   const nodeLabelBackground = nodeLabelGfx.getChildByName!(NODE_LABEL_BACKGROUND) as Sprite;
-  nodeLabelBackground.visible = nodeLabelBackground.visible && zoomStep >= 3;
+  nodeLabelBackground.renderable = nodeLabelBackground.renderable && zoomStep >= 3;
   
   // nodeLabelGfx -> nodeLabelText
   const nodeLabelText = nodeLabelGfx.getChildByName!(NODE_LABEL_TEXT) as BitmapText;
-  nodeLabelText.visible = nodeLabelText.visible && zoomStep >= 2;
+  nodeLabelText.renderable = nodeLabelText.renderable && zoomStep >= 2;
 }

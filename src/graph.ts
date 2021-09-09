@@ -226,7 +226,10 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.app.stage.addChild(this.viewport);
 
     // create cull
-    this.cull = new Cull();
+    this.cull = new Cull({
+      // recursive: false,
+      toggle: 'renderable' // visible renderable
+    });
 
     // create layers
     this.edgeLayer = new Container();
@@ -769,7 +772,26 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     //   this.onGraphEachEdgeAttributesUpdated();
     // }
   }
-
+  
+  // 设置node可见性
+  nodeVisibility(nodeKey: any, visible: boolean) {
+    const node = this.nodeKeyToNodeObject.get(nodeKey);
+    if (node) {
+      node.nodeVisibility(visible);
+    } else {
+      console.error('根据nodeKey获取node点失败!', nodeKey + ': ' + node);
+    }
+  }
+  // 设置edge可见性
+  edgeVisibility(edgeKey: any, visible: boolean) {
+    const edge = this.edgeKeyToEdgeObject.get(edgeKey);
+    if (edge) {
+      edge.edgeVisibility(visible);
+    } else {
+      console.error('根据edgeKey获取edge点失败!', edgeKey + ': ' + edge);
+    }
+  }
+  
   // 剔除
   culling() {
     this.cull.addAll((this.viewport.children as Container[]).map(layer => layer.children).flat());
@@ -781,9 +803,9 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
 
   // 提取图片
-  extract() {
-    this.uncull();
-    return this.app.renderer.plugins.extract.base64(this.viewport);
+  extract(full: boolean = true, format: string = 'image/png', quality: number = 0.92) {
+    full && this.uncull();
+    return this.app.renderer.plugins.extract.base64(this.viewport, format, quality);
   }
   
   // 激活拖拽

@@ -97,4 +97,10 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     updateNodeLabelVisibility(this.nodeLabelGfx, zoomStep);
     updateNodeAttachVisibility(this.nodeAttachGfx, zoomStep);
   }
+
+  nodeVisibility(visible: boolean) {
+    this.nodeGfx.visible = visible;
+    this.nodeLabelGfx.visible = visible;
+    this.nodeAttachGfx.visible = visible;
+  }
 }

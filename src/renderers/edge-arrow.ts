@@ -14,7 +14,7 @@ const EDGE_ARROW = 'EDGE_ARROW';
 export function createEdgeArrow(edgeArrowGfx: Container, isSelfLoop: boolean) {
   // nodeGfx -> edgeArrow
   if (isSelfLoop) {
-    edgeArrowGfx.visible = false;
+    edgeArrowGfx.renderable = false;
     return;
   }
 
@@ -50,10 +50,8 @@ export function updateEdgeArrowStyle(edgeArrowGfx: Container, edgeStyle: EdgeSty
 
 export function updateEdgeArrowVisibility(edgeArrowGfx: Container, zoomStep: number, isSelfLoop: boolean) {
   // edgeGfx -> edgeArrow
-  if (isSelfLoop) {
-    return;
+  if (!isSelfLoop) {
+    const edgeArrow = edgeArrowGfx.getChildByName!(EDGE_ARROW) as Sprite;
+    edgeArrow.renderable = edgeArrow.renderable && zoomStep >= 1;
   }
-
-  const edgeArrow = edgeArrowGfx.getChildByName!(EDGE_ARROW) as Sprite;
-  edgeArrow.visible = edgeArrow.visible && zoomStep >= 1;
 }

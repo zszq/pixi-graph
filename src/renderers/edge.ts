@@ -83,10 +83,10 @@ export function updateEdgeVisibility(edgeGfx: Container, zoomStep: number, isSel
   if (isSelfLoop) {
     // edgeGfx -> edgeCircleBorder
     const edgeCircleBorder = edgeGfx.getChildByName!(EDGE_CIRCLE_BORDER) as Sprite;
-    edgeCircleBorder.visible = edgeCircleBorder.visible && zoomStep >= 1;
+    edgeCircleBorder.renderable = edgeCircleBorder.renderable && zoomStep >= 1;
   } else {
     // edgeGfx -> edgeLine
     const edgeLine = edgeGfx.getChildByName!(EDGE_LINE) as Sprite;
-    edgeLine.visible = edgeLine.visible && zoomStep >= 1;
+    edgeLine.renderable = edgeLine.renderable && zoomStep >= 1;
   }
 }

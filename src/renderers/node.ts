@@ -8,7 +8,6 @@ import { colorToPixi } from '../utils/color';
 import { NodeStyle } from '../utils/style';
 import { textToPixi, TextType } from '../utils/text';
 import { TextureCache } from '../texture-cache';
-import { isUrl } from '../utils/tools';
 
 const DELIMITER = '::';
 const WHITE = 0xffffff;
@@ -49,10 +48,6 @@ export function createNode(nodeGfx: Container, nodeStyle: NodeStyle) {
 }
 
 export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache) {
-  if (nodeStyle.icon.type === TextType.IMAGE && !isUrl(nodeStyle.icon.content)) {
-    console.error('icon 应该是一个图片地址！');
-    // return false;
-  }
   const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
   
   const nodeCircleTextureKey = [NODE_CIRCLE, nodeStyle.size].join(DELIMITER);
@@ -141,9 +136,9 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
 export function updateNodeVisibility(nodeGfx: Container, zoomStep: number) {
   // nodeGfx -> nodeCircleBorder
   const nodeCircleBorder = nodeGfx.getChildByName!(NODE_CIRCLE_BORDER) as Sprite;
-  nodeCircleBorder.visible = nodeCircleBorder.visible && zoomStep >= 1;
+  nodeCircleBorder.renderable = nodeCircleBorder.renderable && zoomStep >= 1;
 
   // nodeGfx -> nodeIcon
   const nodeIcon = nodeGfx.getChildByName!(NODE_ICON) as Sprite;
-  nodeIcon.visible = nodeIcon.visible && zoomStep >= 2;
+  nodeIcon.renderable = nodeIcon.renderable && zoomStep >= 2;
 }

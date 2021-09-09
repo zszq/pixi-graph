@@ -143,4 +143,10 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
     updateEdgeLabelVisibility(this.edgeLabelGfx, zoomStep);
     updateEdgeArrowVisibility(this.edgeArrowGfx, zoomStep, this.isSelfLoop);
   }
+
+  edgeVisibility(visible: boolean) {
+    this.edgeGfx.visible = visible;
+    this.edgeLabelGfx.visible = visible;
+    this.edgeArrowGfx.visible = visible;
+  }
 }

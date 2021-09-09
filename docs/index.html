@@ -57,6 +57,8 @@
     <button id="extract">extract</button>
     <button id="add-group">add group</button>
     <button id="drop-group">drop group</button>
+    <button id="hide">visible</button>
+    <button id="show">visible</button>
     <!-- <button id="add-edge">Add Edge</button>
     <button id="drop-node">Drop Node</button>
     <button id="drop-edge">Drop Edge</button>
@@ -252,7 +254,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         content: node => node.label ? node.label : node.id,
         type: PixiGraph.TextType.TEXT,
         fontFamily: 'HelveticaRegular',
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '400',
         color: '#000',
         backgroundColor: 'rgba(255, 255, 255, 0.75)',
@@ -296,13 +298,13 @@ window.addEventListener('DOMContentLoaded', async () => {
       bilateralKey: 'reverse', // 判断是否存在相反线的关键字，用于查看下级节点时使用，需在线属性设置此key和相应的boolean值。
       arrow: {
         show: true,
-        size: edge => (Math.log((edge.value || 0) + 1) + 2) * 5, // 根据edge.width设置避免被覆盖,如果不能被2整除会自动加1像素，防止发生偏移
+        size: edge => (Math.log((edge.value || 0) + 1) + 2) * 3, // 根据edge.width设置避免被覆盖,如果不能被2整除会自动加1像素，防止发生偏移
       },
       label: {
         content: edge => edge.label ? edge.label : edge.target,
         type: PixiGraph.TextType.TEXT,
         fontFamily: 'HelveticaRegular',
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: '500',
         color: '#000',
         backgroundColor: 'rgba(255, 255, 255, 0.75)',
@@ -344,6 +346,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     // resources,
     onprogress: (percentage) => {console.log(percentage)}
   });
+
+  pixiGraph.on('nodeMouseover', () => {
+    console.log('nodeMouseover');
+  })
 
 
   // 加载进度对外接口
@@ -565,6 +571,16 @@ window.addEventListener('DOMContentLoaded', async () => {
   // 删除分组
   document.getElementById('drop-group').addEventListener('click', () => {
     graph.setNodeAttribute('node0', 'group', [0, 1, 2, 3, 4, 5, 6]);
+  });
+  // 隐藏
+  document.getElementById('hide').addEventListener('click', () => {
+    pixiGraph.nodeVisibility('node0', false);
+    pixiGraph.edgeVisibility('node0->node4', false);
+  });
+  // 显示
+  document.getElementById('show').addEventListener('click', () => {
+    pixiGraph.nodeVisibility('node0', true);
+    pixiGraph.edgeVisibility('node0->node4', true);
   });
   
 

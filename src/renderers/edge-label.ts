@@ -55,9 +55,9 @@ export function updateEdgeLabelStyle(edgeLabelGfx: Container, edgeStyle: EdgeSty
 export function updateEdgeLabelVisibility(edgeLabelGfx: Container, zoomStep: number) {
   // edgeLabelGfx -> edgeLabelBackground
   const edgeLabelBackground = edgeLabelGfx.getChildByName!(EDGE_LABEL_BACKGROUND) as Sprite;
-  edgeLabelBackground.visible = edgeLabelBackground.visible && zoomStep >= 3;
+  edgeLabelBackground.renderable = edgeLabelBackground.renderable && zoomStep >= 3;
   
   // edgeLabelGfx -> edgeLabelText
   const edgeLabelText = edgeLabelGfx.getChildByName!(EDGE_LABEL_TEXT) as BitmapText;
-  edgeLabelText.visible = edgeLabelText.visible && zoomStep >= 2;
+  edgeLabelText.renderable = edgeLabelText.renderable && zoomStep >= 2;
 }
