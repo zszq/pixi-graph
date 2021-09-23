@@ -346,16 +346,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     // resources,
     onprogress: (percentage) => {console.log(percentage)}
   });
-
-  pixiGraph.on('nodeMouseover', () => {
-    console.log('nodeMouseover');
-  })
+  
 
 
   // 加载进度对外接口
   // pixiGraph.on('progress', (percentage) => console.log('progress', percentage));
 
-
+  pixiGraph.on('nodeMouseover', () => {
+    // console.log('nodeMouseover');
+  })
 
   // pixiGraph.on('nodeClick', (event, nodeKey) => {
   //   console.log('nodeClick', event.type, nodeKey)
@@ -484,6 +483,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   // pixiGraph.on('viewClick', (event) => {
   //   console.log('viewClick', event, pixiGraph.viewport.center);
   // });
+  pixiGraph.on('nodeMove', (event, nodeKey) => {
+    console.log('nodeMove', event, nodeKey);
+  });
   // 加载下一级
   pixiGraph.on('nodeClick', (event, nodeKey, nodeStyle) => {
     // pixiGraph.dragEnable();
@@ -556,7 +558,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('add-node').addEventListener('click', addNode);
   // 提取图片
   document.getElementById('extract').addEventListener('click', () => {
-    let src = pixiGraph.extract();
+    let src = pixiGraph.extract(false);
     let img = document.createElement('img');
     img.src = src;
     let thumbnail_box = document.querySelector('#thumbnail');

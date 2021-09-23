@@ -18,6 +18,8 @@ import { BaseNodeAttributes, BaseEdgeAttributes } from './attributes';
 import { TextureCache } from './texture-cache';
 import { PixiNode } from './node';
 import { PixiEdge } from './edge';
+import { NodeStyle } from './utils/style';
+import { EdgeStyle } from './utils/style';
 // import '@pixi/filter-fxaa';
 
 Application.registerPlugin(TickerPlugin);
@@ -109,21 +111,22 @@ export interface GraphOptions<NodeAttributes extends BaseNodeAttributes = BaseNo
 }
 
 interface PixiGraphEvents {
-  nodeClick: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
-  nodeMousemove: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
-  nodeMouseover: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
-  nodeMouseout: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
-  nodeMousedown: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
-  nodeMouseup: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
-  nodeRightclick: (event: MouseEvent, nodeKey: string, nodeStyle: any) => void;
+  nodeClick: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
+  nodeMousemove: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
+  nodeMouseover: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
+  nodeMouseout: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
+  nodeMousedown: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
+  nodeMouseup: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
+  nodeRightclick: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
+  nodeMove: (event: MouseEvent, nodeKey: string) => void;
   
-  edgeClick: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
-  edgeMousemove: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
-  edgeMouseover: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
-  edgeMouseout: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
-  edgeMousedown: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
-  edgeMouseup: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
-  edgeRightclick: (event: MouseEvent, edgeKey: string, edgeStyle: any) => void;
+  edgeClick: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
+  edgeMousemove: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
+  edgeMouseover: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
+  edgeMouseout: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
+  edgeMousedown: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
+  edgeMouseup: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
+  edgeRightclick: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   
   viewClick: (event: any) => void;
   // progress: (percentage: number) => void;
@@ -215,13 +218,14 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.viewport = new Viewport({
       screenWidth: this.container.clientWidth,
       screenHeight: this.container.clientHeight,
+      worldWidth: this.container.clientWidth,
+      worldHeight: this.container.clientHeight,
       interaction: this.app.renderer.plugins.interaction
     })
       .drag()
       .pinch()
       .wheel()
       // .decelerate()
-      // .clampZoom({ maxScale: 1 });
       .clampZoom({ maxScale: 1.5, minScale: 0.1 });
     this.app.stage.addChild(this.viewport);
 
@@ -520,13 +524,15 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // this.frontEdgeArrowLayer.addChild(edge.edgeArrowPlaceholderGfx);
   }
 
-  private moveNode(nodeKey: string, point: IPointData) {
+  private moveNode(nodeKey: string, point: IPointData, event: MouseEvent) {
     this.graph.setNodeAttribute(nodeKey, 'x', point.x);
     this.graph.setNodeAttribute(nodeKey, 'y', point.y);
 
     // update style
     this.updateNodeStyleByKey(nodeKey);
     this.graph.edges(nodeKey).forEach(this.updateEdgeStyleByKey.bind(this));
+
+    this.emit('nodeMove', event, nodeKey);
   }
 
   private enableNodeDragging() {
@@ -541,7 +547,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     const worldPosition = this.viewport.toWorld(eventPosition);
 
     if (this.mousedownNodeKey) {
-      this.moveNode(this.mousedownNodeKey, worldPosition);
+      this.moveNode(this.mousedownNodeKey, worldPosition, event);
     }
   }
 
