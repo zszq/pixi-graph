@@ -22,6 +22,7 @@
     #graph {
       width: 100vw;
       height: 100vh;
+      background: #56606e;
     }
     #controls {
       position: absolute;
@@ -484,7 +485,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   //   console.log('viewClick', event, pixiGraph.viewport.center);
   // });
   pixiGraph.on('nodeMove', (event, nodeKey) => {
-    console.log('nodeMove', event, nodeKey);
+    // console.log('nodeMove', event, nodeKey);
   });
   // 加载下一级
   pixiGraph.on('nodeClick', (event, nodeKey, nodeStyle) => {

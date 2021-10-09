@@ -118,7 +118,7 @@ interface PixiGraphEvents {
   nodeMousedown: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeMouseup: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeRightclick: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
-  nodeMove: (event: MouseEvent, nodeKey: string) => void;
+  nodeMove: (event: MouseEvent, nodeKey: string, point: IPointData) => void;
   
   edgeClick: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   edgeMousemove: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
@@ -532,7 +532,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.updateNodeStyleByKey(nodeKey);
     this.graph.edges(nodeKey).forEach(this.updateEdgeStyleByKey.bind(this));
 
-    this.emit('nodeMove', event, nodeKey);
+    this.emit('nodeMove', event, nodeKey, point);
   }
 
   private enableNodeDragging() {
