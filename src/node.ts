@@ -103,4 +103,8 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     this.nodeLabelGfx.visible = visible;
     this.nodeAttachGfx.visible = visible;
   }
+
+  checkNodeVisibility() {
+    return this.nodeGfx.visible; // 注意文字和附加容器的可见性
+  }
 }

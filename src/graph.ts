@@ -31,9 +31,9 @@ Renderer.registerPlugin('extract', Extract);
 
 const DEFAULT_STYLE: GraphStyleDefinition = {
   node: {
-    size: 15,
-    color: '#000000',
-    shape: 'circle',
+    shape: 'circle', //circle or rect
+    size: 20,
+    color: '#000',
     border: {
       width: 2,
       color: '#ffffff',
@@ -68,9 +68,9 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
         fontWeight: '400',
         color: '#333333',
       },
-      colGap: 5, // 分组图标之间的左右间距
-      rowGap: 5, // 行之间的上下间距
-      crevice: 10 // 与点之间的上下距离
+      colGap: 5, // 分组图标列间距
+      rowGap: 5, // 分组图标行间距
+      crevice: 5 // 与目标之间的上下距离
     }
   },
   edge: {
@@ -561,7 +561,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
 
   private createGraph() {
-    console.time('render');
+    console.time('create-render');
     // this.emit('progress', 0); // 线上使用时不生效
     this.onprogress && this.onprogress(0);
     this.graph.forEachNode(this.createNode.bind(this));
@@ -570,7 +570,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.graph.forEachEdge(this.createEdge.bind(this));
     // this.emit('progress', 100);
     this.onprogress && this.onprogress(100);
-    console.timeEnd('render');
+    console.timeEnd('create-render');
   }
 
   private createNode(nodeKey: string, nodeAttributes: NodeAttributes) {
@@ -780,21 +780,39 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
   
   // 设置node可见性
-  nodeVisibility(nodeKey: any, visible: boolean) {
+  nodeVisibility(nodeKey: string, visible: boolean) {
     const node = this.nodeKeyToNodeObject.get(nodeKey);
     if (node) {
       node.nodeVisibility(visible);
     } else {
-      console.error('根据nodeKey获取node点失败!', nodeKey + ': ' + node);
+      console.error(`根据${nodeKey}获取点失败!`);
+    }
+  }
+  // 检查node可见性
+  checkNodeVisibility(nodeKey: string) {
+    const node = this.nodeKeyToNodeObject.get(nodeKey);
+    if (node) {
+      return node.checkNodeVisibility();
+    } else {
+      console.error(`根据${nodeKey}获取点失败!`);
     }
   }
   // 设置edge可见性
-  edgeVisibility(edgeKey: any, visible: boolean) {
+  edgeVisibility(edgeKey: string, visible: boolean) {
     const edge = this.edgeKeyToEdgeObject.get(edgeKey);
     if (edge) {
       edge.edgeVisibility(visible);
     } else {
-      console.error('根据edgeKey获取edge点失败!', edgeKey + ': ' + edge);
+      console.error(`根据${edgeKey}获取线失败!`);
+    }
+  }
+  // 检查edge可见性
+  checkEdgeVisibility(edgeKey: string) {
+    const edge = this.edgeKeyToEdgeObject.get(edgeKey);
+    if (edge) {
+      return edge.checkEdgeVisibility();
+    } else {
+      console.error(`根据${edgeKey}获取线失败!`);
     }
   }
   

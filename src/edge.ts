@@ -149,4 +149,8 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
     this.edgeLabelGfx.visible = visible;
     this.edgeArrowGfx.visible = visible;
   }
+
+  checkEdgeVisibility() {
+    return this.edgeGfx.visible; // 注意文字和箭头容器的可见性
+  }
 }

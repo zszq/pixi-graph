@@ -58,8 +58,8 @@
     <button id="extract">extract</button>
     <button id="add-group">add group</button>
     <button id="drop-group">drop group</button>
-    <button id="hide">visible</button>
-    <button id="show">visible</button>
+    <button id="show">visible-show</button>
+    <button id="hide">visible-hide</button>
     <!-- <button id="add-edge">Add Edge</button>
     <button id="drop-node">Drop Node</button>
     <button id="drop-edge">Drop Edge</button>
@@ -228,9 +228,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   
   const style = {
     node: {
+      shape: node => 'circle', // circle or rect
       size: node => 20,
       color: node => NODE_COLOR_NORMAL,
-      shape: node => 'circle', // circle or rect
       border: {
         width: 4,
         color: '#ccc',
@@ -490,7 +490,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // 加载下一级
   pixiGraph.on('nodeClick', (event, nodeKey, nodeStyle) => {
     // pixiGraph.dragEnable();
-    console.log('nodeClick', event, nodeKey, nodeStyle);
+    console.log('nodeClick', event, nodeKey, nodeStyle, pixiGraph.checkNodeVisibility(nodeKey));
     // style.node.label.fontWeight = 'bolder';
     // addLeaf(nodeKey);
   });
@@ -507,7 +507,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // pixiGraph.on('nodeMouseup', (event, nodeKey) => console.log('nodeMouseup', event, nodeKey));
   pixiGraph.on('edgeClick', (event, edgeKey, edgeStyle) => {
     // pixiGraph.dragDisable();
-    console.log('edgeClick', event, edgeKey, edgeStyle);
+    console.log('edgeClick', event, edgeKey, edgeStyle, pixiGraph.checkEdgeVisibility(edgeKey));
   });
   pixiGraph.on('edgeRightclick', (event, edgeKey, edgeStyle) => {
     // pixiGraph.dragDisable();
