@@ -45,6 +45,8 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       fontSize: 20,
       fontWeight: '400',
       color: '#ffffff',
+      stroke: 'black',
+      strokeThickness: 0,
     },
     label: {
       type: TextType.TEXT,
@@ -52,7 +54,9 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       fontFamily: 'Arial',
       fontSize: 12,
       fontWeight: '400',
-      color: '#333333',
+      color: '#333333', // fill
+      stroke: 'black',
+      strokeThickness: 0,
       backgroundColor: 'rgba(0, 0, 0, 0)',
       padding: 4,
     },
@@ -66,7 +70,9 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
         fontFamily: 'Arial',
         fontSize: 12,
         fontWeight: '400',
-        color: '#333333',
+        color: '#333333', // fill
+        stroke: 'black',
+        strokeThickness: 0,
       },
       colGap: 5, // 分组图标列间距
       rowGap: 5, // 分组图标行间距
@@ -93,6 +99,8 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       fontSize: 12,
       fontWeight: '400',
       color: '#333333',
+      stroke: 'black',
+      strokeThickness: 0,
       backgroundColor: 'rgba(0, 0, 0, 0)',
       padding: 4,
     },
@@ -232,7 +240,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // create cull
     this.cull = new Cull({
       // recursive: false,
-      toggle: 'renderable' // visible renderable
+      toggle: 'renderable' // visible or renderable
     });
 
     // create layers

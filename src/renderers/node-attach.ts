@@ -14,7 +14,7 @@ const WHITE = 0xffffff;
 const NODE_ATTACH = 'NODE_ATTACH';
 const NODE_ATTACH_TEXT = 'NODE_ATTACH_TEXT';
 
-// 临时处理：必须初始化至少一个子元素，不然group为空时添加不显示（拖拽和缩放才会显示）
+// TODO: 临时处理：必须初始化至少一个子元素，不然group为空时添加不显示（拖拽和缩放才会显示）
 export function createNodeAttach(nodeAttachGfx: Container) {
   // nodeAttachGfx -> nodeInitAttach
   const nodeInitAttach = new Sprite();
@@ -24,17 +24,16 @@ export function createNodeAttach(nodeAttachGfx: Container) {
 export function updateNodeAttachGroup(nodeAttachGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache) {
   let newGroup = nodeStyle.attach.group;
   if (!newGroup || !Array.isArray(newGroup)) {
-    console.error('group 应该是一个数组！');
-    return false;
+    throw new Error('group 应该是一个数组！');
   };
   const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
   let childrens = nodeAttachGfx.children;
   let oldGroup: number[] = [];
 
   childrens.forEach(sprite => {
-    let nodeAttach = sprite.name && sprite.name.slice(0, -2);
+    let nodeAttach = sprite.name && sprite.name.split('-')[0];
     if (nodeAttach === NODE_ATTACH) {
-      let name = sprite.name && sprite.name.slice(-1);
+      let name = sprite.name && sprite.name.split('-')[0];
       oldGroup.push(Number(name));
     }
   })
@@ -45,15 +44,27 @@ export function updateNodeAttachGroup(nodeAttachGfx: Container, nodeStyle: NodeS
 
     const nodeInitAttach = new Sprite();
     let children_sprites: Sprite[] = [];
-    children_sprites.push(nodeInitAttach); // （同上创建注释）至少有一个子元素，否则清空后不能新增
+    children_sprites.push(nodeInitAttach); // 同上创建注释，至少有一个子元素，否则清空后不能新增
     
     newGroup.forEach((g, i) => {
-      const nodeAttachTextTextureKey = [`${NODE_ATTACH_TEXT}_${g}`, nodeStyle.attach.text.fontFamily, nodeStyle.attach.text.fontSize, nodeStyle.attach.text.fontWeight].join(DELIMITER);
+      const nodeAttachTextTextureKey = [
+        `${NODE_ATTACH_TEXT}-${g}`, 
+        nodeStyle.attach.text.fontFamily, 
+        nodeStyle.attach.text.fontSize, 
+        nodeStyle.attach.text.fontWeight,
+        nodeStyle.attach.text.color,
+        nodeStyle.attach.text.stroke,
+        nodeStyle.attach.text.strokeThickness,
+        g
+      ].join(DELIMITER);
       const nodeAttachTextTexture = textureCache.get(nodeAttachTextTextureKey, () => {
         const text = textToPixi(nodeStyle.attach.text.type, g, {
           fontFamily: nodeStyle.attach.text.fontFamily,
           fontSize: nodeStyle.attach.text.fontSize,
-          fontWeight: nodeStyle.attach.text.fontWeight
+          fontWeight: nodeStyle.attach.text.fontWeight,
+          color: nodeStyle.attach.text.color,
+          stroke: nodeStyle.attach.text.stroke,
+          strokeThickness: nodeStyle.attach.text.strokeThickness
         });
         return text;
       });
@@ -73,7 +84,7 @@ export function updateNodeAttachGroup(nodeAttachGfx: Container, nodeStyle: NodeS
 
       // nodeAttachGfx -> nodeAttach
       const nodeAttach = new Sprite();
-      nodeAttach.name = `${NODE_ATTACH}_${g}`;
+      nodeAttach.name = `${NODE_ATTACH}-${g}`;
       nodeAttach.anchor.set(0.5);
       nodeAttach.texture = nodeCircleTexture;
       nodeAttach.x = setAttachItemX(newGroup, i, nodeStyle.attach.size, nodeStyle.attach.colGap);
@@ -83,12 +94,11 @@ export function updateNodeAttachGroup(nodeAttachGfx: Container, nodeStyle: NodeS
 
       // nodeAttachGfx -> nodeAttachText
       const nodeAttachText = new Sprite();
-      nodeAttachText.name = `${NODE_ATTACH_TEXT}_${g}`;
+      nodeAttachText.name = `${NODE_ATTACH_TEXT}-${g}`;
       nodeAttachText.anchor.set(0.5);
       nodeAttachText.texture = nodeAttachTextTexture;
       nodeAttachText.x = setAttachItemX(newGroup, i, nodeStyle.attach.size, nodeStyle.attach.colGap);
       nodeAttachText.y = setAttachItemY(nodeOuterSize, newGroup, i, nodeStyle.attach.size, nodeStyle.attach.crevice, nodeStyle.attach.rowGap);
-      [nodeAttachText.tint, nodeAttachText.alpha] = colorToPixi(nodeStyle.attach.text.color);
       children_sprites.push(nodeAttachText);
     })
     nodeAttachGfx.addChild(...children_sprites);

@@ -18,6 +18,8 @@ export interface GraphStyle {
       fontSize: number;
       fontWeight: string;
       color: string;
+      stroke: string;
+      strokeThickness: number;
     };
     label: {
       content: string;
@@ -25,7 +27,9 @@ export interface GraphStyle {
       fontFamily: string;
       fontSize: number;
       fontWeight: string;
-      color: string;
+      color: string; // fill
+      stroke: string;
+      strokeThickness: number,
       backgroundColor: string;
       padding: number;
     };
@@ -39,7 +43,9 @@ export interface GraphStyle {
         fontFamily: string,
         fontSize: number,
         fontWeight: string,
-        color: string,
+        color: string, // fill
+        stroke: string,
+        strokeThickness: number,
       },
       colGap: number,
       rowGap: number,
@@ -65,7 +71,9 @@ export interface GraphStyle {
       fontSize: number,
       fontWeight: string,
       content: string,
-      color: string,
+      color: string, // fill
+      stroke: string,
+      strokeThickness: number,
       backgroundColor: string,
       padding: number
     }

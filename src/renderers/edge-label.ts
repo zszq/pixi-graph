@@ -28,12 +28,24 @@ export function createEdgeLabel(edgeLabelGfx: Container) {
 }
 
 export function updateEdgeLabelStyle(edgeLabelGfx: Container, edgeStyle: EdgeStyle, textureCache: TextureCache) {
-  const edgeLabelTextTextureKey = [EDGE_LABEL_TEXT, edgeStyle.label.fontFamily, edgeStyle.label.fontSize, edgeStyle.label.fontWeight, edgeStyle.label.content].join(DELIMITER);
+  const edgeLabelTextTextureKey = [
+    EDGE_LABEL_TEXT, 
+    edgeStyle.label.fontFamily, 
+    edgeStyle.label.fontSize, 
+    edgeStyle.label.fontWeight, 
+    edgeStyle.label.color,
+    edgeStyle.label.stroke,
+    edgeStyle.label.strokeThickness,
+    edgeStyle.label.content
+  ].join(DELIMITER);
   const edgeLabelTextTexture = textureCache.get(edgeLabelTextTextureKey, () => {
     const text = textToPixi(edgeStyle.label.type, edgeStyle.label.content, {
       fontFamily: edgeStyle.label.fontFamily,
       fontSize: edgeStyle.label.fontSize,
-      fontWeight: edgeStyle.label.fontWeight
+      fontWeight: edgeStyle.label.fontWeight,
+      color: edgeStyle.label.color,
+      stroke: edgeStyle.label.stroke,
+      strokeThickness: edgeStyle.label.strokeThickness
     });
     return text;
   });
@@ -49,7 +61,6 @@ export function updateEdgeLabelStyle(edgeLabelGfx: Container, edgeStyle: EdgeSty
   const edgeLabelText = edgeLabelGfx.getChildByName!(EDGE_LABEL_TEXT) as Sprite;
   edgeLabelText.texture = edgeLabelTextTexture;
   // edgeLabelText.y = (edgeLabelTextTexture.height + edgeStyle.width + edgeStyle.label.padding * 2) / 2;
-  [edgeLabelText.tint, edgeLabelText.alpha] = colorToPixi(edgeStyle.label.color);
 }
 
 export function updateEdgeLabelVisibility(edgeLabelGfx: Container, zoomStep: number) {

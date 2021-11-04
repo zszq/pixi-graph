@@ -30,12 +30,24 @@ export function createNodeLabel(nodeLabelGfx: Container) {
 export function updateNodeLabelStyle(nodeLabelGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache) {
   const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
 
-  const nodeLabelTextTextureKey = [NODE_LABEL_TEXT, nodeStyle.label.fontFamily, nodeStyle.label.fontSize, nodeStyle.label.fontWeight, nodeStyle.label.content].join(DELIMITER);
+  const nodeLabelTextTextureKey = [
+    NODE_LABEL_TEXT, 
+    nodeStyle.label.fontFamily, 
+    nodeStyle.label.fontSize, 
+    nodeStyle.label.fontWeight, 
+    nodeStyle.label.color,
+    nodeStyle.label.stroke,
+    nodeStyle.label.strokeThickness,
+    nodeStyle.label.content
+  ].join(DELIMITER);
   const nodeLabelTextTexture = textureCache.get(nodeLabelTextTextureKey, () => {
     const text = textToPixi(nodeStyle.label.type, nodeStyle.label.content, {
       fontFamily: nodeStyle.label.fontFamily,
       fontSize: nodeStyle.label.fontSize,
-      fontWeight: nodeStyle.label.fontWeight
+      fontWeight: nodeStyle.label.fontWeight,
+      color: nodeStyle.label.color,
+      stroke: nodeStyle.label.stroke,
+      strokeThickness: nodeStyle.label.strokeThickness
     });
     return text;
   });
@@ -51,7 +63,6 @@ export function updateNodeLabelStyle(nodeLabelGfx: Container, nodeStyle: NodeSty
   const nodeLabelText = nodeLabelGfx.getChildByName!(NODE_LABEL_TEXT) as Sprite;
   nodeLabelText.texture = nodeLabelTextTexture;
   nodeLabelText.y = nodeOuterSize + (nodeLabelTextTexture.height + nodeStyle.label.padding * 2) / 2;
-  [nodeLabelText.tint, nodeLabelText.alpha] = colorToPixi(nodeStyle.label.color);
 }
 
 export function updateNodeLabelVisibility(nodeLabelGfx: Container, zoomStep: number) {

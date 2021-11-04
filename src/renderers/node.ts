@@ -77,13 +77,25 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
     return graphics;
   });
 
-  const nodeIconTextureKey = [NODE_ICON, nodeStyle.icon.fontFamily, nodeStyle.icon.fontSize, nodeStyle.icon.content].join(DELIMITER);
+  const nodeIconTextureKey = [
+    NODE_ICON, 
+    nodeStyle.icon.fontFamily, 
+    nodeStyle.icon.fontSize, 
+    nodeStyle.icon.fontWeight,
+    nodeStyle.icon.color,
+    nodeStyle.icon.stroke,
+    nodeStyle.icon.strokeThickness,
+    nodeStyle.icon.content,
+  ].join(DELIMITER);
   if (nodeStyle.icon.type !== TextType.IMAGE) {
     const nodeIconTexture = textureCache.get(nodeIconTextureKey, () => {
       const text = textToPixi(nodeStyle.icon.type, nodeStyle.icon.content, {
         fontFamily: nodeStyle.icon.fontFamily,
         fontSize: nodeStyle.icon.fontSize,
-        fontWeight: nodeStyle.icon.fontWeight
+        fontWeight: nodeStyle.icon.fontWeight,
+        color: nodeStyle.icon.color,
+        stroke: nodeStyle.icon.stroke,
+        strokeThickness: nodeStyle.icon.strokeThickness
       });
       return text;
     });

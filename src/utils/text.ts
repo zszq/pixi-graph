@@ -1,8 +1,6 @@
 import { Text } from '@pixi/text';
 import { BitmapText } from '@pixi/text-bitmap';
 
-const WHITE = 0xffffff;
-
 export enum TextType {
   TEXT = 'TEXT',
   BITMAP_TEXT = 'BITMAP_TEXT',
@@ -16,6 +14,9 @@ export interface TextStyle {
   fontFamily: string;
   fontSize: number;
   fontWeight: any;
+  color: string;
+  stroke: string;
+  strokeThickness: number;
 }
 
 export function textToPixi(type: TextType, content: string, style: TextStyle) {
@@ -25,8 +26,10 @@ export function textToPixi(type: TextType, content: string, style: TextStyle) {
     text = new Text(content, {
       fontFamily: style.fontFamily,
       fontSize: style.fontSize,
-      fill: WHITE,
       fontWeight: style.fontWeight,
+      fill: style.color,
+      stroke: style.stroke,
+      strokeThickness: style.strokeThickness,
       // wordWrap: true,
       // wordWrapWidth: 200
     });
