@@ -1,8 +1,9 @@
+// v0.22.1
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.graphology = factory());
-}(this, (function () { 'use strict';
+})(this, (function () { 'use strict';
 
   function _typeof(obj) {
     "@babel/helpers - typeof";
@@ -23,7 +24,8 @@
   function _inheritsLoose(subClass, superClass) {
     subClass.prototype = Object.create(superClass.prototype);
     subClass.prototype.constructor = subClass;
-    subClass.__proto__ = superClass;
+
+    _setPrototypeOf(subClass, superClass);
   }
 
   function _getPrototypeOf(o) {
@@ -48,7 +50,7 @@
     if (typeof Proxy === "function") return true;
 
     try {
-      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+      Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
       return true;
     } catch (e) {
       return false;
@@ -268,29 +270,26 @@
    * @return {function}
    */
 
-  function incrementalId() {
-    var i = 0;
+  function incrementalIdStartingFromRandomByte() {
+    var i = Math.floor(Math.random() * 256) & 0xff;
     return function () {
-      return "_geid".concat(i++, "_");
+      return i++;
     };
   }
 
-  // Copyright Joyent, Inc. and other Node contributors.
+  var events = {exports: {}};
 
   var R = typeof Reflect === 'object' ? Reflect : null;
-  var ReflectApply = R && typeof R.apply === 'function'
-    ? R.apply
-    : function ReflectApply(target, receiver, args) {
-      return Function.prototype.apply.call(target, receiver, args);
-    };
-
+  var ReflectApply = R && typeof R.apply === 'function' ? R.apply : function ReflectApply(target, receiver, args) {
+    return Function.prototype.apply.call(target, receiver, args);
+  };
   var ReflectOwnKeys;
+
   if (R && typeof R.ownKeys === 'function') {
     ReflectOwnKeys = R.ownKeys;
   } else if (Object.getOwnPropertySymbols) {
     ReflectOwnKeys = function ReflectOwnKeys(target) {
-      return Object.getOwnPropertyNames(target)
-        .concat(Object.getOwnPropertySymbols(target));
+      return Object.getOwnPropertyNames(target).concat(Object.getOwnPropertySymbols(target));
     };
   } else {
     ReflectOwnKeys = function ReflectOwnKeys(target) {
@@ -309,18 +308,16 @@
   function EventEmitter() {
     EventEmitter.init.call(this);
   }
-  var events = EventEmitter;
-  var once_1 = once;
 
-  // Backwards-compat with node 0.10.x
+  events.exports = EventEmitter;
+  events.exports.once = once; // Backwards-compat with node 0.10.x
+
   EventEmitter.EventEmitter = EventEmitter;
-
   EventEmitter.prototype._events = undefined;
   EventEmitter.prototype._eventsCount = 0;
-  EventEmitter.prototype._maxListeners = undefined;
-
-  // By default EventEmitters will print a warning if more than 10 listeners are
+  EventEmitter.prototype._maxListeners = undefined; // By default EventEmitters will print a warning if more than 10 listeners are
   // added to it. This is a useful default which helps finding memory leaks.
+
   var defaultMaxListeners = 10;
 
   function checkListener(listener) {
@@ -331,41 +328,40 @@
 
   Object.defineProperty(EventEmitter, 'defaultMaxListeners', {
     enumerable: true,
-    get: function() {
+    get: function () {
       return defaultMaxListeners;
     },
-    set: function(arg) {
+    set: function (arg) {
       if (typeof arg !== 'number' || arg < 0 || NumberIsNaN(arg)) {
         throw new RangeError('The value of "defaultMaxListeners" is out of range. It must be a non-negative number. Received ' + arg + '.');
       }
+
       defaultMaxListeners = arg;
     }
   });
 
-  EventEmitter.init = function() {
-
-    if (this._events === undefined ||
-        this._events === Object.getPrototypeOf(this)._events) {
+  EventEmitter.init = function () {
+    if (this._events === undefined || this._events === Object.getPrototypeOf(this)._events) {
       this._events = Object.create(null);
       this._eventsCount = 0;
     }
 
     this._maxListeners = this._maxListeners || undefined;
-  };
-
-  // Obviously not all Emitters should be limited to 10. This function allows
+  }; // Obviously not all Emitters should be limited to 10. This function allows
   // that to be increased. Set to zero for unlimited.
+
+
   EventEmitter.prototype.setMaxListeners = function setMaxListeners(n) {
     if (typeof n !== 'number' || n < 0 || NumberIsNaN(n)) {
       throw new RangeError('The value of "n" is out of range. It must be a non-negative number. Received ' + n + '.');
     }
+
     this._maxListeners = n;
     return this;
   };
 
   function _getMaxListeners(that) {
-    if (that._maxListeners === undefined)
-      return EventEmitter.defaultMaxListeners;
+    if (that._maxListeners === undefined) return EventEmitter.defaultMaxListeners;
     return that._maxListeners;
   }
 
@@ -375,43 +371,39 @@
 
   EventEmitter.prototype.emit = function emit(type) {
     var args = [];
+
     for (var i = 1; i < arguments.length; i++) args.push(arguments[i]);
-    var doError = (type === 'error');
 
+    var doError = type === 'error';
     var events = this._events;
-    if (events !== undefined)
-      doError = (doError && events.error === undefined);
-    else if (!doError)
-      return false;
+    if (events !== undefined) doError = doError && events.error === undefined;else if (!doError) return false; // If there is no 'error' event listener then throw.
 
-    // If there is no 'error' event listener then throw.
     if (doError) {
       var er;
-      if (args.length > 0)
-        er = args[0];
+      if (args.length > 0) er = args[0];
+
       if (er instanceof Error) {
         // Note: The comments on the `throw` lines are intentional, they show
         // up in Node's output if this results in an unhandled exception.
         throw er; // Unhandled 'error' event
-      }
-      // At least give some kind of context to the user
+      } // At least give some kind of context to the user
+
+
       var err = new Error('Unhandled error.' + (er ? ' (' + er.message + ')' : ''));
       err.context = er;
       throw err; // Unhandled 'error' event
     }
 
     var handler = events[type];
-
-    if (handler === undefined)
-      return false;
+    if (handler === undefined) return false;
 
     if (typeof handler === 'function') {
       ReflectApply(handler, this, args);
     } else {
       var len = handler.length;
       var listeners = arrayClone(handler, len);
-      for (var i = 0; i < len; ++i)
-        ReflectApply(listeners[i], this, args);
+
+      for (var i = 0; i < len; ++i) ReflectApply(listeners[i], this, args);
     }
 
     return true;
@@ -421,10 +413,9 @@
     var m;
     var events;
     var existing;
-
     checkListener(listener);
-
     events = target._events;
+
     if (events === undefined) {
       events = target._events = Object.create(null);
       target._eventsCount = 0;
@@ -432,13 +423,12 @@
       // To avoid recursion in the case that type === "newListener"! Before
       // adding it to the listeners, first emit "newListener".
       if (events.newListener !== undefined) {
-        target.emit('newListener', type,
-                    listener.listener ? listener.listener : listener);
-
-        // Re-assign `events` because a newListener handler could have caused the
+        target.emit('newListener', type, listener.listener ? listener.listener : listener); // Re-assign `events` because a newListener handler could have caused the
         // this._events to be assigned to a new object
+
         events = target._events;
       }
+
       existing = events[type];
     }
 
@@ -449,25 +439,21 @@
     } else {
       if (typeof existing === 'function') {
         // Adding the second element, need to change to array.
-        existing = events[type] =
-          prepend ? [listener, existing] : [existing, listener];
-        // If we've already got an array, just append.
+        existing = events[type] = prepend ? [listener, existing] : [existing, listener]; // If we've already got an array, just append.
       } else if (prepend) {
         existing.unshift(listener);
       } else {
         existing.push(listener);
-      }
+      } // Check for listener leak
 
-      // Check for listener leak
+
       m = _getMaxListeners(target);
+
       if (m > 0 && existing.length > m && !existing.warned) {
-        existing.warned = true;
-        // No error code for this since it is a Warning
+        existing.warned = true; // No error code for this since it is a Warning
         // eslint-disable-next-line no-restricted-syntax
-        var w = new Error('Possible EventEmitter memory leak detected. ' +
-                            existing.length + ' ' + String(type) + ' listeners ' +
-                            'added. Use emitter.setMaxListeners() to ' +
-                            'increase limit');
+
+        var w = new Error('Possible EventEmitter memory leak detected. ' + existing.length + ' ' + String(type) + ' listeners ' + 'added. Use emitter.setMaxListeners() to ' + 'increase limit');
         w.name = 'MaxListenersExceededWarning';
         w.emitter = target;
         w.type = type;
@@ -485,23 +471,27 @@
 
   EventEmitter.prototype.on = EventEmitter.prototype.addListener;
 
-  EventEmitter.prototype.prependListener =
-      function prependListener(type, listener) {
-        return _addListener(this, type, listener, true);
-      };
+  EventEmitter.prototype.prependListener = function prependListener(type, listener) {
+    return _addListener(this, type, listener, true);
+  };
 
   function onceWrapper() {
     if (!this.fired) {
       this.target.removeListener(this.type, this.wrapFn);
       this.fired = true;
-      if (arguments.length === 0)
-        return this.listener.call(this.target);
+      if (arguments.length === 0) return this.listener.call(this.target);
       return this.listener.apply(this.target, arguments);
     }
   }
 
   function _onceWrap(target, type, listener) {
-    var state = { fired: false, wrapFn: undefined, target: target, type: type, listener: listener };
+    var state = {
+      fired: false,
+      wrapFn: undefined,
+      target: target,
+      type: type,
+      listener: listener
+    };
     var wrapped = onceWrapper.bind(state);
     wrapped.listener = listener;
     state.wrapFn = wrapped;
@@ -514,134 +504,104 @@
     return this;
   };
 
-  EventEmitter.prototype.prependOnceListener =
-      function prependOnceListener(type, listener) {
-        checkListener(listener);
-        this.prependListener(type, _onceWrap(this, type, listener));
-        return this;
-      };
+  EventEmitter.prototype.prependOnceListener = function prependOnceListener(type, listener) {
+    checkListener(listener);
+    this.prependListener(type, _onceWrap(this, type, listener));
+    return this;
+  }; // Emits a 'removeListener' event if and only if the listener was removed.
 
-  // Emits a 'removeListener' event if and only if the listener was removed.
-  EventEmitter.prototype.removeListener =
-      function removeListener(type, listener) {
-        var list, events, position, i, originalListener;
 
-        checkListener(listener);
+  EventEmitter.prototype.removeListener = function removeListener(type, listener) {
+    var list, events, position, i, originalListener;
+    checkListener(listener);
+    events = this._events;
+    if (events === undefined) return this;
+    list = events[type];
+    if (list === undefined) return this;
 
-        events = this._events;
-        if (events === undefined)
-          return this;
+    if (list === listener || list.listener === listener) {
+      if (--this._eventsCount === 0) this._events = Object.create(null);else {
+        delete events[type];
+        if (events.removeListener) this.emit('removeListener', type, list.listener || listener);
+      }
+    } else if (typeof list !== 'function') {
+      position = -1;
 
-        list = events[type];
-        if (list === undefined)
-          return this;
-
-        if (list === listener || list.listener === listener) {
-          if (--this._eventsCount === 0)
-            this._events = Object.create(null);
-          else {
-            delete events[type];
-            if (events.removeListener)
-              this.emit('removeListener', type, list.listener || listener);
-          }
-        } else if (typeof list !== 'function') {
-          position = -1;
-
-          for (i = list.length - 1; i >= 0; i--) {
-            if (list[i] === listener || list[i].listener === listener) {
-              originalListener = list[i].listener;
-              position = i;
-              break;
-            }
-          }
-
-          if (position < 0)
-            return this;
-
-          if (position === 0)
-            list.shift();
-          else {
-            spliceOne(list, position);
-          }
-
-          if (list.length === 1)
-            events[type] = list[0];
-
-          if (events.removeListener !== undefined)
-            this.emit('removeListener', type, originalListener || listener);
+      for (i = list.length - 1; i >= 0; i--) {
+        if (list[i] === listener || list[i].listener === listener) {
+          originalListener = list[i].listener;
+          position = i;
+          break;
         }
+      }
 
-        return this;
-      };
+      if (position < 0) return this;
+      if (position === 0) list.shift();else {
+        spliceOne(list, position);
+      }
+      if (list.length === 1) events[type] = list[0];
+      if (events.removeListener !== undefined) this.emit('removeListener', type, originalListener || listener);
+    }
+
+    return this;
+  };
 
   EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
 
-  EventEmitter.prototype.removeAllListeners =
-      function removeAllListeners(type) {
-        var listeners, events, i;
+  EventEmitter.prototype.removeAllListeners = function removeAllListeners(type) {
+    var listeners, events, i;
+    events = this._events;
+    if (events === undefined) return this; // not listening for removeListener, no need to emit
 
-        events = this._events;
-        if (events === undefined)
-          return this;
+    if (events.removeListener === undefined) {
+      if (arguments.length === 0) {
+        this._events = Object.create(null);
+        this._eventsCount = 0;
+      } else if (events[type] !== undefined) {
+        if (--this._eventsCount === 0) this._events = Object.create(null);else delete events[type];
+      }
 
-        // not listening for removeListener, no need to emit
-        if (events.removeListener === undefined) {
-          if (arguments.length === 0) {
-            this._events = Object.create(null);
-            this._eventsCount = 0;
-          } else if (events[type] !== undefined) {
-            if (--this._eventsCount === 0)
-              this._events = Object.create(null);
-            else
-              delete events[type];
-          }
-          return this;
-        }
+      return this;
+    } // emit removeListener for all listeners on all events
 
-        // emit removeListener for all listeners on all events
-        if (arguments.length === 0) {
-          var keys = Object.keys(events);
-          var key;
-          for (i = 0; i < keys.length; ++i) {
-            key = keys[i];
-            if (key === 'removeListener') continue;
-            this.removeAllListeners(key);
-          }
-          this.removeAllListeners('removeListener');
-          this._events = Object.create(null);
-          this._eventsCount = 0;
-          return this;
-        }
 
-        listeners = events[type];
+    if (arguments.length === 0) {
+      var keys = Object.keys(events);
+      var key;
 
-        if (typeof listeners === 'function') {
-          this.removeListener(type, listeners);
-        } else if (listeners !== undefined) {
-          // LIFO order
-          for (i = listeners.length - 1; i >= 0; i--) {
-            this.removeListener(type, listeners[i]);
-          }
-        }
+      for (i = 0; i < keys.length; ++i) {
+        key = keys[i];
+        if (key === 'removeListener') continue;
+        this.removeAllListeners(key);
+      }
 
-        return this;
-      };
+      this.removeAllListeners('removeListener');
+      this._events = Object.create(null);
+      this._eventsCount = 0;
+      return this;
+    }
+
+    listeners = events[type];
+
+    if (typeof listeners === 'function') {
+      this.removeListener(type, listeners);
+    } else if (listeners !== undefined) {
+      // LIFO order
+      for (i = listeners.length - 1; i >= 0; i--) {
+        this.removeListener(type, listeners[i]);
+      }
+    }
+
+    return this;
+  };
 
   function _listeners(target, type, unwrap) {
     var events = target._events;
-
-    if (events === undefined)
-      return [];
-
+    if (events === undefined) return [];
     var evlistener = events[type];
-    if (evlistener === undefined)
-      return [];
-
-    if (typeof evlistener === 'function')
-      return unwrap ? [evlistener.listener || evlistener] : [evlistener];
-
-    return unwrap ?
-      unwrapListeners(evlistener) : arrayClone(evlistener, evlistener.length);
+    if (evlistener === undefined) return [];
+    if (typeof evlistener === 'function') return unwrap ? [evlistener.listener || evlistener] : [evlistener];
+    return unwrap ? unwrapListeners(evlistener) : arrayClone(evlistener, evlistener.length);
   }
 
   EventEmitter.prototype.listeners = function listeners(type) {
@@ -652,7 +612,7 @@
     return _listeners(this, type, false);
   };
 
-  EventEmitter.listenerCount = function(emitter, type) {
+  EventEmitter.listenerCount = function (emitter, type) {
     if (typeof emitter.listenerCount === 'function') {
       return emitter.listenerCount(type);
     } else {
@@ -661,6 +621,7 @@
   };
 
   EventEmitter.prototype.listenerCount = listenerCount;
+
   function listenerCount(type) {
     var events = this._events;
 
@@ -683,53 +644,83 @@
 
   function arrayClone(arr, n) {
     var copy = new Array(n);
-    for (var i = 0; i < n; ++i)
-      copy[i] = arr[i];
+
+    for (var i = 0; i < n; ++i) copy[i] = arr[i];
+
     return copy;
   }
 
   function spliceOne(list, index) {
-    for (; index + 1 < list.length; index++)
-      list[index] = list[index + 1];
+    for (; index + 1 < list.length; index++) list[index] = list[index + 1];
+
     list.pop();
   }
 
   function unwrapListeners(arr) {
     var ret = new Array(arr.length);
+
     for (var i = 0; i < ret.length; ++i) {
       ret[i] = arr[i].listener || arr[i];
     }
+
     return ret;
   }
 
   function once(emitter, name) {
     return new Promise(function (resolve, reject) {
-      function eventListener() {
-        if (errorListener !== undefined) {
-          emitter.removeListener('error', errorListener);
-        }
-        resolve([].slice.call(arguments));
-      }    var errorListener;
-
-      // Adding an error listener is not optional because
-      // if an error is thrown on an event emitter we cannot
-      // guarantee that the actual event we are waiting will
-      // be fired. The result could be a silent way to create
-      // memory or file descriptor leaks, which is something
-      // we should avoid.
-      if (name !== 'error') {
-        errorListener = function errorListener(err) {
-          emitter.removeListener(name, eventListener);
-          reject(err);
-        };
-
-        emitter.once('error', errorListener);
+      function errorListener(err) {
+        emitter.removeListener(name, resolver);
+        reject(err);
       }
 
-      emitter.once(name, eventListener);
+      function resolver() {
+        if (typeof emitter.removeListener === 'function') {
+          emitter.removeListener('error', errorListener);
+        }
+
+        resolve([].slice.call(arguments));
+      }
+      eventTargetAgnosticAddListener(emitter, name, resolver, {
+        once: true
+      });
+
+      if (name !== 'error') {
+        addErrorHandlerIfEventEmitter(emitter, errorListener, {
+          once: true
+        });
+      }
     });
   }
-  events.once = once_1;
+
+  function addErrorHandlerIfEventEmitter(emitter, handler, flags) {
+    if (typeof emitter.on === 'function') {
+      eventTargetAgnosticAddListener(emitter, 'error', handler, flags);
+    }
+  }
+
+  function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
+    if (typeof emitter.on === 'function') {
+      if (flags.once) {
+        emitter.once(name, listener);
+      } else {
+        emitter.on(name, listener);
+      }
+    } else if (typeof emitter.addEventListener === 'function') {
+      // EventTarget does not have `error` event semantics like Node
+      // EventEmitters, we do not listen for `error` events here.
+      emitter.addEventListener(name, function wrapListener(arg) {
+        // IE does not have builtin `{ once: true }` support so we
+        // have to do it manually.
+        if (flags.once) {
+          emitter.removeEventListener(name, wrapListener);
+        }
+
+        listener(arg);
+      });
+    } else {
+      throw new TypeError('The "emitter" argument must be of type EventEmitter. Received type ' + typeof emitter);
+    }
+  }
 
   /**
    * Obliterator Iterator Class
@@ -737,48 +728,25 @@
    *
    * Simple class representing the library's iterators.
    */
+
   /**
    * Iterator class.
    *
    * @constructor
    * @param {function} next - Next function.
    */
-  function Iterator(next) {
+  function Iterator$2(next) {
+    if (typeof next !== 'function')
+      throw new Error('obliterator/iterator: expecting a function!');
 
-    // Hiding the given function
-    Object.defineProperty(this, '_next', {
-      writable: false,
-      enumerable: false,
-      value: next
-    });
-
-    // Is the iterator complete?
-    this.done = false;
+    this.next = next;
   }
-
-  /**
-   * Next function.
-   *
-   * @return {object}
-   */
-  // NOTE: maybe this should dropped for performance?
-  Iterator.prototype.next = function() {
-    if (this.done)
-      return {done: true};
-
-    var step = this._next();
-
-    if (step.done)
-      this.done = true;
-
-    return step;
-  };
 
   /**
    * If symbols are supported, we add `next` to `Symbol.iterator`.
    */
   if (typeof Symbol !== 'undefined')
-    Iterator.prototype[Symbol.iterator] = function() {
+    Iterator$2.prototype[Symbol.iterator] = function () {
       return this;
     };
 
@@ -788,14 +756,13 @@
    * @param  {any...} values - Values.
    * @return {Iterator}
    */
-  Iterator.of = function() {
+  Iterator$2.of = function () {
     var args = arguments,
-        l = args.length,
-        i = 0;
+      l = args.length,
+      i = 0;
 
-    return new Iterator(function() {
-      if (i >= l)
-        return {done: true};
+    return new Iterator$2(function () {
+      if (i >= l) return {done: true};
 
       return {done: false, value: args[i++]};
     });
@@ -806,11 +773,29 @@
    *
    * @return {Iterator}
    */
-  Iterator.empty = function() {
-    var iterator = new Iterator(null);
-    iterator.done = true;
+  Iterator$2.empty = function () {
+    var iterator = new Iterator$2(function () {
+      return {done: true};
+    });
 
     return iterator;
+  };
+
+  /**
+   * Returning an iterator over the given indexed sequence.
+   *
+   * @param  {string|Array} sequence - Target sequence.
+   * @return {Iterator}
+   */
+  Iterator$2.fromSequence = function (sequence) {
+    var i = 0,
+      l = sequence.length;
+
+    return new Iterator$2(function () {
+      if (i >= l) return {done: true};
+
+      return {done: false, value: sequence[i++]};
+    });
   };
 
   /**
@@ -819,9 +804,8 @@
    * @param  {any} value - Value.
    * @return {boolean}
    */
-  Iterator.is = function(value) {
-    if (value instanceof Iterator)
-      return true;
+  Iterator$2.is = function (value) {
+    if (value instanceof Iterator$2) return true;
 
     return (
       typeof value === 'object' &&
@@ -833,9 +817,63 @@
   /**
    * Exporting.
    */
-  var iterator = Iterator;
+  var iterator = Iterator$2;
+
+  var support$1 = {};
+
+  support$1.ARRAY_BUFFER_SUPPORT = typeof ArrayBuffer !== 'undefined';
+  support$1.SYMBOL_SUPPORT = typeof Symbol !== 'undefined';
+
+  /**
+   * Obliterator Iter Function
+   * ==========================
+   *
+   * Function coercing values to an iterator. It can be quite useful when needing
+   * to handle iterables and iterators the same way.
+   */
+
+  var Iterator$1 = iterator;
+  var support = support$1;
+
+  var ARRAY_BUFFER_SUPPORT = support.ARRAY_BUFFER_SUPPORT;
+  var SYMBOL_SUPPORT = support.SYMBOL_SUPPORT;
+
+  function iterOrNull(target) {
+    // Indexed sequence
+    if (
+      typeof target === 'string' ||
+      Array.isArray(target) ||
+      (ARRAY_BUFFER_SUPPORT && ArrayBuffer.isView(target))
+    )
+      return Iterator$1.fromSequence(target);
+
+    // Invalid value
+    if (typeof target !== 'object' || target === null) return null;
+
+    // Iterable
+    if (SYMBOL_SUPPORT && typeof target[Symbol.iterator] === 'function')
+      return target[Symbol.iterator]();
+
+    // Iterator duck-typing
+    if (typeof target.next === 'function') return target;
+
+    // Invalid object
+    return null;
+  }
+
+  var iter$2 = function iter(target) {
+    var iterator = iterOrNull(target);
+
+    if (!iterator)
+      throw new Error(
+        'obliterator: target is not iterable nor a valid iterator.'
+      );
+
+    return iterator;
+  };
 
   /* eslint no-constant-condition: 0 */
+
   /**
    * Obliterator Take Function
    * ==========================
@@ -843,31 +881,30 @@
    * Function taking n or every value of the given iterator and returns them
    * into an array.
    */
+  var iter$1 = iter$2;
 
   /**
    * Take.
    *
-   * @param  {Iterator} iterator - Target iterator.
+   * @param  {Iterable} iterable - Target iterable.
    * @param  {number}   [n]      - Optional number of items to take.
    * @return {array}
    */
-  var take = function take(iterator, n) {
+  var take = function take(iterable, n) {
     var l = arguments.length > 1 ? n : Infinity,
-        array = l !== Infinity ? new Array(l) : [],
-        step,
-        i = 0;
+      array = l !== Infinity ? new Array(l) : [],
+      step,
+      i = 0;
+
+    var iterator = iter$1(iterable);
 
     while (true) {
-
-      if (i === l)
-        return array;
+      if (i === l) return array;
 
       step = iterator.next();
 
       if (step.done) {
-
-        if (i !== n)
-          return array.slice(0, i);
+        if (i !== n) array.length = i;
 
         return array;
       }
@@ -966,8 +1003,12 @@
   function MixedNodeData(key, attributes) {
     // Attributes
     this.key = key;
-    this.attributes = attributes; // Degrees
+    this.attributes = attributes;
+    this.clear();
+  }
 
+  MixedNodeData.prototype.clear = function () {
+    // Degrees
     this.inDegree = 0;
     this.outDegree = 0;
     this.undirectedDegree = 0;
@@ -977,7 +1018,7 @@
     this["in"] = {};
     this.out = {};
     this.undirected = {};
-  }
+  };
   /**
    * DirectedNodeData class.
    *
@@ -986,18 +1027,23 @@
    * @param {object} attributes - Node's attributes.
    */
 
+
   function DirectedNodeData(key, attributes) {
     // Attributes
     this.key = key;
-    this.attributes = attributes; // Degrees
+    this.attributes = attributes;
+    this.clear();
+  }
 
+  DirectedNodeData.prototype.clear = function () {
+    // Degrees
     this.inDegree = 0;
     this.outDegree = 0;
     this.directedSelfLoops = 0; // Indices
 
     this["in"] = {};
     this.out = {};
-  }
+  };
 
   DirectedNodeData.prototype.upgradeToMixed = function () {
     // Degrees
@@ -1018,13 +1064,17 @@
   function UndirectedNodeData(key, attributes) {
     // Attributes
     this.key = key;
-    this.attributes = attributes; // Degrees
+    this.attributes = attributes;
+    this.clear();
+  }
 
+  UndirectedNodeData.prototype.clear = function () {
+    // Degrees
     this.undirectedDegree = 0;
     this.undirectedSelfLoops = 0; // Indices
 
     this.undirected = {};
-  }
+  };
 
   UndirectedNodeData.prototype.upgradeToMixed = function () {
     // Degrees
@@ -1041,23 +1091,20 @@
    * @constructor
    * @param {boolean} undirected   - Whether the edge is undirected.
    * @param {string}  string       - The edge's key.
-   * @param {boolean} generatedKey - Was its key generated?
    * @param {string}  source       - Source of the edge.
    * @param {string}  target       - Target of the edge.
    * @param {object}  attributes   - Edge's attributes.
    */
 
 
-  function EdgeData(undirected, key, generatedKey, source, target, attributes) {
+  function EdgeData(undirected, key, source, target, attributes) {
     // Attributes
     this.key = key;
     this.attributes = attributes;
     this.undirected = undirected; // Extremities
 
     this.source = source;
-    this.target = target; // Was its key generated?
-
-    this.generatedKey = generatedKey;
+    this.target = target;
   }
 
   /**
@@ -1153,17 +1200,13 @@
    */
 
   function clearStructureIndex(graph) {
-    graph._nodes.forEach(function (data) {
-      // Clearing now useless properties
-      if (typeof data["in"] !== 'undefined') {
-        data["in"] = {};
-        data.out = {};
-      }
+    var iterator = graph._nodes.values();
 
-      if (typeof data.undirected !== 'undefined') {
-        data.undirected = {};
-      }
-    });
+    var step;
+
+    while (step = iterator.next(), step.done !== true) {
+      step.value.clear();
+    }
   }
   /**
    * Function used to upgrade a simple `structure` index to a multi on.
@@ -1704,28 +1747,30 @@
    * Obliterator Chain Function
    * ===========================
    *
-   * Variadic function combining the given iterators.
+   * Variadic function combining the given iterables.
    */
+
+  var Iterator = iterator,
+    iter = iter$2;
 
   /**
    * Chain.
    *
-   * @param  {...Iterator} iterators - Target iterators.
+   * @param  {...Iterator} iterables - Target iterables.
    * @return {Iterator}
    */
   var chain = function chain() {
-    var iterators = arguments,
-        current,
-        i = -1;
+    var iterables = arguments,
+      current,
+      i = -1;
 
-    return new iterator(function iterate() {
+    return new Iterator(function iterate() {
       if (!current) {
         i++;
 
-        if (i >= iterators.length)
-          return {done: true};
+        if (i >= iterables.length) return {done: true};
 
-        current = iterators[i];
+        current = iter(iterables[i]);
       }
 
       var step = current.next();
@@ -1809,7 +1854,7 @@
     for (var k in object) {
       if (k === avoid) continue;
       var edgeData = object[k];
-      callback(edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes, edgeData.undirected, edgeData.generatedKey);
+      callback(edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes, edgeData.undirected);
     }
   }
 
@@ -1817,33 +1862,32 @@
     for (var k in object) {
       if (k === avoid) continue;
       object[k].forEach(function (edgeData) {
-        return callback(edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes, edgeData.undirected, edgeData.generatedKey);
+        return callback(edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes, edgeData.undirected);
       });
     }
   }
   /**
-   * Function iterating over edges from the given object using a callback until
-   * the return value of the callback is truthy.
+   * Function iterating over edges from the given object to match one of them.
    *
    * @param {object}   object   - Target object.
    * @param {function} callback - Function to call.
    */
 
 
-  function forEachSimpleUntil(object, callback, avoid) {
+  function findSimple(object, callback, avoid) {
     var shouldBreak = false;
 
     for (var k in object) {
       if (k === avoid) continue;
       var edgeData = object[k];
-      shouldBreak = callback(edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes, edgeData.undirected, edgeData.generatedKey);
-      if (shouldBreak) return true;
+      shouldBreak = callback(edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes, edgeData.undirected);
+      if (shouldBreak) return edgeData.key;
     }
 
-    return false;
+    return;
   }
 
-  function forEachMultiUntil(object, callback, avoid) {
+  function findMulti(object, callback, avoid) {
     var iterator, step, edgeData, source, target;
     var shouldBreak = false;
 
@@ -1855,12 +1899,12 @@
         edgeData = step.value;
         source = edgeData.source;
         target = edgeData.target;
-        shouldBreak = callback(edgeData.key, edgeData.attributes, source.key, target.key, source.attributes, target.attributes, edgeData.undirected, edgeData.generatedKey);
-        if (shouldBreak) return true;
+        shouldBreak = callback(edgeData.key, edgeData.attributes, source.key, target.key, source.attributes, target.attributes, edgeData.undirected);
+        if (shouldBreak) return edgeData.key;
       }
     }
 
-    return false;
+    return;
   }
   /**
    * Function returning an iterator over edges from the given object.
@@ -1911,7 +1955,15 @@
 
       return {
         done: false,
-        value: [edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes]
+        value: {
+          edge: edgeData.key,
+          attributes: edgeData.attributes,
+          source: edgeData.source.key,
+          target: edgeData.target.key,
+          sourceAttributes: edgeData.source.attributes,
+          targetAttributes: edgeData.target.attributes,
+          undirected: edgeData.undirected
+        }
       };
     });
   }
@@ -1953,19 +2005,19 @@
     if (!edgeData) return;
     var sourceData = edgeData.source;
     var targetData = edgeData.target;
-    callback(edgeData.key, edgeData.attributes, sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.undirected, edgeData.generatedKey);
+    callback(edgeData.key, edgeData.attributes, sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.undirected);
   }
 
   function forEachForKeyMulti(object, k, callback) {
     var edgesData = object[k];
     if (!edgesData) return;
     edgesData.forEach(function (edgeData) {
-      return callback(edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes, edgeData.undirected, edgeData.generatedKey);
+      return callback(edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes, edgeData.undirected);
     });
   }
   /**
-   * Function iterating over the egdes from the object at given key using
-   * a callback until it returns a truthy value to stop iteration.
+   * Function iterating over the egdes from the object at given key to match
+   * one of them.
    *
    * @param {object}   object   - Target object.
    * @param {mixed}    k        - Neighbor key.
@@ -1973,15 +2025,15 @@
    */
 
 
-  function forEachForKeySimpleUntil(object, k, callback) {
+  function findForKeySimple(object, k, callback) {
     var edgeData = object[k];
     if (!edgeData) return;
     var sourceData = edgeData.source;
     var targetData = edgeData.target;
-    return callback(edgeData.key, edgeData.attributes, sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.undirected, edgeData.generatedKey);
+    if (callback(edgeData.key, edgeData.attributes, sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.undirected)) return edgeData.key;
   }
 
-  function forEachForKeyMultiUntil(object, k, callback) {
+  function findForKeyMulti(object, k, callback) {
     var edgesData = object[k];
     if (!edgesData) return;
     var shouldBreak = false;
@@ -1990,11 +2042,11 @@
 
     while (step = iterator.next(), step.done !== true) {
       edgeData = step.value;
-      shouldBreak = callback(edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes, edgeData.undirected, edgeData.generatedKey);
-      if (shouldBreak) return true;
+      shouldBreak = callback(edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes, edgeData.undirected);
+      if (shouldBreak) return edgeData.key;
     }
 
-    return false;
+    return;
   }
   /**
    * Function returning an iterator over the egdes from the object at given key.
@@ -2016,7 +2068,15 @@
         var edgeData = step.value;
         return {
           done: false,
-          value: [edgeData.key, edgeData.attributes, edgeData.source.key, edgeData.target.key, edgeData.source.attributes, edgeData.target.attributes]
+          value: {
+            edge: edgeData.key,
+            attributes: edgeData.attributes,
+            source: edgeData.source.key,
+            target: edgeData.target.key,
+            sourceAttributes: edgeData.source.attributes,
+            targetAttributes: edgeData.target.attributes,
+            undirected: edgeData.undirected
+          }
         };
       });
     }
@@ -2081,12 +2141,12 @@
           attributes = _data.attributes,
           source = _data.source,
           target = _data.target;
-      callback(key, attributes, source.key, target.key, source.attributes, target.attributes, data.undirected, data.generatedKey);
+      callback(key, attributes, source.key, target.key, source.attributes, target.attributes, data.undirected);
     }
   }
   /**
-   * Function iterating over a graph's edges using a callback until it returns
-   * a truthy value to stop iteration.
+   * Function iterating over a graph's edges using a callback to match one of
+   * them.
    *
    * @param  {Graph}    graph    - Target Graph instance.
    * @param  {string}   type     - Type of edges to retrieve.
@@ -2094,7 +2154,7 @@
    */
 
 
-  function forEachEdgeUntil(graph, type, callback) {
+  function findEdge(graph, type, callback) {
     if (graph.size === 0) return;
     var shouldFilter = type !== 'mixed' && type !== graph.type;
     var mask = type === 'undirected';
@@ -2111,9 +2171,11 @@
           attributes = _data2.attributes,
           source = _data2.source,
           target = _data2.target;
-      shouldBreak = callback(key, attributes, source.key, target.key, source.attributes, target.attributes, data.undirected, data.generatedKey);
-      if (shouldBreak) break;
+      shouldBreak = callback(key, attributes, source.key, target.key, source.attributes, target.attributes, data.undirected);
+      if (shouldBreak) return key;
     }
+
+    return;
   }
   /**
    * Function creating an iterator of edges for the given type.
@@ -2142,7 +2204,15 @@
         break;
       }
 
-      var value = [data.key, data.attributes, data.source.key, data.target.key, data.source.attributes, data.target.attributes];
+      var value = {
+        edge: data.key,
+        attributes: data.attributes,
+        source: data.source.key,
+        target: data.target.key,
+        sourceAttributes: data.source.attributes,
+        targetAttributes: data.target.attributes,
+        undirected: data.undirected
+      };
       return {
         value: value,
         done: false
@@ -2201,8 +2271,7 @@
     }
   }
   /**
-   * Function iterating over a node's edges using a callback until it returns
-   * a truthy value to stop iteration.
+   * Function iterating over a node's edges using a callback to match one of them.
    *
    * @param  {boolean}  multi     - Whether the graph is multi or not.
    * @param  {string}   type      - Type of edges to retrieve.
@@ -2212,26 +2281,28 @@
    */
 
 
-  function forEachEdgeForNodeUntil(multi, type, direction, nodeData, callback) {
-    var fn = multi ? forEachMultiUntil : forEachSimpleUntil;
-    var shouldBreak = false;
+  function findEdgeForNode(multi, type, direction, nodeData, callback) {
+    var fn = multi ? findMulti : findSimple;
+    var found;
 
     if (type !== 'undirected') {
       if (direction !== 'out') {
-        shouldBreak = fn(nodeData["in"], callback);
-        if (shouldBreak) return;
+        found = fn(nodeData["in"], callback);
+        if (found) return found;
       }
 
       if (direction !== 'in') {
-        shouldBreak = fn(nodeData.out, callback, !direction ? nodeData.key : null);
-        if (shouldBreak) return;
+        found = fn(nodeData.out, callback, !direction ? nodeData.key : null);
+        if (found) return found;
       }
     }
 
     if (type !== 'directed') {
-      shouldBreak = fn(nodeData.undirected, callback);
-      if (shouldBreak) return;
+      found = fn(nodeData.undirected, callback);
+      if (found) return found;
     }
+
+    return;
   }
   /**
    * Function iterating over a node's edges using a callback.
@@ -2311,8 +2382,8 @@
     }
   }
   /**
-   * Function iterating over edges for the given path using a callback until
-   * it returns a truthy value to stop iteration.
+   * Function iterating over edges for the given path using a callback to match
+   * one of them.
    *
    * @param  {string}   type       - Type of edges to retrieve.
    * @param  {boolean}  multi      - Whether the graph is multi.
@@ -2323,28 +2394,30 @@
    */
 
 
-  function forEachEdgeForPathUntil(type, multi, direction, sourceData, target, callback) {
-    var fn = multi ? forEachForKeyMultiUntil : forEachForKeySimpleUntil;
-    var shouldBreak = false;
+  function findEdgeForPath(type, multi, direction, sourceData, target, callback) {
+    var fn = multi ? findForKeyMulti : findForKeySimple;
+    var found;
 
     if (type !== 'undirected') {
       if (typeof sourceData["in"] !== 'undefined' && direction !== 'out') {
-        shouldBreak = fn(sourceData["in"], target, callback);
-        if (shouldBreak) return;
+        found = fn(sourceData["in"], target, callback);
+        if (found) return found;
       }
 
       if (sourceData.key !== target) if (typeof sourceData.out !== 'undefined' && direction !== 'in') {
-        shouldBreak = fn(sourceData.out, target, callback, !direction ? sourceData.key : null);
-        if (shouldBreak) return;
+        found = fn(sourceData.out, target, callback, !direction ? sourceData.key : null);
+        if (found) return found;
       }
     }
 
     if (type !== 'directed') {
       if (typeof sourceData.undirected !== 'undefined') {
-        shouldBreak = fn(sourceData.undirected, target, callback);
-        if (shouldBreak) return;
+        found = fn(sourceData.undirected, target, callback);
+        if (found) return found;
       }
     }
+
+    return;
   }
   /**
    * Function returning an iterator over edges for the given path.
@@ -2499,6 +2572,152 @@
 
       throw new InvalidArgumentsGraphError("Graph.".concat(forEachName, ": too many arguments (expecting 1, 2 or 3 and got ").concat(arguments.length, ")."));
     };
+    /**
+     * Function mapping the graph's relevant edges by applying the given
+     * callback.
+     *
+     * Arity 1: Map all the relevant edges.
+     * @param  {function} callback - Callback to use.
+     *
+     * Arity 2: Map all of a node's relevant edges.
+     * @param  {any}      node     - Target node.
+     * @param  {function} callback - Callback to use.
+     *
+     * Arity 3: Map the relevant edges across the given path.
+     * @param  {any}      source   - Source node.
+     * @param  {any}      target   - Target node.
+     * @param  {function} callback - Callback to use.
+     *
+     * @return {undefined}
+     *
+     * @throws {Error} - Will throw if there are too many arguments.
+     */
+
+
+    var mapName = 'map' + name[0].toUpperCase() + name.slice(1);
+
+    Class.prototype[mapName] = function () {
+      var args = Array.prototype.slice.call(arguments);
+      var callback = args.pop();
+      var result; // We know the result length beforehand
+
+      if (args.length === 0) {
+        var length = 0;
+        if (type !== 'directed') length += this.undirectedSize;
+        if (type !== 'undirected') length += this.directedSize;
+        result = new Array(length);
+        var i = 0;
+        args.push(function (e, ea, s, t, sa, ta, u) {
+          result[i++] = callback(e, ea, s, t, sa, ta, u);
+        });
+      } // We don't know the result length beforehand
+      // TODO: we can in some instances of simple graphs, knowing degree
+      else {
+        result = [];
+        args.push(function (e, ea, s, t, sa, ta, u) {
+          result.push(callback(e, ea, s, t, sa, ta, u));
+        });
+      }
+
+      this[forEachName].apply(this, args);
+      return result;
+    };
+    /**
+     * Function filtering the graph's relevant edges using the provided predicate
+     * function.
+     *
+     * Arity 1: Filter all the relevant edges.
+     * @param  {function} predicate - Predicate to use.
+     *
+     * Arity 2: Filter all of a node's relevant edges.
+     * @param  {any}      node      - Target node.
+     * @param  {function} predicate - Predicate to use.
+     *
+     * Arity 3: Filter the relevant edges across the given path.
+     * @param  {any}      source    - Source node.
+     * @param  {any}      target    - Target node.
+     * @param  {function} predicate - Predicate to use.
+     *
+     * @return {undefined}
+     *
+     * @throws {Error} - Will throw if there are too many arguments.
+     */
+
+
+    var filterName = 'filter' + name[0].toUpperCase() + name.slice(1);
+
+    Class.prototype[filterName] = function () {
+      var args = Array.prototype.slice.call(arguments);
+      var callback = args.pop();
+      var result = [];
+      args.push(function (e, ea, s, t, sa, ta, u) {
+        if (callback(e, ea, s, t, sa, ta, u)) result.push(e);
+      });
+      this[forEachName].apply(this, args);
+      return result;
+    };
+    /**
+     * Function reducing the graph's relevant edges using the provided accumulator
+     * function.
+     *
+     * Arity 1: Reduce all the relevant edges.
+     * @param  {function} accumulator  - Accumulator to use.
+     * @param  {any}      initialValue - Initial value.
+     *
+     * Arity 2: Reduce all of a node's relevant edges.
+     * @param  {any}      node         - Target node.
+     * @param  {function} accumulator  - Accumulator to use.
+     * @param  {any}      initialValue - Initial value.
+     *
+     * Arity 3: Reduce the relevant edges across the given path.
+     * @param  {any}      source       - Source node.
+     * @param  {any}      target       - Target node.
+     * @param  {function} accumulator  - Accumulator to use.
+     * @param  {any}      initialValue - Initial value.
+     *
+     * @return {undefined}
+     *
+     * @throws {Error} - Will throw if there are too many arguments.
+     */
+
+
+    var reduceName = 'reduce' + name[0].toUpperCase() + name.slice(1);
+
+    Class.prototype[reduceName] = function () {
+      var args = Array.prototype.slice.call(arguments);
+
+      if (args.length < 2 || args.length > 4) {
+        throw new InvalidArgumentsGraphError("Graph.".concat(reduceName, ": invalid number of arguments (expecting 2, 3 or 4 and got ").concat(args.length, ")."));
+      }
+
+      if (typeof args[args.length - 1] === 'function' && typeof args[args.length - 2] !== 'function') {
+        throw new InvalidArgumentsGraphError("Graph.".concat(reduceName, ": missing initial value. You must provide it because the callback takes more than one argument and we cannot infer the initial value from the first iteration, as you could with a simple array."));
+      }
+
+      var callback;
+      var initialValue;
+
+      if (args.length === 2) {
+        callback = args[0];
+        initialValue = args[1];
+        args = [];
+      } else if (args.length === 3) {
+        callback = args[1];
+        initialValue = args[2];
+        args = [args[0]];
+      } else if (args.length === 4) {
+        callback = args[2];
+        initialValue = args[3];
+        args = [args[0], args[1]];
+      }
+
+      var accumulator = initialValue;
+      args.push(function (e, ea, s, t, sa, ta, u) {
+        accumulator = callback(accumulator, e, ea, s, t, sa, ta, u);
+      });
+      this[forEachName].apply(this, args);
+      return accumulator;
+    };
   }
   /**
    * Function attaching a breakable edge callback iterator method to the Graph
@@ -2509,14 +2728,14 @@
    */
 
 
-  function attachForEachEdgeUntil(Class, description) {
+  function attachFindEdge(Class, description) {
     var name = description.name,
         type = description.type,
         direction = description.direction;
-    var forEachUntilName = 'forEach' + name[0].toUpperCase() + name.slice(1, -1) + 'Until';
+    var findEdgeName = 'find' + name[0].toUpperCase() + name.slice(1, -1);
     /**
-     * Function iterating over the graph's relevant edges by applying the given
-     * callback and breaking as soon as the callback return a truthy value.
+     * Function iterating over the graph's relevant edges in order to match
+     * one of them using the provided predicate function.
      *
      * Arity 1: Iterate over all the relevant edges.
      * @param  {function} callback - Callback to use.
@@ -2535,13 +2754,13 @@
      * @throws {Error} - Will throw if there are too many arguments.
      */
 
-    Class.prototype[forEachUntilName] = function (source, target, callback) {
+    Class.prototype[findEdgeName] = function (source, target, callback) {
       // Early termination
-      if (type !== 'mixed' && this.type !== 'mixed' && type !== this.type) return;
+      if (type !== 'mixed' && this.type !== 'mixed' && type !== this.type) return false;
 
       if (arguments.length === 1) {
         callback = source;
-        return forEachEdgeUntil(this, type, callback);
+        return findEdge(this, type, callback);
       }
 
       if (arguments.length === 2) {
@@ -2550,10 +2769,10 @@
 
         var nodeData = this._nodes.get(source);
 
-        if (typeof nodeData === 'undefined') throw new NotFoundGraphError("Graph.".concat(forEachUntilName, ": could not find the \"").concat(source, "\" node in the graph.")); // Iterating over a node's edges
+        if (typeof nodeData === 'undefined') throw new NotFoundGraphError("Graph.".concat(findEdgeName, ": could not find the \"").concat(source, "\" node in the graph.")); // Iterating over a node's edges
         // TODO: maybe attach the sub method to the instance dynamically?
 
-        return forEachEdgeForNodeUntil(this.multi, type === 'mixed' ? this.type : type, direction, nodeData, callback);
+        return findEdgeForNode(this.multi, type === 'mixed' ? this.type : type, direction, nodeData, callback);
       }
 
       if (arguments.length === 3) {
@@ -2562,13 +2781,81 @@
 
         var sourceData = this._nodes.get(source);
 
-        if (!sourceData) throw new NotFoundGraphError("Graph.".concat(forEachUntilName, ":  could not find the \"").concat(source, "\" source node in the graph."));
-        if (!this._nodes.has(target)) throw new NotFoundGraphError("Graph.".concat(forEachUntilName, ":  could not find the \"").concat(target, "\" target node in the graph.")); // Iterating over the edges between source & target
+        if (!sourceData) throw new NotFoundGraphError("Graph.".concat(findEdgeName, ":  could not find the \"").concat(source, "\" source node in the graph."));
+        if (!this._nodes.has(target)) throw new NotFoundGraphError("Graph.".concat(findEdgeName, ":  could not find the \"").concat(target, "\" target node in the graph.")); // Iterating over the edges between source & target
 
-        return forEachEdgeForPathUntil(type, this.multi, direction, sourceData, target, callback);
+        return findEdgeForPath(type, this.multi, direction, sourceData, target, callback);
       }
 
-      throw new InvalidArgumentsGraphError("Graph.".concat(forEachUntilName, ": too many arguments (expecting 1, 2 or 3 and got ").concat(arguments.length, ")."));
+      throw new InvalidArgumentsGraphError("Graph.".concat(findEdgeName, ": too many arguments (expecting 1, 2 or 3 and got ").concat(arguments.length, ")."));
+    };
+    /**
+     * Function iterating over the graph's relevant edges in order to assert
+     * whether any one of them matches the provided predicate function.
+     *
+     * Arity 1: Iterate over all the relevant edges.
+     * @param  {function} callback - Callback to use.
+     *
+     * Arity 2: Iterate over all of a node's relevant edges.
+     * @param  {any}      node     - Target node.
+     * @param  {function} callback - Callback to use.
+     *
+     * Arity 3: Iterate over the relevant edges across the given path.
+     * @param  {any}      source   - Source node.
+     * @param  {any}      target   - Target node.
+     * @param  {function} callback - Callback to use.
+     *
+     * @return {undefined}
+     *
+     * @throws {Error} - Will throw if there are too many arguments.
+     */
+
+
+    var someName = 'some' + name[0].toUpperCase() + name.slice(1, -1);
+
+    Class.prototype[someName] = function () {
+      var args = Array.prototype.slice.call(arguments);
+      var callback = args.pop();
+      args.push(function (e, ea, s, t, sa, ta, u) {
+        return callback(e, ea, s, t, sa, ta, u);
+      });
+      var found = this[findEdgeName].apply(this, args);
+      if (found) return true;
+      return false;
+    };
+    /**
+     * Function iterating over the graph's relevant edges in order to assert
+     * whether all of them matche the provided predicate function.
+     *
+     * Arity 1: Iterate over all the relevant edges.
+     * @param  {function} callback - Callback to use.
+     *
+     * Arity 2: Iterate over all of a node's relevant edges.
+     * @param  {any}      node     - Target node.
+     * @param  {function} callback - Callback to use.
+     *
+     * Arity 3: Iterate over the relevant edges across the given path.
+     * @param  {any}      source   - Source node.
+     * @param  {any}      target   - Target node.
+     * @param  {function} callback - Callback to use.
+     *
+     * @return {undefined}
+     *
+     * @throws {Error} - Will throw if there are too many arguments.
+     */
+
+
+    var everyName = 'every' + name[0].toUpperCase() + name.slice(1, -1);
+
+    Class.prototype[everyName] = function () {
+      var args = Array.prototype.slice.call(arguments);
+      var callback = args.pop();
+      args.push(function (e, ea, s, t, sa, ta, u) {
+        return !callback(e, ea, s, t, sa, ta, u);
+      });
+      var found = this[findEdgeName].apply(this, args);
+      if (found) return false;
+      return true;
     };
   }
   /**
@@ -2637,11 +2924,12 @@
    * @param {function} Graph - Graph class.
    */
 
+
   function attachEdgeIterationMethods(Graph) {
     EDGES_ITERATION.forEach(function (description) {
       attachEdgeArrayCreator(Graph, description);
       attachForEachEdge(Graph, description);
-      attachForEachEdgeUntil(Graph, description);
+      attachFindEdge(Graph, description);
       attachEdgeIteratorCreator(Graph, description);
     });
   }
@@ -2768,8 +3056,8 @@
     }
   }
   /**
-   * Function iterating over the given node's relevant neighbors using a
-   * callback until it returns a truthy value to stop iteration.
+   * Function iterating over the given node's relevant neighbors to match
+   * one of them using a predicated function.
    *
    * @param  {string}   type      - Type of neighbors.
    * @param  {string}   direction - Direction.
@@ -2778,34 +3066,34 @@
    */
 
 
-  function forEachInObjectUntil(nodeData, object, callback) {
+  function findInObject(nodeData, object, callback) {
     for (var k in object) {
       var edgeData = object[k];
       if (edgeData instanceof Set) edgeData = edgeData.values().next().value;
-      var sourceData = edgeData.source,
-          targetData = edgeData.target;
+      var sourceData = edgeData.source;
+      var targetData = edgeData.target;
       var neighborData = sourceData === nodeData ? targetData : sourceData;
       var shouldBreak = callback(neighborData.key, neighborData.attributes);
-      if (shouldBreak) return true;
+      if (shouldBreak) return neighborData.key;
     }
 
-    return false;
+    return;
   }
 
-  function forEachInObjectOnceUntil(visited, nodeData, object, callback) {
+  function findInObjectOnce(visited, nodeData, object, callback) {
     for (var k in object) {
       var edgeData = object[k];
       if (edgeData instanceof Set) edgeData = edgeData.values().next().value;
-      var sourceData = edgeData.source,
-          targetData = edgeData.target;
+      var sourceData = edgeData.source;
+      var targetData = edgeData.target;
       var neighborData = sourceData === nodeData ? targetData : sourceData;
       if (visited.has(neighborData.key)) continue;
       visited.add(neighborData.key);
       var shouldBreak = callback(neighborData.key, neighborData.attributes);
-      if (shouldBreak) return true;
+      if (shouldBreak) return neighborData.key;
     }
 
-    return false;
+    return;
   }
 
   function forEachNeighborForNode(type, direction, nodeData, callback) {
@@ -2833,33 +3121,35 @@
     }
   }
 
-  function forEachNeighborForNodeUntil(type, direction, nodeData, callback) {
+  function findNeighbor(type, direction, nodeData, callback) {
     // If we want only undirected or in or out, we can roll some optimizations
     if (type !== 'mixed') {
-      if (type === 'undirected') return forEachInObjectUntil(nodeData, nodeData.undirected, callback);
-      if (typeof direction === 'string') return forEachInObjectUntil(nodeData, nodeData[direction], callback);
+      if (type === 'undirected') return findInObject(nodeData, nodeData.undirected, callback);
+      if (typeof direction === 'string') return findInObject(nodeData, nodeData[direction], callback);
     } // Else we need to keep a set of neighbors not to return duplicates
 
 
     var visited = new Set();
-    var shouldBreak = false;
+    var found;
 
     if (type !== 'undirected') {
       if (direction !== 'out') {
-        shouldBreak = forEachInObjectOnceUntil(visited, nodeData, nodeData["in"], callback);
-        if (shouldBreak) return;
+        found = findInObjectOnce(visited, nodeData, nodeData["in"], callback);
+        if (found) return found;
       }
 
       if (direction !== 'in') {
-        shouldBreak = forEachInObjectOnceUntil(visited, nodeData, nodeData.out, callback);
-        if (shouldBreak) return;
+        found = findInObjectOnce(visited, nodeData, nodeData.out, callback);
+        if (found) return found;
       }
     }
 
     if (type !== 'directed') {
-      shouldBreak = forEachInObjectOnceUntil(visited, nodeData, nodeData.undirected, callback);
-      if (shouldBreak) return;
+      found = findInObjectOnce(visited, nodeData, nodeData.undirected, callback);
+      if (found) return found;
     }
+
+    return;
   }
   /**
    * Function returning an iterator over the given node's relevant neighbors.
@@ -2886,7 +3176,10 @@
       var neighborData = sourceData === nodeData ? targetData : sourceData;
       return {
         done: false,
-        value: [neighborData.key, neighborData.attributes]
+        value: {
+          neighbor: neighborData.key,
+          attributes: neighborData.attributes
+        }
       };
     });
   }
@@ -2908,7 +3201,10 @@
       visited.add(neighborData.key);
       return {
         done: false,
-        value: [neighborData.key, neighborData.attributes]
+        value: {
+          neighbor: neighborData.key,
+          attributes: neighborData.attributes
+        }
       };
     });
   }
@@ -2941,43 +3237,6 @@
     return iterator$1;
   }
   /**
-   * Function returning whether the given node has target neighbor.
-   *
-   * @param  {Graph}        graph     - Target graph.
-   * @param  {string}       type      - Type of neighbor.
-   * @param  {string}       direction - Direction.
-   * @param  {any}          node      - Target node.
-   * @param  {any}          neighbor  - Target neighbor.
-   * @return {boolean}
-   */
-
-
-  function nodeHasNeighbor(graph, type, direction, node, neighbor) {
-    var nodeData = graph._nodes.get(node);
-
-    if (type !== 'undirected') {
-      if (direction !== 'out' && typeof nodeData["in"] !== 'undefined') {
-        for (var k in nodeData["in"]) {
-          if (k === neighbor) return true;
-        }
-      }
-
-      if (direction !== 'in' && typeof nodeData.out !== 'undefined') {
-        for (var _k in nodeData.out) {
-          if (_k === neighbor) return true;
-        }
-      }
-    }
-
-    if (type !== 'directed' && typeof nodeData.undirected !== 'undefined') {
-      for (var _k2 in nodeData.undirected) {
-        if (_k2 === neighbor) return true;
-      }
-    }
-
-    return false;
-  }
-  /**
    * Function attaching a neighbors array creator method to the Graph prototype.
    *
    * @param {function} Class       - Target class.
@@ -2990,43 +3249,24 @@
         type = description.type,
         direction = description.direction;
     /**
-     * Function returning an array or the count of certain neighbors.
+     * Function returning an array of certain neighbors.
      *
-     * Arity 1: Return all of a node's relevant neighbors.
      * @param  {any}   node   - Target node.
+     * @return {array} - The neighbors of neighbors.
      *
-     * Arity 2: Return whether the two nodes are indeed neighbors.
-     * @param  {any}   source - Source node.
-     * @param  {any}   target - Target node.
-     *
-     * @return {array|number} - The neighbors or the number of neighbors.
-     *
-     * @throws {Error} - Will throw if there are too many arguments.
+     * @throws {Error} - Will throw if node is not found in the graph.
      */
 
     Class.prototype[name] = function (node) {
       // Early termination
       if (type !== 'mixed' && this.type !== 'mixed' && type !== this.type) return [];
+      node = '' + node;
 
-      if (arguments.length === 2) {
-        var node1 = '' + arguments[0],
-            node2 = '' + arguments[1];
-        if (!this._nodes.has(node1)) throw new NotFoundGraphError("Graph.".concat(name, ": could not find the \"").concat(node1, "\" node in the graph."));
-        if (!this._nodes.has(node2)) throw new NotFoundGraphError("Graph.".concat(name, ": could not find the \"").concat(node2, "\" node in the graph.")); // Here, we want to assess whether the two given nodes are neighbors
+      var nodeData = this._nodes.get(node);
 
-        return nodeHasNeighbor(this, type, direction, node1, node2);
-      } else if (arguments.length === 1) {
-        node = '' + node;
+      if (typeof nodeData === 'undefined') throw new NotFoundGraphError("Graph.".concat(name, ": could not find the \"").concat(node, "\" node in the graph.")); // Here, we want to iterate over a node's relevant neighbors
 
-        var nodeData = this._nodes.get(node);
-
-        if (typeof nodeData === 'undefined') throw new NotFoundGraphError("Graph.".concat(name, ": could not find the \"").concat(node, "\" node in the graph.")); // Here, we want to iterate over a node's relevant neighbors
-
-        var neighbors = createNeighborArrayForNode(type === 'mixed' ? this.type : type, direction, nodeData);
-        return neighbors;
-      }
-
-      throw new InvalidArgumentsGraphError("Graph.".concat(name, ": invalid number of arguments (expecting 1 or 2 and got ").concat(arguments.length, ")."));
+      return createNeighborArrayForNode(type === 'mixed' ? this.type : type, direction, nodeData);
     };
   }
   /**
@@ -3063,6 +3303,65 @@
 
       forEachNeighborForNode(type === 'mixed' ? this.type : type, direction, nodeData, callback);
     };
+    /**
+     * Function mapping the relevant neighbors using a callback.
+     *
+     * @param  {any}      node     - Target node.
+     * @param  {function} callback - Callback to use.
+     *
+     * @throws {Error} - Will throw if there are too many arguments.
+     */
+
+
+    var mapName = 'map' + name[0].toUpperCase() + name.slice(1);
+
+    Class.prototype[mapName] = function (node, callback) {
+      // TODO: optimize when size is known beforehand
+      var result = [];
+      this[forEachName](node, function (n, a) {
+        result.push(callback(n, a));
+      });
+      return result;
+    };
+    /**
+     * Function filtering the relevant neighbors using a callback.
+     *
+     * @param  {any}      node     - Target node.
+     * @param  {function} callback - Callback to use.
+     *
+     * @throws {Error} - Will throw if there are too many arguments.
+     */
+
+
+    var filterName = 'filter' + name[0].toUpperCase() + name.slice(1);
+
+    Class.prototype[filterName] = function (node, callback) {
+      var result = [];
+      this[forEachName](node, function (n, a) {
+        if (callback(n, a)) result.push(n);
+      });
+      return result;
+    };
+    /**
+     * Function reducing the relevant neighbors using a callback.
+     *
+     * @param  {any}      node     - Target node.
+     * @param  {function} callback - Callback to use.
+     *
+     * @throws {Error} - Will throw if there are too many arguments.
+     */
+
+
+    var reduceName = 'reduce' + name[0].toUpperCase() + name.slice(1);
+
+    Class.prototype[reduceName] = function (node, callback, initialValue) {
+      if (arguments.length < 3) throw new InvalidArgumentsGraphError("Graph.".concat(reduceName, ": missing initial value. You must provide it because the callback takes more than one argument and we cannot infer the initial value from the first iteration, as you could with a simple array."));
+      var accumulator = initialValue;
+      this[forEachName](node, function (n, a) {
+        accumulator = callback(accumulator, n, a);
+      });
+      return accumulator;
+    };
   }
   /**
    * Function attaching a breakable neighbors callback iterator method to the
@@ -3073,11 +3372,12 @@
    */
 
 
-  function attachForEachNeighborUntil(Class, description) {
+  function attachFindNeighbor(Class, description) {
     var name = description.name,
         type = description.type,
         direction = description.direction;
-    var forEachUntilName = 'forEach' + name[0].toUpperCase() + name.slice(1, -1) + 'Until';
+    var capitalizedSingular = name[0].toUpperCase() + name.slice(1, -1);
+    var findName = 'find' + capitalizedSingular;
     /**
      * Function iterating over all the relevant neighbors using a callback.
      *
@@ -3088,16 +3388,56 @@
      * @throws {Error} - Will throw if there are too many arguments.
      */
 
-    Class.prototype[forEachUntilName] = function (node, callback) {
+    Class.prototype[findName] = function (node, callback) {
       // Early termination
       if (type !== 'mixed' && this.type !== 'mixed' && type !== this.type) return;
       node = '' + node;
 
       var nodeData = this._nodes.get(node);
 
-      if (typeof nodeData === 'undefined') throw new NotFoundGraphError("Graph.".concat(forEachUntilName, ": could not find the \"").concat(node, "\" node in the graph.")); // Here, we want to iterate over a node's relevant neighbors
+      if (typeof nodeData === 'undefined') throw new NotFoundGraphError("Graph.".concat(findName, ": could not find the \"").concat(node, "\" node in the graph.")); // Here, we want to iterate over a node's relevant neighbors
 
-      forEachNeighborForNodeUntil(type === 'mixed' ? this.type : type, direction, nodeData, callback);
+      return findNeighbor(type === 'mixed' ? this.type : type, direction, nodeData, callback);
+    };
+    /**
+     * Function iterating over all the relevant neighbors to find if any of them
+     * matches the given predicate.
+     *
+     * @param  {any}      node     - Target node.
+     * @param  {function} callback - Callback to use.
+     * @return {boolean}
+     *
+     * @throws {Error} - Will throw if there are too many arguments.
+     */
+
+
+    var someName = 'some' + capitalizedSingular;
+
+    Class.prototype[someName] = function (node, callback) {
+      var found = this[findName](node, callback);
+      if (found) return true;
+      return false;
+    };
+    /**
+     * Function iterating over all the relevant neighbors to find if all of them
+     * matche the given predicate.
+     *
+     * @param  {any}      node     - Target node.
+     * @param  {function} callback - Callback to use.
+     * @return {boolean}
+     *
+     * @throws {Error} - Will throw if there are too many arguments.
+     */
+
+
+    var everyName = 'every' + capitalizedSingular;
+
+    Class.prototype[everyName] = function (node, callback) {
+      var found = this[findName](node, function (n, a) {
+        return !callback(n, a);
+      });
+      if (found) return false;
+      return true;
     };
   }
   /**
@@ -3145,7 +3485,7 @@
     NEIGHBORS_ITERATION.forEach(function (description) {
       attachNeighborArrayCreator(Graph, description);
       attachForEachNeighbor(Graph, description);
-      attachForEachNeighborUntil(Graph, description);
+      attachFindNeighbor(Graph, description);
       attachNeighborIteratorCreator(Graph, description);
     });
   }
@@ -3180,8 +3520,8 @@
         for (neighbor in adj) {
           edgeData = adj[neighbor];
           targetData = edgeData.target;
-          shouldBreak = callback(sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.key, edgeData.attributes, edgeData.undirected, edgeData.generatedKey);
-          if (breakable && shouldBreak) return;
+          shouldBreak = callback(sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.key, edgeData.attributes, edgeData.undirected);
+          if (breakable && shouldBreak) return edgeData.key;
         }
       }
 
@@ -3192,11 +3532,13 @@
           edgeData = adj[neighbor];
           targetData = edgeData.target;
           if (targetData.key !== neighbor) targetData = edgeData.source;
-          shouldBreak = callback(sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.key, edgeData.attributes, edgeData.undirected, edgeData.generatedKey);
-          if (breakable && shouldBreak) return;
+          shouldBreak = callback(sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.key, edgeData.attributes, edgeData.undirected);
+          if (breakable && shouldBreak) return edgeData.key;
         }
       }
     }
+
+    return;
   }
   /**
    * Function iterating over a multi graph's adjacency using a callback.
@@ -3224,8 +3566,8 @@
           while (containerStep = container.next(), containerStep.done !== true) {
             edgeData = containerStep.value;
             targetData = edgeData.target;
-            shouldBreak = callback(sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.key, edgeData.attributes, edgeData.undirected, edgeData.generatedKey);
-            if (breakable && shouldBreak) return;
+            shouldBreak = callback(sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.key, edgeData.attributes, edgeData.undirected);
+            if (breakable && shouldBreak) return edgeData.key;
           }
         }
       }
@@ -3240,12 +3582,14 @@
             edgeData = containerStep.value;
             targetData = edgeData.target;
             if (targetData.key !== neighbor) targetData = edgeData.source;
-            shouldBreak = callback(sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.key, edgeData.attributes, edgeData.undirected, edgeData.generatedKey);
-            if (breakable && shouldBreak) return;
+            shouldBreak = callback(sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.key, edgeData.attributes, edgeData.undirected);
+            if (breakable && shouldBreak) return edgeData.key;
           }
         }
       }
     }
+
+    return;
   }
   function createAdjacencyIteratorSimple(graph) {
     var iterator$1 = graph._nodes.values();
@@ -3304,7 +3648,15 @@
       if (state === 'inner-undirected' && targetData.key === sourceData.key) targetData = edgeData.source;
       return {
         done: false,
-        value: [sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.key, edgeData.attributes]
+        value: {
+          source: sourceData.key,
+          target: targetData.key,
+          sourceAttributes: sourceData.attributes,
+          targetAttributes: targetData.attributes,
+          edgeKey: edgeData.key,
+          edgeAttributes: edgeData.attributes,
+          undirected: edgeData.undirected
+        }
       };
     });
   }
@@ -3378,7 +3730,15 @@
       if (state === 'inner-undirected' && targetData.key === sourceData.key) targetData = edgeData.source;
       return {
         done: false,
-        value: [sourceData.key, targetData.key, sourceData.attributes, targetData.attributes, edgeData.key, edgeData.attributes]
+        value: {
+          source: sourceData.key,
+          target: targetData.key,
+          sourceAttributes: sourceData.attributes,
+          targetAttributes: targetData.attributes,
+          edge: edgeData.key,
+          edgeAttributes: edgeData.attributes,
+          undirected: edgeData.undirected
+        }
       };
     });
   }
@@ -3424,11 +3784,10 @@
 
   function serializeEdge(key, data) {
     var serialized = {
+      key: key,
       source: data.source.key,
       target: data.target.key
-    }; // We export the key unless if it was provided by the user
-
-    if (!data.generatedKey) serialized.key = key;
+    };
     if (!isEmpty(data.attributes)) serialized.attributes = assign({}, data.attributes);
     if (data.undirected) serialized.undirected = true;
     return serialized;
@@ -3462,6 +3821,11 @@
     return null;
   }
 
+  /**
+   * Constants.
+   */
+
+  var INSTANCE_ID = incrementalIdStartingFromRandomByte();
   /**
    * Enums.
    */
@@ -3506,7 +3870,6 @@
 
   var DEFAULTS = {
     allowSelfLoops: true,
-    edgeKeyGenerator: null,
     multi: false,
     type: 'mixed'
   };
@@ -3601,18 +3964,25 @@
       target: target,
       attributes: attributes
     };
-    if (mustGenerateKey) edge = graph._edgeKeyGenerator(eventData); // Coercion of edge key
 
-    edge = '' + edge; // Here, we have a key collision
+    if (mustGenerateKey) {
+      // NOTE: in this case we can guarantee that the key does not already
+      // exist and is already correctly casted as a string
+      edge = graph._edgeKeyGenerator();
+    } else {
+      // Coercion of edge key
+      edge = '' + edge; // Here, we have a key collision
 
-    if (graph._edges.has(edge)) throw new UsageGraphError("Graph.".concat(name, ": the \"").concat(edge, "\" edge already exists in the graph.")); // Here, we might have a source / target collision
+      if (graph._edges.has(edge)) throw new UsageGraphError("Graph.".concat(name, ": the \"").concat(edge, "\" edge already exists in the graph."));
+    } // Here, we might have a source / target collision
+
 
     if (!graph.multi && (undirected ? typeof sourceData.undirected[target] !== 'undefined' : typeof sourceData.out[target] !== 'undefined')) {
       throw new UsageGraphError("Graph.".concat(name, ": an edge linking \"").concat(source, "\" to \"").concat(target, "\" already exists. If you really want to add multiple edges linking those nodes, you should create a multi graph by using the 'multi' option."));
     } // Storing some data
 
 
-    var edgeData = new EdgeData(undirected, edge, mustGenerateKey, sourceData, targetData, attributes); // Adding the edge to the internal register
+    var edgeData = new EdgeData(undirected, edge, sourceData, targetData, attributes); // Adding the edge to the internal register
 
     graph._edges.set(edge, edgeData); // Incrementing node degree counters
 
@@ -3730,14 +4100,14 @@
         });
       } // Merging the attributes
       else {
-          assign(alreadyExistingEdgeData.attributes, attributes);
-          graph.emit('edgeAttributesUpdated', {
-            type: 'merge',
-            key: alreadyExistingEdgeData.key,
-            attributes: alreadyExistingEdgeData.attributes,
-            data: attributes
-          });
-        }
+        assign(alreadyExistingEdgeData.attributes, attributes);
+        graph.emit('edgeAttributesUpdated', {
+          type: 'merge',
+          key: alreadyExistingEdgeData.key,
+          attributes: alreadyExistingEdgeData.attributes,
+          data: attributes
+        });
+      }
 
       return alreadyExistingEdgeData.key;
     }
@@ -3752,11 +4122,17 @@
       target: target,
       attributes: attributes
     };
-    if (mustGenerateKey) edge = graph._edgeKeyGenerator(eventData); // Coercion of edge key
 
-    edge = '' + edge; // Here, we have a key collision
+    if (mustGenerateKey) {
+      // NOTE: in this case we can guarantee that the key does not already
+      // exist and is already correctly casted as a string
+      edge = graph._edgeKeyGenerator();
+    } else {
+      // Coercion of edge key
+      edge = '' + edge; // Here, we have a key collision
 
-    if (graph._edges.has(edge)) throw new UsageGraphError("Graph.".concat(name, ": the \"").concat(edge, "\" edge already exists in the graph."));
+      if (graph._edges.has(edge)) throw new UsageGraphError("Graph.".concat(name, ": the \"").concat(edge, "\" edge already exists in the graph."));
+    }
 
     if (!sourceData) {
       sourceData = unsafeAddNode(graph, source, {});
@@ -3768,7 +4144,7 @@
     } // Storing some data
 
 
-    edgeData = new EdgeData(undirected, edge, mustGenerateKey, sourceData, targetData, attributes); // Adding the edge to the internal register
+    edgeData = new EdgeData(undirected, edge, sourceData, targetData, attributes); // Adding the edge to the internal register
 
     graph._edges.set(edge, edgeData); // Incrementing node degree counters
 
@@ -3823,14 +4199,35 @@
 
       options = assign({}, DEFAULTS, options); // Enforcing options validity
 
-      if (options.edgeKeyGenerator && typeof options.edgeKeyGenerator !== 'function') throw new InvalidArgumentsGraphError("Graph.constructor: invalid 'edgeKeyGenerator' option. Expecting a function but got \"".concat(options.edgeKeyGenerator, "\"."));
       if (typeof options.multi !== 'boolean') throw new InvalidArgumentsGraphError("Graph.constructor: invalid 'multi' option. Expecting a boolean but got \"".concat(options.multi, "\"."));
       if (!TYPES.has(options.type)) throw new InvalidArgumentsGraphError("Graph.constructor: invalid 'type' option. Should be one of \"mixed\", \"directed\" or \"undirected\" but got \"".concat(options.type, "\"."));
       if (typeof options.allowSelfLoops !== 'boolean') throw new InvalidArgumentsGraphError("Graph.constructor: invalid 'allowSelfLoops' option. Expecting a boolean but got \"".concat(options.allowSelfLoops, "\".")); //-- Private properties
       // Utilities
 
       var NodeDataClass = options.type === 'mixed' ? MixedNodeData : options.type === 'directed' ? DirectedNodeData : UndirectedNodeData;
-      privateProperty(_assertThisInitialized(_this), 'NodeDataClass', NodeDataClass); // Indexes
+      privateProperty(_assertThisInitialized(_this), 'NodeDataClass', NodeDataClass); // Internal edge key generator
+      // NOTE: this internal generator produce keys that are strings
+      // composed of a weird prefix, an incremental instance id starting from
+      // a random byte and finally an internal instance incremental id.
+      // All this to avoid intra-frame and cross-frame adversarial inputs
+      // that can force a single #.addEdge call to degenerate into a O(n)
+      // available key search loop.
+      // It also ensures that automatically generated edge keys are unlikely
+      // to produce collisions with arbitrary keys given by users.
+
+      var instanceId = INSTANCE_ID();
+      var edgeId = 0;
+
+      var edgeKeyGenerator = function edgeKeyGenerator() {
+        var availableEdgeKey;
+
+        do {
+          availableEdgeKey = "geid_".concat(instanceId, "_").concat(edgeId++);
+        } while (_this._edges.has(availableEdgeKey));
+
+        return availableEdgeKey;
+      }; // Indexes
+
 
       privateProperty(_assertThisInitialized(_this), '_attributes', {});
       privateProperty(_assertThisInitialized(_this), '_nodes', new Map());
@@ -3839,7 +4236,7 @@
       privateProperty(_assertThisInitialized(_this), '_undirectedSize', 0);
       privateProperty(_assertThisInitialized(_this), '_directedSelfLoopCount', 0);
       privateProperty(_assertThisInitialized(_this), '_undirectedSelfLoopCount', 0);
-      privateProperty(_assertThisInitialized(_this), '_edgeKeyGenerator', options.edgeKeyGenerator || incrementalId()); // Options
+      privateProperty(_assertThisInitialized(_this), '_edgeKeyGenerator', edgeKeyGenerator); // Options
 
       privateProperty(_assertThisInitialized(_this), '_options', options); // Emitter properties
 
@@ -3876,6 +4273,15 @@
       });
       return _this;
     }
+
+    var _proto = Graph.prototype;
+
+    _proto._resetInstanceCounters = function _resetInstanceCounters() {
+      this._directedSize = 0;
+      this._undirectedSize = 0;
+      this._directedSelfLoopCount = 0;
+      this._undirectedSelfLoopCount = 0;
+    }
     /**---------------------------------------------------------------------------
      * Read
      **---------------------------------------------------------------------------
@@ -3887,9 +4293,7 @@
      * @param  {any}     node - The node.
      * @return {boolean}
      */
-
-
-    var _proto = Graph.prototype;
+    ;
 
     _proto.hasNode = function hasNode(node) {
       return this._nodes.has('' + node);
@@ -4090,75 +4494,232 @@
       if (edgeData) return edgeData.key;
     }
     /**
+     * Method returning whether two nodes are directed neighbors.
+     *
+     * @param  {any}     node     - The node's key.
+     * @param  {any}     neighbor - The neighbor's key.
+     * @return {boolean}
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.areDirectedNeighbors = function areDirectedNeighbors(node, neighbor) {
+      node = '' + node;
+      neighbor = '' + neighbor;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.areDirectedNeighbors: could not find the \"".concat(node, "\" node in the graph."));
+      if (this.type === 'undirected') return false;
+      return neighbor in nodeData["in"] || neighbor in nodeData.out;
+    }
+    /**
+     * Method returning whether two nodes are out neighbors.
+     *
+     * @param  {any}     node     - The node's key.
+     * @param  {any}     neighbor - The neighbor's key.
+     * @return {boolean}
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.areOutNeighbors = function areOutNeighbors(node, neighbor) {
+      node = '' + node;
+      neighbor = '' + neighbor;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.areOutNeighbors: could not find the \"".concat(node, "\" node in the graph."));
+      if (this.type === 'undirected') return false;
+      return neighbor in nodeData.out;
+    }
+    /**
+     * Method returning whether two nodes are in neighbors.
+     *
+     * @param  {any}     node     - The node's key.
+     * @param  {any}     neighbor - The neighbor's key.
+     * @return {boolean}
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.areInNeighbors = function areInNeighbors(node, neighbor) {
+      node = '' + node;
+      neighbor = '' + neighbor;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.areInNeighbors: could not find the \"".concat(node, "\" node in the graph."));
+      if (this.type === 'undirected') return false;
+      return neighbor in nodeData["in"];
+    }
+    /**
+     * Method returning whether two nodes are undirected neighbors.
+     *
+     * @param  {any}     node     - The node's key.
+     * @param  {any}     neighbor - The neighbor's key.
+     * @return {boolean}
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.areUndirectedNeighbors = function areUndirectedNeighbors(node, neighbor) {
+      node = '' + node;
+      neighbor = '' + neighbor;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.areUndirectedNeighbors: could not find the \"".concat(node, "\" node in the graph."));
+      if (this.type === 'directed') return false;
+      return neighbor in nodeData.undirected;
+    }
+    /**
+     * Method returning whether two nodes are neighbors.
+     *
+     * @param  {any}     node     - The node's key.
+     * @param  {any}     neighbor - The neighbor's key.
+     * @return {boolean}
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.areNeighbors = function areNeighbors(node, neighbor) {
+      node = '' + node;
+      neighbor = '' + neighbor;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.areNeighbors: could not find the \"".concat(node, "\" node in the graph."));
+
+      if (this.type !== 'undirected') {
+        if (neighbor in nodeData["in"] || neighbor in nodeData.out) return true;
+      }
+
+      if (this.type !== 'directed') {
+        if (neighbor in nodeData.undirected) return true;
+      }
+
+      return false;
+    }
+    /**
+     * Method returning whether two nodes are inbound neighbors.
+     *
+     * @param  {any}     node     - The node's key.
+     * @param  {any}     neighbor - The neighbor's key.
+     * @return {boolean}
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.areInboundNeighbors = function areInboundNeighbors(node, neighbor) {
+      node = '' + node;
+      neighbor = '' + neighbor;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.areInboundNeighbors: could not find the \"".concat(node, "\" node in the graph."));
+
+      if (this.type !== 'undirected') {
+        if (neighbor in nodeData["in"]) return true;
+      }
+
+      if (this.type !== 'directed') {
+        if (neighbor in nodeData.undirected) return true;
+      }
+
+      return false;
+    }
+    /**
+     * Method returning whether two nodes are outbound neighbors.
+     *
+     * @param  {any}     node     - The node's key.
+     * @param  {any}     neighbor - The neighbor's key.
+     * @return {boolean}
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.areOutboundNeighbors = function areOutboundNeighbors(node, neighbor) {
+      node = '' + node;
+      neighbor = '' + neighbor;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.areOutboundNeighbors: could not find the \"".concat(node, "\" node in the graph."));
+
+      if (this.type !== 'undirected') {
+        if (neighbor in nodeData.out) return true;
+      }
+
+      if (this.type !== 'directed') {
+        if (neighbor in nodeData.undirected) return true;
+      }
+
+      return false;
+    }
+    /**
      * Method returning the given node's in degree.
      *
-     * @param  {any}     node      - The node's key.
-     * @param  {boolean} allowSelfLoops - Count self-loops?
-     * @return {number}            - The node's in degree.
+     * @param  {any}     node - The node's key.
+     * @return {number}       - The node's in degree.
      *
-     * @throws {Error} - Will throw if the selfLoops arg is not boolean.
      * @throws {Error} - Will throw if the node isn't in the graph.
      */
     ;
 
     _proto.inDegree = function inDegree(node) {
-      var selfLoops = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-      if (typeof selfLoops !== 'boolean') throw new InvalidArgumentsGraphError("Graph.inDegree: Expecting a boolean but got \"".concat(selfLoops, "\" for the second parameter (allowing self-loops to be counted)."));
       node = '' + node;
 
       var nodeData = this._nodes.get(node);
 
       if (!nodeData) throw new NotFoundGraphError("Graph.inDegree: could not find the \"".concat(node, "\" node in the graph."));
       if (this.type === 'undirected') return 0;
-      var loops = selfLoops ? nodeData.directedSelfLoops : 0;
-      return nodeData.inDegree + loops;
+      return nodeData.inDegree + nodeData.directedSelfLoops;
     }
     /**
      * Method returning the given node's out degree.
      *
-     * @param  {any}     node      - The node's key.
-     * @param  {boolean} selfLoops - Count self-loops?
-     * @return {number}            - The node's out degree.
+     * @param  {any}     node - The node's key.
+     * @return {number}       - The node's in degree.
      *
-     * @throws {Error} - Will throw if the selfLoops arg is not boolean.
      * @throws {Error} - Will throw if the node isn't in the graph.
      */
     ;
 
     _proto.outDegree = function outDegree(node) {
-      var selfLoops = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-      if (typeof selfLoops !== 'boolean') throw new InvalidArgumentsGraphError("Graph.outDegree: Expecting a boolean but got \"".concat(selfLoops, "\" for the second parameter (allowing self-loops to be counted)."));
       node = '' + node;
 
       var nodeData = this._nodes.get(node);
 
       if (!nodeData) throw new NotFoundGraphError("Graph.outDegree: could not find the \"".concat(node, "\" node in the graph."));
       if (this.type === 'undirected') return 0;
-      var loops = selfLoops ? nodeData.directedSelfLoops : 0;
-      return nodeData.outDegree + loops;
+      return nodeData.outDegree + nodeData.directedSelfLoops;
     }
     /**
      * Method returning the given node's directed degree.
      *
-     * @param  {any}     node      - The node's key.
-     * @param  {boolean} selfLoops - Count self-loops?
-     * @return {number}            - The node's directed degree.
+     * @param  {any}     node - The node's key.
+     * @return {number}       - The node's in degree.
      *
-     * @throws {Error} - Will throw if the selfLoops arg is not boolean.
      * @throws {Error} - Will throw if the node isn't in the graph.
      */
     ;
 
     _proto.directedDegree = function directedDegree(node) {
-      var selfLoops = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-      if (typeof selfLoops !== 'boolean') throw new InvalidArgumentsGraphError("Graph.directedDegree: Expecting a boolean but got \"".concat(selfLoops, "\" for the second parameter (allowing self-loops to be counted)."));
       node = '' + node;
 
       var nodeData = this._nodes.get(node);
 
       if (!nodeData) throw new NotFoundGraphError("Graph.directedDegree: could not find the \"".concat(node, "\" node in the graph."));
       if (this.type === 'undirected') return 0;
-      var loops = selfLoops ? nodeData.directedSelfLoops : 0;
+      var loops = nodeData.directedSelfLoops;
       var inDegree = nodeData.inDegree + loops;
       var outDegree = nodeData.outDegree + loops;
       return inDegree + outDegree;
@@ -4166,58 +4727,151 @@
     /**
      * Method returning the given node's undirected degree.
      *
-     * @param  {any}     node      - The node's key.
-     * @param  {boolean} selfLoops - Count self-loops?
-     * @return {number}            - The node's undirected degree.
+     * @param  {any}     node - The node's key.
+     * @return {number}       - The node's in degree.
      *
-     * @throws {Error} - Will throw if the selfLoops arg is not boolean.
      * @throws {Error} - Will throw if the node isn't in the graph.
      */
     ;
 
     _proto.undirectedDegree = function undirectedDegree(node) {
-      var selfLoops = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-      if (typeof selfLoops !== 'boolean') throw new InvalidArgumentsGraphError("Graph.undirectedDegree: Expecting a boolean but got \"".concat(selfLoops, "\" for the second parameter (allowing self-loops to be counted)."));
       node = '' + node;
 
       var nodeData = this._nodes.get(node);
 
       if (!nodeData) throw new NotFoundGraphError("Graph.undirectedDegree: could not find the \"".concat(node, "\" node in the graph."));
       if (this.type === 'directed') return 0;
-      var loops = selfLoops ? nodeData.undirectedSelfLoops : 0;
+      var loops = nodeData.undirectedSelfLoops;
       return nodeData.undirectedDegree + loops * 2;
     }
     /**
-     * Method returning the given node's degree.
+     * Method returning the given node's directed degree.
      *
-     * @param  {any}     node      - The node's key.
-     * @param  {boolean} selfLoops - Count self-loops?
-     * @return {number}            - The node's degree.
+     * @param  {any}     node - The node's key.
+     * @return {number}       - The node's in degree.
      *
-     * @throws {Error} - Will throw if the selfLoops arg is not boolean.
      * @throws {Error} - Will throw if the node isn't in the graph.
      */
     ;
 
     _proto.degree = function degree(node) {
-      var selfLoops = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-      if (typeof selfLoops !== 'boolean') throw new InvalidArgumentsGraphError("Graph.degree: Expecting a boolean but got \"".concat(selfLoops, "\" for the second parameter (allowing self-loops to be counted)."));
       node = '' + node;
 
       var nodeData = this._nodes.get(node);
 
       if (!nodeData) throw new NotFoundGraphError("Graph.degree: could not find the \"".concat(node, "\" node in the graph."));
       var degree = 0;
-      var loops = 0;
 
       if (this.type !== 'directed') {
-        if (selfLoops) loops = nodeData.undirectedSelfLoops;
-        degree += nodeData.undirectedDegree + loops * 2;
+        degree += nodeData.undirectedDegree + nodeData.undirectedSelfLoops * 2;
       }
 
       if (this.type !== 'undirected') {
-        if (selfLoops) loops = nodeData.directedSelfLoops;
-        degree += nodeData.inDegree + nodeData.outDegree + loops * 2;
+        degree += nodeData.inDegree + nodeData.outDegree + nodeData.directedSelfLoops * 2;
+      }
+
+      return degree;
+    }
+    /**
+     * Method returning the given node's in degree without considering self loops.
+     *
+     * @param  {any}     node - The node's key.
+     * @return {number}       - The node's in degree.
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.inDegreeWithoutSelfLoops = function inDegreeWithoutSelfLoops(node) {
+      node = '' + node;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.inDegreeWithoutSelfLoops: could not find the \"".concat(node, "\" node in the graph."));
+      if (this.type === 'undirected') return 0;
+      return nodeData.inDegree;
+    }
+    /**
+     * Method returning the given node's out degree without considering self loops.
+     *
+     * @param  {any}     node - The node's key.
+     * @return {number}       - The node's in degree.
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.outDegreeWithoutSelfLoops = function outDegreeWithoutSelfLoops(node) {
+      node = '' + node;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.outDegreeWithoutSelfLoops: could not find the \"".concat(node, "\" node in the graph."));
+      if (this.type === 'undirected') return 0;
+      return nodeData.outDegree;
+    }
+    /**
+     * Method returning the given node's directed degree without considering self loops.
+     *
+     * @param  {any}     node - The node's key.
+     * @return {number}       - The node's in degree.
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.directedDegreeWithoutSelfLoops = function directedDegreeWithoutSelfLoops(node) {
+      node = '' + node;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.directedDegreeWithoutSelfLoops: could not find the \"".concat(node, "\" node in the graph."));
+      if (this.type === 'undirected') return 0;
+      return nodeData.inDegree + nodeData.outDegree;
+    }
+    /**
+     * Method returning the given node's undirected degree without considering self loops.
+     *
+     * @param  {any}     node - The node's key.
+     * @return {number}       - The node's in degree.
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.undirectedDegreeWithoutSelfLoops = function undirectedDegreeWithoutSelfLoops(node) {
+      node = '' + node;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.undirectedDegreeWithoutSelfLoops: could not find the \"".concat(node, "\" node in the graph."));
+      if (this.type === 'directed') return 0;
+      return nodeData.undirectedDegree;
+    }
+    /**
+     * Method returning the given node's directed degree without considering self loops.
+     *
+     * @param  {any}     node - The node's key.
+     * @return {number}       - The node's in degree.
+     *
+     * @throws {Error} - Will throw if the node isn't in the graph.
+     */
+    ;
+
+    _proto.degreeWithoutSelfLoops = function degreeWithoutSelfLoops(node) {
+      node = '' + node;
+
+      var nodeData = this._nodes.get(node);
+
+      if (!nodeData) throw new NotFoundGraphError("Graph.degreeWithoutSelfLoops: could not find the \"".concat(node, "\" node in the graph."));
+      var degree = 0;
+
+      if (this.type !== 'directed') {
+        degree += nodeData.undirectedDegree;
+      }
+
+      if (this.type !== 'undirected') {
+        degree += nodeData.inDegree + nodeData.outDegree;
       }
 
       return degree;
@@ -4373,24 +5027,6 @@
 
       if (!data) throw new NotFoundGraphError("Graph.isSelfLoop: could not find the \"".concat(edge, "\" edge in the graph."));
       return data.source === data.target;
-    }
-    /**
-     * Method returning whether the given edge has a generated key.
-     *
-     * @param  {any}     edge - The edge's key.
-     * @return {boolean}
-     *
-     * @throws {Error} - Will throw if the edge isn't in the graph.
-     */
-    ;
-
-    _proto.hasGeneratedKey = function hasGeneratedKey(edge) {
-      edge = '' + edge;
-
-      var data = this._edges.get(edge);
-
-      if (!data) throw new NotFoundGraphError("Graph.hasGeneratedKey: could not find the \"".concat(edge, "\" edge in the graph."));
-      return data.generatedKey;
     }
     /**---------------------------------------------------------------------------
      * Mutation
@@ -4614,7 +5250,10 @@
       this._edges.clear(); // Clearing nodes
 
 
-      this._nodes.clear(); // Emitting
+      this._nodes.clear(); // Reset counters
+
+
+      this._resetInstanceCounters(); // Emitting
 
 
       this.emit('cleared');
@@ -4627,11 +5266,13 @@
     ;
 
     _proto.clearEdges = function clearEdges() {
-      // Clearing edges
-      this._edges.clear(); // Clearing indices
+      clearStructureIndex(this); // Clearing edges
+
+      this._edges.clear(); // Reset counters
 
 
-      this.clearIndex(); // Emitting
+      this._resetInstanceCounters(); // Emitting
+
 
       this.emit('edgesCleared');
     }
@@ -4846,7 +5487,7 @@
       var data = this._nodes.get(node);
 
       if (!data) throw new NotFoundGraphError("Graph.setNodeAttribute: could not find the \"".concat(node, "\" node in the graph."));
-      if (arguments.length < 3) throw new InvalidArgumentsGraphError('Graph.setNodeAttribute: not enough arguments. Either you forgot to pass the attribute\'s name or value, or you meant to use #.replaceNodeAttributes / #.mergeNodeAttributes instead.');
+      if (arguments.length < 3) throw new InvalidArgumentsGraphError("Graph.setNodeAttribute: not enough arguments. Either you forgot to pass the attribute's name or value, or you meant to use #.replaceNodeAttributes / #.mergeNodeAttributes instead.");
       data.attributes[name] = value; // Emitting
 
       this.emit('nodeAttributesUpdated', {
@@ -4877,7 +5518,7 @@
       var data = this._nodes.get(node);
 
       if (!data) throw new NotFoundGraphError("Graph.updateNodeAttribute: could not find the \"".concat(node, "\" node in the graph."));
-      if (arguments.length < 3) throw new InvalidArgumentsGraphError('Graph.updateNodeAttribute: not enough arguments. Either you forgot to pass the attribute\'s name or updater, or you meant to use #.replaceNodeAttributes / #.mergeNodeAttributes instead.');
+      if (arguments.length < 3) throw new InvalidArgumentsGraphError("Graph.updateNodeAttribute: not enough arguments. Either you forgot to pass the attribute's name or updater, or you meant to use #.replaceNodeAttributes / #.mergeNodeAttributes instead.");
       if (typeof updater !== 'function') throw new InvalidArgumentsGraphError('Graph.updateAttribute: updater should be a function.');
       var attributes = data.attributes;
       var value = updater(attributes[name]);
@@ -4907,7 +5548,7 @@
 
       var data = this._nodes.get(node);
 
-      if (!data) throw new NotFoundGraphError("Graph.hasNodeAttribute: could not find the \"".concat(node, "\" node in the graph."));
+      if (!data) throw new NotFoundGraphError("Graph.removeNodeAttribute: could not find the \"".concat(node, "\" node in the graph."));
       delete data.attributes[name]; // Emitting
 
       this.emit('nodeAttributesUpdated', {
@@ -5042,16 +5683,17 @@
       if (this.multi) forEachAdjacencyMulti(false, this, callback);else forEachAdjacencySimple(false, this, callback);
     }
     /**
-     * Method iterating over the graph's adjacency using the given callback until
-     * it returns a truthy value to stop iteration.
+     * Method returning whether a matching edge can be found using given
+     * predicate function.
      *
      * @param  {function}  callback - Callback to use.
      */
     ;
 
-    _proto.forEachUntil = function forEachUntil(callback) {
-      if (typeof callback !== 'function') throw new InvalidArgumentsGraphError('Graph.forEach: expecting a callback.');
-      if (this.multi) forEachAdjacencyMulti(true, this, callback);else forEachAdjacencySimple(true, this, callback);
+    _proto.find = function find(callback) {
+      if (typeof callback !== 'function') throw new InvalidArgumentsGraphError('Graph.find: expecting a callback.');
+      if (this.multi) return forEachAdjacencyMulti(true, this, callback);
+      return forEachAdjacencySimple(true, this, callback);
     }
     /**
      * Method returning an iterator over the graph's adjacency.
@@ -5085,30 +5727,146 @@
     _proto.forEachNode = function forEachNode(callback) {
       if (typeof callback !== 'function') throw new InvalidArgumentsGraphError('Graph.forEachNode: expecting a callback.');
 
-      this._nodes.forEach(function (data, key) {
-        callback(key, data.attributes);
-      });
+      var iterator = this._nodes.values();
+
+      var step, nodeData;
+
+      while (step = iterator.next(), step.done !== true) {
+        nodeData = step.value;
+        callback(nodeData.key, nodeData.attributes);
+      }
     }
     /**
-     * Method iterating over the graph's nodes using the given callback until
-     * it returns a truthy value to stop iteration.
+     * Method iterating attempting to find a node matching the given predicate
+     * function.
      *
-     * @param  {function}  callback - Callback (key, attributes, index).
+     * @param  {function}  callback - Callback (key, attributes).
      */
     ;
 
-    _proto.forEachNodeUntil = function forEachNodeUntil(callback) {
-      if (typeof callback !== 'function') throw new InvalidArgumentsGraphError('Graph.forEachNode: expecting a callback.');
+    _proto.findNode = function findNode(callback) {
+      if (typeof callback !== 'function') throw new InvalidArgumentsGraphError('Graph.findNode: expecting a callback.');
 
       var iterator = this._nodes.values();
 
-      var step, nodeData, shouldBreak;
+      var step, nodeData;
 
-      while (step = iterator.next(), step !== true) {
+      while (step = iterator.next(), step.done !== true) {
         nodeData = step.value;
-        shouldBreak = callback(nodeData.key, nodeData.attributes);
-        if (shouldBreak) break;
+        if (callback(nodeData.key, nodeData.attributes)) return nodeData.key;
       }
+
+      return;
+    }
+    /**
+     * Method mapping nodes.
+     *
+     * @param  {function}  callback - Callback (key, attributes).
+     */
+    ;
+
+    _proto.mapNodes = function mapNodes(callback) {
+      if (typeof callback !== 'function') throw new InvalidArgumentsGraphError('Graph.mapNode: expecting a callback.');
+
+      var iterator = this._nodes.values();
+
+      var step, nodeData;
+      var result = new Array(this.order);
+      var i = 0;
+
+      while (step = iterator.next(), step.done !== true) {
+        nodeData = step.value;
+        result[i++] = callback(nodeData.key, nodeData.attributes);
+      }
+
+      return result;
+    }
+    /**
+     * Method returning whether some node verify the given predicate.
+     *
+     * @param  {function}  callback - Callback (key, attributes).
+     */
+    ;
+
+    _proto.someNode = function someNode(callback) {
+      if (typeof callback !== 'function') throw new InvalidArgumentsGraphError('Graph.someNode: expecting a callback.');
+
+      var iterator = this._nodes.values();
+
+      var step, nodeData;
+
+      while (step = iterator.next(), step.done !== true) {
+        nodeData = step.value;
+        if (callback(nodeData.key, nodeData.attributes)) return true;
+      }
+
+      return false;
+    }
+    /**
+     * Method returning whether all node verify the given predicate.
+     *
+     * @param  {function}  callback - Callback (key, attributes).
+     */
+    ;
+
+    _proto.everyNode = function everyNode(callback) {
+      if (typeof callback !== 'function') throw new InvalidArgumentsGraphError('Graph.everyNode: expecting a callback.');
+
+      var iterator = this._nodes.values();
+
+      var step, nodeData;
+
+      while (step = iterator.next(), step.done !== true) {
+        nodeData = step.value;
+        if (!callback(nodeData.key, nodeData.attributes)) return false;
+      }
+
+      return true;
+    }
+    /**
+     * Method filtering nodes.
+     *
+     * @param  {function}  callback - Callback (key, attributes).
+     */
+    ;
+
+    _proto.filterNodes = function filterNodes(callback) {
+      if (typeof callback !== 'function') throw new InvalidArgumentsGraphError('Graph.filterNodes: expecting a callback.');
+
+      var iterator = this._nodes.values();
+
+      var step, nodeData;
+      var result = [];
+
+      while (step = iterator.next(), step.done !== true) {
+        nodeData = step.value;
+        if (callback(nodeData.key, nodeData.attributes)) result.push(nodeData.key);
+      }
+
+      return result;
+    }
+    /**
+     * Method reducing nodes.
+     *
+     * @param  {function}  callback - Callback (accumulator, key, attributes).
+     */
+    ;
+
+    _proto.reduceNodes = function reduceNodes(callback, initialValue) {
+      if (typeof callback !== 'function') throw new InvalidArgumentsGraphError('Graph.reduceNodes: expecting a callback.');
+      if (arguments.length < 2) throw new InvalidArgumentsGraphError('Graph.reduceNodes: missing initial value. You must provide it because the callback takes more than one argument and we cannot infer the initial value from the first iteration, as you could with a simple array.');
+      var accumulator = initialValue;
+
+      var iterator = this._nodes.values();
+
+      var step, nodeData;
+
+      while (step = iterator.next(), step.done !== true) {
+        nodeData = step.value;
+        accumulator = callback(accumulator, nodeData.key, nodeData.attributes);
+      }
+
+      return accumulator;
     }
     /**
      * Method returning an iterator over the graph's node entries.
@@ -5125,7 +5883,10 @@
         if (step.done) return step;
         var data = step.value;
         return {
-          value: [data.key, data.attributes],
+          value: {
+            node: data.key,
+            attributes: data.attributes
+          },
           done: false
         };
       });
@@ -5367,8 +6128,10 @@
     ;
 
     _proto.copy = function copy() {
-      var graph = new Graph(this._options);
-      graph["import"](this);
+      var graph = this.emptyCopy();
+      this.forEachEdge(function (edge, attr, source, target, _sa, _ta, undirected) {
+        addEdge(graph, 'copy', false, undirected, edge, source, target, assign({}, attr));
+      });
       return graph;
     }
     /**
@@ -5409,22 +6172,6 @@
       readOnlyProperty(this, 'multi', true); // Upgrading indices
 
       upgradeStructureIndexToMulti(this);
-      return this;
-    }
-    /**---------------------------------------------------------------------------
-     * Indexes-related methods
-     **---------------------------------------------------------------------------
-     */
-
-    /**
-     * Method used to clear the desired index to clear memory.
-     *
-     * @return {Graph}       - Returns itself for chaining.
-     */
-    ;
-
-    _proto.clearIndex = function clearIndex() {
-      clearStructureIndex(this);
       return this;
     }
     /**---------------------------------------------------------------------------
@@ -5474,7 +6221,7 @@
         var label = '';
         var desc = "(".concat(data.source.key, ")").concat(direction, "(").concat(data.target.key, ")");
 
-        if (!data.generatedKey) {
+        if (!key.startsWith('geid_')) {
           label += "[".concat(key, "]: ");
         } else if (_this3.multi) {
           if (typeof multiIndex[desc] === 'undefined') {
@@ -5504,7 +6251,7 @@
     };
 
     return Graph;
-  }(events.EventEmitter);
+  }(events.exports.EventEmitter);
   if (typeof Symbol !== 'undefined') Graph.prototype[Symbol["for"]('nodejs.util.inspect.custom')] = Graph.prototype.inspect;
   /**
    * Attaching methods to the prototype.
@@ -5520,8 +6267,8 @@
 
   EDGE_ADD_METHODS.forEach(function (method) {
     ['add', 'merge', 'update'].forEach(function (verb) {
-      var name = method.name(verb),
-          fn = verb === 'add' ? addEdge : mergeEdge;
+      var name = method.name(verb);
+      var fn = verb === 'add' ? addEdge : mergeEdge;
 
       if (method.generateKey) {
         Graph.prototype[name] = function (source, target, attributes) {
@@ -5681,5 +6428,5 @@
 
   return Graph;
 
-})));
+}));
 //# sourceMappingURL=graphology.umd.js.map

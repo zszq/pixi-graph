@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>pixi-graph</title>
   <!-- <script src="https://unpkg.com/graphology@0.19.3/dist/graphology.umd.js"></script> -->
-  <script src="./js/graphology.umd.js"></script>
+  <script src="./js/graphology.js"></script> <!-- v0.22.1 -->
   <!-- <script src="https://unpkg.com/graphology-layout-forceatlas2@0.4.4/build/graphology-layout-forceatlas2.js"></script> -->
   <script src="./js/graphology-layout-forceatlas2.js"></script>
   <!-- <script src="https://unpkg.com/fontfaceobserver@2.1.0/fontfaceobserver.standalone.js"></script> -->
@@ -55,6 +55,7 @@
   <div id="graph"></div>
   <div id="controls">
     <button id="add-node">Add Node</button>
+    <button id="add-edge">Add Edge</button>
     <button id="extract">extract</button>
     <button id="add-group">add group</button>
     <button id="drop-group">drop group</button>
@@ -561,6 +562,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   };
   // 新增节点
   document.getElementById('add-node').addEventListener('click', addNode);
+  // 新增边
+  document.getElementById('add-edge').addEventListener('click', () => {
+    graph.addEdgeWithKey('node32-node52', 'node32', 'node52', {"source":"node32","target":"node52","value":5});
+  });
   // 提取图片
   document.getElementById('extract').addEventListener('click', () => {
     let src = pixiGraph.extract(false);
