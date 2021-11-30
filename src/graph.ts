@@ -4,7 +4,6 @@ import { AppLoaderPlugin, Loader } from '@pixi/loaders';
 import { BitmapFontLoader } from '@pixi/text-bitmap';
 import { Renderer, BatchRenderer } from '@pixi/core';
 import { InteractionManager } from '@pixi/interaction';
-import { Extract } from '@pixi/extract';
 import { Container } from '@pixi/display';
 import { Point, IPointData } from '@pixi/math';
 import { Viewport } from 'pixi-viewport';
@@ -20,7 +19,9 @@ import { PixiNode } from './node';
 import { PixiEdge } from './edge';
 import { NodeStyle } from './utils/style';
 import { EdgeStyle } from './utils/style';
-// import '@pixi/filter-fxaa';
+import { Extract } from '@pixi/extract';
+import { makeWatermark } from './watermark';
+// import { Graphics } from '@pixi/graphics';
 
 Application.registerPlugin(TickerPlugin);
 Application.registerPlugin(AppLoaderPlugin);
@@ -233,8 +234,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       .drag()
       .pinch()
       .wheel()
-      // .decelerate()
       .clampZoom({ maxScale: 1.5, minScale: 0.1 });
+      // .decelerate()
     this.app.stage.addChild(this.viewport);
 
     // create cull
@@ -304,6 +305,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       // initial draw
       this.createGraph();
       this.resetView(this.graph.nodes());
+      // const line = new Graphics().lineStyle(3, 0xff0000).drawRect(0, 0, this.viewport.worldWidth, this.viewport.worldHeight);
+      // this.viewport.addChild(line);
     });
   }
 
@@ -332,18 +335,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.app = undefined!;
   }
 
-  private get zoomStep() {
-    return Math.min(this.viewport.worldWidth, this.viewport.worldHeight) / 10;
-  }
-
-  zoomIn() {
-    this.viewport.zoom(-this.zoomStep, true);
-  }
-
-  zoomOut() {
-    this.viewport.zoom(this.zoomStep, true);
-  }
-  // 多次实例化，销毁实例无效，会造成内存溢出，临时处理方法：只实例化一次，由外层动态设置位置
+  // 销毁实例无效，多次实例化会造成内存溢出，临时处理：只实例化一次，由外层动态设置位置
   resetView(nodes: any[]) {
     if (!nodes.length) { // 设置一个能显示在窗口的，防止外面没调用此函数看不到内容
       this.viewport.center = new Point(this.container.clientWidth/2, this.container.clientHeight/2);
@@ -617,7 +609,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     node.on('rightclick', (event: MouseEvent) => {
       this.emit('nodeRightclick', event, nodeKey, nodeStyle);
     });
-
+    // 添加更新防抖
     // this.nodeKeyToNodeObjectTemp.set(nodeKey, node);
     // if (this.nodeTimer) clearTimeout(this.nodeTimer);
     // this.nodeTimer = setTimeout(() => {
@@ -768,7 +760,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.culling();
 
     // levels of detail
-    const zoom = this.viewport.scale.x;
+    const zoom = this.viewport.scaled;
     const zoomSteps = [0.1, 0.2, 0.3, 0.4, 0.5, Infinity];
     const zoomStep = zoomSteps.findIndex(zoomStep => zoom <= zoomStep);
 
@@ -785,6 +777,28 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // if (zoomStep === 1) {
     //   this.onGraphEachEdgeAttributesUpdated();
     // }
+  }
+  
+
+  // 剔除
+  culling() {
+    this.cull.addAll((this.viewport.children as Container[]).map(layer => layer.children).flat());
+    this.cull.cull(this.app.renderer.screen);
+  }
+  // 取消剔除
+  uncull() {
+    this.cull.uncull();
+  }
+
+  // 设置缩放
+  private get zoomStep() {
+    return Math.min(this.viewport.worldWidth, this.viewport.worldHeight) / 10;
+  }
+  zoomIn() {
+    this.viewport.zoom(-this.zoomStep, true);
+  }
+  zoomOut() {
+    this.viewport.zoom(this.zoomStep, true);
   }
   
   // 设置node可见性
@@ -823,16 +837,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       console.error(`根据${edgeKey}获取线失败!`);
     }
   }
-  
-  // 剔除
-  culling() {
-    this.cull.addAll((this.viewport.children as Container[]).map(layer => layer.children).flat());
-    this.cull.cull(this.app.renderer.screen);
-  }
-  // 取消剔除
-  uncull() {
-    this.cull.uncull();
-  }
 
   // 提取图片
   extract(full: boolean = true, format: string = 'image/png', quality: number = 0.92) {
@@ -848,4 +852,22 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   dragDisable() {
     this.viewport.pause = true;
   }
+
+  // 添加水印
+  watermark(option: any) {
+    let containerWidth = this.container.clientWidth;
+    let containerHeight = this.container.clientHeight;
+    let watermark = makeWatermark(containerWidth, containerHeight, option);
+    this.app.stage.addChildAt(watermark, 0);
+  }
+
+  // 获取所有的点容器信息
+  getAllNodeObject() {
+    return this.nodeKeyToNodeObject;
+  }
+  // 获取所有的线容器信息
+  getAllEdgeObject() {
+    return this.edgeKeyToEdgeObject;
+  }
+
 }

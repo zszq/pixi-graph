@@ -24,8 +24,8 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
   edgeLabelGfx: Container;
   edgeArrowGfx: Container;
   edgePlaceholderGfx: Container;
-  edgeLabelPlaceholderGfx: Container;
-  edgeArrowPlaceholderGfx: Container;
+  // edgeLabelPlaceholderGfx: Container;
+  // edgeArrowPlaceholderGfx: Container;
 
   hovered: boolean = false;
 
@@ -38,8 +38,8 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
     this.edgeLabelGfx = this.createEdgeLabel();
     this.edgeArrowGfx = this.createEdgeArrow();
     this.edgePlaceholderGfx = new Container();
-    this.edgeLabelPlaceholderGfx = new Container();
-    this.edgeArrowPlaceholderGfx = new Container();
+    // this.edgeLabelPlaceholderGfx = new Container();
+    // this.edgeArrowPlaceholderGfx = new Container();
   }
 
   createEdge() {
@@ -99,13 +99,13 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
       const st_length = Math.hypot(targetNodePosition.x - sourceNodePosition.x, targetNodePosition.y - sourceNodePosition.y);
       // const line_length = st_length - sourceNodeStyle.size - sourceNodeStyle.border.width - targetNodeStyle.size - targetNodeStyle.border.width;
       const line_length = st_length-Math.sqrt(3)/2 * edgeStyle.arrow.size - targetNodeStyle.size - sourceNodeStyle.size - targetNodeStyle.border.width - sourceNodeStyle.border.width;
-      const center_target = line_length/2 + targetNodeStyle.size + Math.sqrt(3)/2 * edgeStyle.arrow.size + targetNodeStyle.border.width
+      const line_length_half = line_length/2 + targetNodeStyle.size + Math.sqrt(3)/2 * edgeStyle.arrow.size + targetNodeStyle.border.width;
       // 一条起点为P1（x1，y1）和终点为P2（x2，y2）的线。这条线是从圆心开始的。圆半径为r。圆线相交点
       // phi = atan2(y2-y1, x2-x1)
       // x = x1 + r * cos(phi)
       // y = y1 + r * sin(phi)
       // https://blog.csdn.net/m0_37885651/article/details/91041342
-      const position = { x: targetNodePosition.x + Math.sin(rotation) * center_target, y: targetNodePosition.y - Math.cos(rotation) * center_target};
+      const position = { x: targetNodePosition.x + Math.sin(rotation) * line_length_half, y: targetNodePosition.y - Math.cos(rotation) * line_length_half};
       if(this.isBilateral) {
         position.x = position.x - Math.cos(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
         position.y = position.y - Math.sin(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);

@@ -135,9 +135,12 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
   (nodeGfx.hitArea as Circle).radius = nodeOuterSize;
 
   // nodeGfx -> nodeCircle
-  const nodeCircle = nodeGfx.getChildByName!(NODE_CIRCLE) as Sprite;
-  nodeCircle.texture = nodeCircleTexture;
-  [nodeCircle.tint, nodeCircle.alpha] = colorToPixi(nodeStyle.color);
+  // 如果nodeicon是图片直接遮盖nodeCircle，不再设置纹理，否则会出现底色锯齿边框
+  if (nodeStyle.icon.type !== TextType.IMAGE) {
+    const nodeCircle = nodeGfx.getChildByName!(NODE_CIRCLE) as Sprite;
+    nodeCircle.texture = nodeCircleTexture;
+    [nodeCircle.tint, nodeCircle.alpha] = colorToPixi(nodeStyle.color);
+  }
 
   // nodeGfx -> nodeCircleBorder
   const nodeCircleBorder = nodeGfx.getChildByName!(NODE_CIRCLE_BORDER) as Sprite;

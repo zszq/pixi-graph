@@ -8,7 +8,7 @@
     "sourceMap": true,
     "strict": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedParameters": false,
     "allowSyntheticDefaultImports": true
   },
   "include": [

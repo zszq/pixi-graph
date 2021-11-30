@@ -12,9 +12,9 @@
   <!-- <script src="https://unpkg.com/pixi-graph@1.3.0/dist/pixi-graph.umd.min.js"></script> -->
   <script src="../dist/pixi-graph.umd.js"></script>
   <!-- <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"> -->
-  <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-  <script src="//unpkg.com/layui@2.6.7/dist/layui.js"></script>
-  <link rel="stylesheet" href="./font.css">
+  <!-- <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script> -->
+  <!-- <script src="//unpkg.com/layui@2.6.7/dist/layui.js"></script> -->
+  <!-- <link rel="stylesheet" href="./font.css"> -->
   <style>
     body {
       margin: 0;
@@ -61,6 +61,7 @@
     <button id="drop-group">drop group</button>
     <button id="show">visible-show</button>
     <button id="hide">visible-hide</button>
+    <button id="watermark">watermark</button>
     <!-- <button id="add-edge">Add Edge</button>
     <button id="drop-node">Drop Node</button>
     <button id="drop-edge">Drop Edge</button>
@@ -237,10 +238,12 @@ window.addEventListener('DOMContentLoaded', async () => {
         color: '#ccc',
       },
       icon: {
-        type: PixiGraph.TextType.IMAGE, // TEXT or IMAGE
+        // type: PixiGraph.TextType.IMAGE, // TEXT or IMAGE
+        type: PixiGraph.TextType.TEXT, // TEXT or IMAGE
         content: (node) => {
-          // return node.id;
-          return node.icon ? node.icon : 'http://127.0.0.1:8080/docs/images/bz.jpeg'; // 使用图片方法(PixiGraph.TextType.IMAGE，返回相应图片路径)
+          return '';
+          // return node.icon ? node.icon : 'http://127.0.0.1:8080/docs/images/bz.jpeg'; // 使用图片方法(PixiGraph.TextType.IMAGE，返回相应图片路径)
+          
           // 使用字体图表的方法(导入相关字体文件后使用);
           // let unicode = '&#xe7f8;';
           // if (unicode === "") return "";
@@ -324,7 +327,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         color: COLOR_SELECTED,
       },
       label: {
-        // backgroundColor: COLOR_SELECTED,
+        backgroundColor: 'rgba(255, 255, 255, 0.6)',
         // color: '#ffffff',
         fontWeight: 'bolder',
       },
@@ -332,17 +335,17 @@ window.addEventListener('DOMContentLoaded', async () => {
     edge: {
       color: COLOR_SELECTED,
       label: {
-        backgroundColor: COLOR_SELECTED,
+        backgroundColor: 'rgba(255, 255, 255, 0.6)',
         // color: '#ffffff',
         fontWeight: 'bolder',
       },
     },
   };
 
-  const resources = [
-    { name: 'HelveticaRegular', url: 'https://gist.githubusercontent.com/zakjan/b61c0a26d297edf0c09a066712680f37/raw/8cdda3c21ba3668c3dd022efac6d7f740c9f1e18/HelveticaRegular.fnt' },
-  ];
-  await new FontFaceObserver('iconfont').load().then(() => console.log('Icons'));
+  // const resources = [
+  //   { name: 'HelveticaRegular', url: 'https://gist.githubusercontent.com/zakjan/b61c0a26d297edf0c09a066712680f37/raw/8cdda3c21ba3668c3dd022efac6d7f740c9f1e18/HelveticaRegular.fnt' },
+  // ];
+  // await new FontFaceObserver('iconfont').load().then(() => console.log('Icons'));
 
   const pixiGraph = new PixiGraph.PixiGraph({
     container: document.getElementById('graph'),
@@ -498,6 +501,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.log('nodeClick', event, nodeKey, nodeStyle, pixiGraph.checkNodeVisibility(nodeKey));
     // style.node.label.fontWeight = 'bolder';
     // addLeaf(nodeKey);
+    // let nodeAttributes = graph.getNodeAttributes(nodeKey);
+    // let nodePosiotion = {x: nodeAttributes.x, y: nodeAttributes.y};
+    // console.log('nodeClick1', event);
+    // console.log('nodeClick2', nodePosiotion);
+    // console.log('nodeClick3', pixiGraph.viewport.toScreen(nodePosiotion));
   });
   pixiGraph.on('nodeRightclick', (event, nodeKey, nodeStyle) => {
     // pixiGraph.dragEnable();
@@ -593,6 +601,25 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('show').addEventListener('click', () => {
     pixiGraph.nodeVisibility('node0', true);
     pixiGraph.edgeVisibility('node0->node4', true);
+    // pixiGraph.getAllNodeObject();
+    // pixiGraph.getAllEdgeObject();
+  });
+  // 创建水印
+  document.getElementById('watermark').addEventListener('click', () => {
+    pixiGraph.watermark({
+      type: 'TEXT', // TEXT or IMAGE
+      content: './images/ba.png',
+      cover: false, // cover为true时均匀铺满全屏，position无效
+      position: {
+        x: document.getElementById('graph').clientWidth / 2,
+        y: document.getElementById('graph').clientHeight / 2
+      },
+      rotation: -0.3,
+      style: {
+        fontSize: 18,
+        color: 0xff3300
+      }
+    });
   });
   
 
