@@ -854,7 +854,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
 
   // 添加水印
-  watermark(option: any) {
+  createWatermark(option: any) {
     let containerWidth = this.container.clientWidth;
     let containerHeight = this.container.clientHeight;
     let watermark = makeWatermark(containerWidth, containerHeight, option);

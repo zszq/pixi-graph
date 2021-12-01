@@ -606,10 +606,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   // 创建水印
   document.getElementById('watermark').addEventListener('click', () => {
-    pixiGraph.watermark({
+    pixiGraph.createWatermark({
       type: 'TEXT', // TEXT or IMAGE
       content: './images/ba.png',
-      cover: false, // cover为true时均匀铺满全屏，position无效
+      cover: true, // cover为true时均匀铺满全屏，position无效
+      row: 5, // cover为true时生效
+      column: 6, // cover为true时生效
       position: {
         x: document.getElementById('graph').clientWidth / 2,
         y: document.getElementById('graph').clientHeight / 2
