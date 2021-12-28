@@ -3,7 +3,7 @@ import { Sprite } from '@pixi/sprite';
 import { Texture } from '@pixi/core';
 import { Text } from '@pixi/text';
 
-interface WatermarkOption {
+export interface WatermarkOption {
   type: string,
   content: string,
   cover: boolean,
@@ -41,6 +41,10 @@ export function makeWatermark(containerWidth: number, containerHeight: number, o
       watermark.addChild(textSprite);
     }
   }
+
+  // watermark.position.set(watermark.width / 2, watermark.height / 2);
+  // watermark.pivot.set(watermark.width / 2, watermark.height / 2);
+  // watermark.rotation = option.rotation;
   
   return watermark;
 }
@@ -65,12 +69,12 @@ function makeTextWatermark(option: WatermarkOption) {
     fontWeight: 'normal',
     color: 'black',
   }
-  option.style = Object.assign(styleDefault, option.style);
+  const style = Object.assign(styleDefault, option.style);
   const watermarkText = new Text(option.content, {
-    fontFamily: option.style.fontFamily ,
-    fontSize: option.style.fontSize,
-    fontWeight: option.style.fontWeight,
-    fill: option.style.color,
+    fontFamily: style.fontFamily ,
+    fontSize: style.fontSize,
+    fontWeight: style.fontWeight,
+    fill: style.color,
   });
   watermarkText.anchor.set(0.5);
   watermarkText.rotation = option.rotation;

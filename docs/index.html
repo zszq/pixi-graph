@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
 <head>
   <meta charset="utf-8">
   <title>pixi-graph</title>
@@ -61,7 +61,9 @@
     <button id="drop-group">drop group</button>
     <button id="show">visible-show</button>
     <button id="hide">visible-hide</button>
-    <button id="watermark">watermark</button>
+    <button id="createWatermark">createWatermark</button>
+    <button id="removeWatermark">removeWatermark</button>
+    <button id="clearWatermark">clearWatermark</button>
     <!-- <button id="add-edge">Add Edge</button>
     <button id="drop-node">Drop Node</button>
     <button id="drop-edge">Drop Edge</button>
@@ -576,7 +578,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   // 提取图片
   document.getElementById('extract').addEventListener('click', () => {
-    let src = pixiGraph.extract(false);
+    let src = pixiGraph.extract(true);
     let img = document.createElement('img');
     img.src = src;
     let thumbnail_box = document.querySelector('#thumbnail');
@@ -605,8 +607,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     // pixiGraph.getAllEdgeObject();
   });
   // 创建水印
-  document.getElementById('watermark').addEventListener('click', () => {
-    pixiGraph.createWatermark({
+  document.getElementById('createWatermark').addEventListener('click', () => {
+    watermarkName = pixiGraph.createWatermark({
       type: 'TEXT', // TEXT or IMAGE
       content: './images/ba.png',
       cover: true, // cover为true时均匀铺满全屏，position无效
@@ -622,7 +624,14 @@ window.addEventListener('DOMContentLoaded', async () => {
         color: 0xff3300
       }
     });
+    console.log('WatermarkName: ', watermarkName);
   });
+  document.getElementById('removeWatermark').addEventListener('click', () => {
+    pixiGraph.removeWatermark(watermarkName);
+  })
+  document.getElementById('clearWatermark').addEventListener('click', () => {
+    pixiGraph.clearWatermark();
+  })
   
 
   // const addEdge = () => {

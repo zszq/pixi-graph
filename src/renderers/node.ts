@@ -136,6 +136,7 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
 
   // nodeGfx -> nodeCircle
   // 如果nodeicon是图片直接遮盖nodeCircle，不再设置纹理，否则会出现底色锯齿边框
+  // 但有图标的点的颜色深浅会失效？
   // if (nodeStyle.icon.type !== TextType.IMAGE) {
     const nodeCircle = nodeGfx.getChildByName!(NODE_CIRCLE) as Sprite;
     nodeCircle.texture = nodeCircleTexture;

@@ -20,7 +20,7 @@ import { PixiEdge } from './edge';
 import { NodeStyle } from './utils/style';
 import { EdgeStyle } from './utils/style';
 import { Extract } from '@pixi/extract';
-import { makeWatermark } from './watermark';
+import { makeWatermark, WatermarkOption } from './watermark';
 // import { Graphics } from '@pixi/graphics';
 
 Application.registerPlugin(TickerPlugin);
@@ -178,6 +178,9 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private edgeMouseX: number = 0;
   private edgeMouseY: number = 0;
 
+  private watermark: Container;
+  private watermarkCount: number = 0;
+
   private onGraphNodeAddedBound = this.onGraphNodeAdded.bind(this);
   private onGraphEdgeAddedBound = this.onGraphEdgeAdded.bind(this);
   private onGraphNodeDroppedBound = this.onGraphNodeDropped.bind(this);
@@ -265,6 +268,10 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // this.viewport.addChild(this.nodeLabelLayer);
     // this.viewport.addChild(this.frontNodeLayer);
     // this.viewport.addChild(this.frontNodeLabelLayer);
+
+    // create watermark
+    this.watermark = new Container();
+    this.app.stage.addChildAt(this.watermark, 0);
 
     this.resizeObserver = new ResizeObserver(() => {
       this.app.resize();
@@ -854,11 +861,23 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
 
   // 添加水印
-  createWatermark(option: any) {
+  createWatermark(option: WatermarkOption) {
     let containerWidth = this.container.clientWidth;
     let containerHeight = this.container.clientHeight;
     let watermark = makeWatermark(containerWidth, containerHeight, option);
-    this.app.stage.addChildAt(watermark, 0);
+    let name = `watermark_${this.watermarkCount++}`;
+    watermark.name = name;
+    this.watermark.addChild(watermark);
+    return name;
+  }
+  // 删除指定水印
+  removeWatermark(name: string) {
+    let children = this.watermark.getChildByName!(name);
+    this.watermark.removeChild(children);
+  }
+  // 清除所有水印
+  clearWatermark() {
+    this.watermark.removeChildren();
   }
 
   // 获取所有的点容器信息
