@@ -14,8 +14,8 @@
   "browser": "dist/pixi-graph.umd.min.js",
   "types": "dist/pixi-graph.d.ts",
   "scripts": {
+    "dev": "rimraf dist && rollup -c -w",
     "build": "rimraf dist && rollup -c",
-    "dev": "rollup -c -w",
     "test": "jest",
     "prepublishOnly": "npm run build"
   },

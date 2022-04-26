@@ -29,7 +29,7 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
 
   hovered: boolean = false;
 
-  constructor(option: {selfLoop: boolean, bilateral: boolean}) {
+  constructor(option: { selfLoop: boolean, bilateral: boolean }) {
     super();
 
     this.isSelfLoop = option.selfLoop;
@@ -55,7 +55,7 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
     createEdge(edgeGfx, this.isSelfLoop);
     return edgeGfx;
   }
-  
+
   createEdgeLabel() {
     const edgeLabelGfx = new Container();
     edgeLabelGfx.interactive = true;
@@ -98,15 +98,15 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
       const rotation = -Math.atan2(targetNodePosition.x - sourceNodePosition.x, targetNodePosition.y - sourceNodePosition.y);
       const st_length = Math.hypot(targetNodePosition.x - sourceNodePosition.x, targetNodePosition.y - sourceNodePosition.y);
       // const line_length = st_length - sourceNodeStyle.size - sourceNodeStyle.border.width - targetNodeStyle.size - targetNodeStyle.border.width;
-      const line_length = st_length-Math.sqrt(3)/2 * edgeStyle.arrow.size - targetNodeStyle.size - sourceNodeStyle.size - targetNodeStyle.border.width - sourceNodeStyle.border.width;
-      const line_length_half = line_length/2 + targetNodeStyle.size + Math.sqrt(3)/2 * edgeStyle.arrow.size + targetNodeStyle.border.width;
+      const line_length = st_length - Math.sqrt(3) / 2 * edgeStyle.arrow.size - targetNodeStyle.size - sourceNodeStyle.size - targetNodeStyle.border.width - sourceNodeStyle.border.width;
+      const line_length_half = line_length / 2 + targetNodeStyle.size + Math.sqrt(3) / 2 * edgeStyle.arrow.size + targetNodeStyle.border.width;
       // 一条起点为P1（x1，y1）和终点为P2（x2，y2）的线。这条线是从圆心开始的。圆半径为r。圆线相交点
       // phi = atan2(y2-y1, x2-x1)
       // x = x1 + r * cos(phi)
       // y = y1 + r * sin(phi)
       // https://blog.csdn.net/m0_37885651/article/details/91041342
-      const position = { x: targetNodePosition.x + Math.sin(rotation) * line_length_half, y: targetNodePosition.y - Math.cos(rotation) * line_length_half};
-      if(this.isBilateral) {
+      const position = { x: targetNodePosition.x + Math.sin(rotation) * line_length_half, y: targetNodePosition.y - Math.cos(rotation) * line_length_half };
+      if (this.isBilateral) {
         position.x = position.x - Math.cos(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
         position.y = position.y - Math.sin(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
       }
@@ -115,15 +115,15 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
       this.edgeGfx.position.copyFrom(position);
       this.edgeGfx.rotation = rotation;
       this.edgeGfx.height = line_length;
-  
+
       // edge -> label
       this.edgeLabelGfx.position.copyFrom(position);
-      
+
       // edge -> arrow
       const radius = targetNodeStyle.size + targetNodeStyle.border.width + (Math.sqrt(3) / 4 * edgeStyle.arrow.size);
       const phi = Math.atan2(targetNodePosition.y - sourceNodePosition.y, targetNodePosition.x - sourceNodePosition.x);
       const arrowPosition = { x: targetNodePosition.x - Math.cos(phi) * radius, y: targetNodePosition.y - Math.sin(phi) * radius };
-      if(this.isBilateral) {
+      if (this.isBilateral) {
         arrowPosition.x = arrowPosition.x - Math.cos(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
         arrowPosition.y = arrowPosition.y - Math.sin(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
       }
@@ -148,6 +148,12 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
     this.edgeGfx.visible = visible;
     this.edgeLabelGfx.visible = visible;
     this.edgeArrowGfx.visible = visible;
+  }
+
+  edgeRenderable(renderable: boolean) {
+    this.edgeGfx.renderable = renderable;
+    this.edgeLabelGfx.renderable = renderable;
+    this.edgeArrowGfx.renderable = renderable;
   }
 
   checkEdgeVisibility() {

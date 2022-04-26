@@ -64,6 +64,7 @@
     <button id="createWatermark">createWatermark</button>
     <button id="removeWatermark">removeWatermark</button>
     <button id="clearWatermark">clearWatermark</button>
+    <button id="snapViewport">snapViewport</button>
     <!-- <button id="add-edge">Add Edge</button>
     <button id="drop-node">Drop Node</button>
     <button id="drop-edge">Drop Edge</button>
@@ -133,6 +134,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   // const { nodes, links } = await (await fetch('miserables.json')).json();
   const { nodes, links } = await (await fetch('data500-1000.json')).json();
+  // const { nodes, links } = await (await fetch('data1000-5000.json')).json();
+  // const { nodes, links } = await (await fetch('data-10000-10000.json')).json();
   // const { nodes, links } = await (await fetch('socfb-Caltech36.json')).json();
   nodes.forEach(node => {
     graph.addNode(node.id, {...node});
@@ -150,7 +153,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     graph.setNodeAttribute(node, 'y', Math.random());
   });
   console.time('compute');
-  forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 80 }});
+  forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 200 }});
   console.timeEnd('compute');
   // const positions = await (await fetch('position2.json')).json();
   // graph.forEachNode(node => {
@@ -233,10 +236,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   const style = {
     node: {
       shape: node => 'circle', // circle or rect
-      size: node => 20,
+      size: node => 15,
       color: node => NODE_COLOR_NORMAL,
       border: {
-        width: 4,
+        width: 3,
         color: '#ccc',
       },
       icon: {
@@ -270,7 +273,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         padding: 2,
       },
       attach: {
-        group: node => node.group ? node.group : [],
+        group: [],
         shape: 'rect', // circle or rect
         size: 15,
         colors: node => ({
@@ -355,9 +358,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     style,
     hoverStyle,
     // resources,
+    highPerformance: true,
+    // dragOffset: true,
     onprogress: (percentage) => {console.log(percentage)}
   });
-  
+  console.log('pixiGraph===', pixiGraph);
 
 
   // 加载进度对外接口
@@ -491,12 +496,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     // console.log('edges', graph.edges('node100', 'node200'));
   }
   
-  // pixiGraph.on('viewClick', (event) => {
-  //   console.log('viewClick', event, pixiGraph.viewport.center);
+  // pixiGraph.viewport.on('clicked', (event) => {
+  //   console.log('viewportClick', event, pixiGraph.viewport.center);
   // });
-  pixiGraph.on('nodeMove', (event, nodeKey) => {
-    // console.log('nodeMove', event, nodeKey);
-  });
+  // pixiGraph.on('nodeMove', (event, nodeKey) => {
+  //   console.log('nodeMove', event, nodeKey);
+  // });
   // 加载下一级
   pixiGraph.on('nodeClick', (event, nodeKey, nodeStyle) => {
     // pixiGraph.dragEnable();
@@ -508,6 +513,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     // console.log('nodeClick1', event);
     // console.log('nodeClick2', nodePosiotion);
     // console.log('nodeClick3', pixiGraph.viewport.toScreen(nodePosiotion));
+
+    // const worldPosition = pixiGraph.viewport.toWorld({x:event.x, y:event.y});
+    // pixiGraph.viewport.snap(worldPosition.x, worldPosition.y, { removeOnComplete: true, removeOnInterrupt: true });
   });
   pixiGraph.on('nodeRightclick', (event, nodeKey, nodeStyle) => {
     // pixiGraph.dragEnable();
@@ -579,13 +587,22 @@ window.addEventListener('DOMContentLoaded', async () => {
   // 提取图片
   document.getElementById('extract').addEventListener('click', () => {
     let src = pixiGraph.extract(true);
+    extract(src);
+  });
+  function extract(src) {
     let img = document.createElement('img');
     img.src = src;
     let thumbnail_box = document.querySelector('#thumbnail');
     let thumbnail_img = document.querySelector('#thumbnail img');
     if (thumbnail_img) thumbnail_box.removeChild(thumbnail_img);
     thumbnail_box.appendChild(img);
-  });
+  }
+  function downloadImg(src) {
+    let a = document.createElement('a');
+    a.href = src;
+    a.download = 'extract_' + new Date().getTime();
+    a.click();
+  }
   // 新增分组
   document.getElementById('add-group').addEventListener('click', () => {
     graph.setNodeAttribute('node0', 'group', [0, 1, 2, 3, 4, 5, 6, 7, 8]);
@@ -631,6 +648,19 @@ window.addEventListener('DOMContentLoaded', async () => {
   })
   document.getElementById('clearWatermark').addEventListener('click', () => {
     pixiGraph.clearWatermark();
+  })
+  // 定位视图
+  document.getElementById('snapViewport').addEventListener('click', () => {
+    console.log('===viewport===', pixiGraph.viewport);
+    pixiGraph.viewport.on('snap-end', () => {
+      console.log('snap-end');
+      // let src = pixiGraph.extract(false);
+      // extract(src);
+      // downloadImg(src);
+    })
+    
+    pixiGraph.moveCenter();
+    
   })
   
 
@@ -738,6 +768,21 @@ window.addEventListener('DOMContentLoaded', async () => {
   // };
   // document.getElementById('import').addEventListener('click', importGraph);
 });
+
+
+(function(){
+  var script = document.createElement('script');
+  script.onload = function(){
+    var stats = new Stats();
+    document.body.appendChild(stats.dom);
+    requestAnimationFrame(function loop(){
+      stats.update();
+      requestAnimationFrame(loop);
+    });
+  };
+  script.src='./js/stats.js';
+  document.head.appendChild(script);
+})()
 </script>
 
 <!-- Global site tag (gtag.js) - Google Analytics -->

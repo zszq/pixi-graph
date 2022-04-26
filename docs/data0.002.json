@@ -17,6 +17,12 @@
       "target": "node1",
       "label": "交易500元",
       "value": 4
+    },
+    {
+      "source": "node0",
+      "target": "node0",
+      "label": "交易500元",
+      "value": 4
     }
   ]
 }

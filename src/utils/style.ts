@@ -85,7 +85,7 @@ export type EdgeStyle = GraphStyle['edge'];
 
 export type StyleDefinition<Style, Attributes> =
   ((attributes: Attributes) => Style) |
-  {[Key in keyof Style]?: StyleDefinition<Style[Key], Attributes>} |
+  { [Key in keyof Style]?: StyleDefinition<Style[Key], Attributes> } |
   Style;
 
 export type NodeStyleDefinition<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes> = StyleDefinition<NodeStyle, NodeAttributes>;
@@ -101,11 +101,15 @@ export function resolveStyleDefinition<Style, Attributes>(styleDefinition: Style
   if (styleDefinition instanceof Function) {
     style = styleDefinition(attributes);
   } else if (typeof styleDefinition === 'object' && styleDefinition !== null) {
-    style = Object.fromEntries(
-      Object.entries(styleDefinition).map(([key, styleDefinition]) => {
-        return [key, resolveStyleDefinition(styleDefinition, attributes)];
-      })
-    ) as Style;
+    if (Array.isArray(styleDefinition)) {
+      style = styleDefinition as any;
+    } else {
+      style = Object.fromEntries(
+        Object.entries(styleDefinition).map(([key, styleDefinition]) => {
+          return [key, resolveStyleDefinition(styleDefinition, attributes)];
+        })
+      ) as Style;
+    }
   } else {
     style = styleDefinition;
   }
