@@ -20,6 +20,7 @@ import { PixiEdge } from './edge';
 import { NodeStyle } from './utils/style';
 import { EdgeStyle } from './utils/style';
 import { Extract } from '@pixi/extract';
+import { skipHello } from '@pixi/utils';
 import { makeWatermark, WatermarkOption } from './watermark';
 // import { Graphics } from '@pixi/graphics';
 
@@ -129,7 +130,9 @@ interface PixiGraphEvents {
   nodeMousedown: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeMouseup: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeRightclick: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
+  nodeMoveStart: (event: MouseEvent, nodeKey: string, point: IPointData) => void;
   nodeMove: (event: MouseEvent, nodeKey: string, point: IPointData) => void;
+  nodeMoveEnd: (event: MouseEvent, nodeKey: string, point: IPointData) => void;
 
   edgeClick: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   edgeMousemove: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
@@ -177,7 +180,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   // private edgeTimer: ReturnType<typeof setTimeout> | null = null;
 
   private mousedownNodeKey: string | null = null;
-  // private mousedownEdgeKey: string | null = null;
   private nodeMouseX: number = 0;
   private nodeMouseY: number = 0;
   private edgeMouseX: number = 0;
@@ -222,6 +224,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     }
 
     // create PIXI application
+    skipHello();
     this.app = new Application({
       resizeTo: this.container,
       // resolution: window.devicePixelRatio,
@@ -565,10 +568,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     let nodeX = attrs.x;
     let nodeY = attrs.y;
     let position = { x: 0, y: 0 };
-
     point.x > nodeX ? position.x = point.x - this.nodeMouseOffsetX : position.x = point.x + this.nodeMouseOffsetX;
     point.y > nodeY ? position.y = point.y - this.nodeMouseOffsetY : position.y = point.y + this.nodeMouseOffsetY;
-
     return position;
   }
 
@@ -578,7 +579,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.graph.setNodeAttribute(nodeKey, 'y', newPosition.y);
 
     // update style
-    this.updateNodeStyleByKey(nodeKey);
+    this.updateNodeStyleByKey(nodeKey); // 在这里更新节点，比在nodeAttributesUpdated事件监听里性能更好 why？
     if (this.highPerformance) {
       if (!this.isNodeMove) {
         this.isNodeMove = true;
@@ -591,11 +592,13 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.emit('nodeMove', event, nodeKey, point);
   }
 
-  private enableNodeDragging() {
+  private enableNodeDragging(event: MouseEvent, nodeKey: string, point: IPointData) {
     this.viewport.pause = true; // disable viewport dragging
 
     document.addEventListener('mousemove', this.onDocumentMouseMoveBound);
-    document.addEventListener('mouseup', this.onDocumentMouseUpBound, { once: true });
+    document.addEventListener('mouseup', (event) => this.onDocumentMouseUpBound(event, nodeKey), { once: true });
+
+    this.emit('nodeMoveStart', event, nodeKey, point);
   }
 
   private onDocumentMouseMove(event: MouseEvent) {
@@ -607,7 +610,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     }
   }
 
-  private onDocumentMouseUp() {
+  private onDocumentMouseUp(event: MouseEvent, nodeKey: string) {
     this.viewport.pause = false; // enable viewport dragging
 
     if (this.highPerformance) {
@@ -618,9 +621,11 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     }
 
     document.removeEventListener('mousemove', this.onDocumentMouseMoveBound);
-
     this.mousedownNodeKey = null;
-    // this.mousedownEdgeKey = null;
+
+    const eventPosition = new Point(event.offsetX, event.offsetY);
+    const point = this.viewport.toWorld(eventPosition);
+    this.emit('nodeMoveEnd', event, nodeKey, point);
   }
 
   private createGraph() {
@@ -659,13 +664,14 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     node.on('mousedown', (event: MouseEvent) => {
       const eventPosition = new Point(event.offsetX, event.offsetY);
       const worldPosition = this.viewport.toWorld(eventPosition);
+
       this.nodeMouseOffsetX = Math.abs(node.nodeGfx.x - worldPosition.x);
       this.nodeMouseOffsetY = Math.abs(node.nodeGfx.y - worldPosition.y);
 
       this.nodeMouseX = event.offsetX;
       this.nodeMouseY = event.offsetY;
       this.mousedownNodeKey = nodeKey;
-      this.enableNodeDragging();
+      this.enableNodeDragging(event, nodeKey, worldPosition);
       this.emit('nodeMousedown', event, nodeKey, nodeStyle);
     });
     node.on('mouseup', (event: MouseEvent) => {
@@ -721,7 +727,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     edge.on('mousedown', (event: MouseEvent) => {
       this.edgeMouseX = event.offsetX;
       this.edgeMouseY = event.offsetY;
-      // this.mousedownEdgeKey = edgeKey;
       this.emit('edgeMousedown', event, edgeKey, edgeStyle);
     });
     edge.on('mouseup', (event: MouseEvent) => {
@@ -843,7 +848,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
       edge.updateVisibility(zoomStep);
     });
-    
+
     // 处理缩小隐藏线之后，再拖拽放大后，线不显示问题 (大量数据缩放会很卡)
     // if (zoomStep === 1) {
     //   this.onGraphEachEdgeAttributesUpdated();
@@ -998,8 +1003,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   edgeRenderable(nodeKey: string, renderable: boolean) {
     this.graph.forEachEdge(nodeKey, (edgeKey, attributes, source, target, sourceAttributes, targetAttributes) => {
       const edgeGfx = this.edgeKeyToEdgeObject.get(edgeKey);
-      edgeGfx && edgeGfx.edgeRenderable(renderable);
-      renderable && this.updateEdgeStyleByKey(edgeKey);
+      if (edgeGfx) edgeGfx.edgeRenderable(renderable);
+      if (renderable) this.updateEdgeStyleByKey(edgeKey);
     })
 
   }

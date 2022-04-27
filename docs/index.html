@@ -273,7 +273,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         padding: 2,
       },
       attach: {
-        group: [],
+        group: node => node.group ? node.group : [],
         shape: 'rect', // circle or rect
         size: 15,
         colors: node => ({
@@ -363,6 +363,16 @@ window.addEventListener('DOMContentLoaded', async () => {
     onprogress: (percentage) => {console.log(percentage)}
   });
   console.log('pixiGraph===', pixiGraph);
+
+  // pixiGraph.on('nodeMoveStart', (event, nodeKey, point) => {
+  //   console.log('nodeMoveStart', event, nodeKey, point);
+  // })
+  // pixiGraph.on('nodeMove', (event, nodeKey, point) => {
+  //   console.log('nodeMove', event, nodeKey, point);
+  // })
+  // pixiGraph.on('nodeMoveEnd', (event, nodeKey, point) => {
+  //   console.log('nodeMoveEnd', event, nodeKey, point);
+  // })
 
 
   // 加载进度对外接口

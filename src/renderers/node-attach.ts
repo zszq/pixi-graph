@@ -133,8 +133,5 @@ export function updateNodeAttachGroup(nodeAttachGfx: Container, nodeStyle: NodeS
 }
 
 export function updateNodeAttachVisibility(nodeAttachGfx: Container, zoomStep: number) {
-  let childrens = nodeAttachGfx.children;
-  childrens.forEach(sprite => {
-    sprite.renderable = sprite.renderable && zoomStep >= 2;
-  })
+  nodeAttachGfx.renderable = nodeAttachGfx.renderable && zoomStep >= 2;
 }
