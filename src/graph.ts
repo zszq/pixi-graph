@@ -195,7 +195,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private watermarkCount: number = 0;
 
   // private currentZoomStep: number = 0;
-  // private zoomFlag: boolean = false;
+  private zoomFlag: boolean = false;
 
   private onGraphNodeAddedBound = this.onGraphNodeAdded.bind(this);
   private onGraphEdgeAddedBound = this.onGraphEdgeAdded.bind(this);
@@ -866,14 +866,14 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       edge.updateVisibility(zoomStep);
     });
 
-    // 处理缩小隐藏线之后，拖拽点后再放大后，相关线不显示问题 (大量数据缩放会很卡)
-    // if (zoomStep == 0) {
-    //   this.zoomFlag = true;
-    // }
-    // if (zoomStep == 1 && this.zoomFlag) {
-    //   this.zoomFlag = false;
-    //   this.onGraphEachEdgeAttributesUpdated();
-    // }
+    // 处理缩小隐藏线之后，拖拽点后再放大后，相关线不显示问题 (大量数据拖拽会延迟卡顿？)
+    if (zoomStep == 0) {
+      this.zoomFlag = true;
+    }
+    if (zoomStep == 1 && this.zoomFlag) {
+      this.zoomFlag = false;
+      this.onGraphEachEdgeAttributesUpdated();
+    }
   }
 
   // 高性能模式下隐藏所有线
