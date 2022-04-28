@@ -288,9 +288,9 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // this.viewport.addChild(this.frontEdgeLayer);
     // this.viewport.addChild(this.frontEdgeLabelLayer);
     // this.viewport.addChild(this.frontEdgeArrowLayer);
-    this.viewport.addChild(this.nodeLayer);
-    this.viewport.addChild(this.nodeLabelLayer);
     this.viewport.addChild(this.nodeAttachLayer);
+    this.viewport.addChild(this.nodeLabelLayer);
+    this.viewport.addChild(this.nodeLayer);
     // this.viewport.addChild(this.frontNodeLayer);
     // this.viewport.addChild(this.frontNodeLabelLayer);
 
