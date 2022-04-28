@@ -119,6 +119,8 @@ export interface GraphOptions<NodeAttributes extends BaseNodeAttributes = BaseNo
   resources?: IAddOptions[]; // bitmap font
   dragOffset?: boolean; // 拖拽保持偏移
   highPerformance?: boolean; // 高性能模式
+  maxScale?: number;
+  minScale?: number;
   onprogress?: (event: any) => void;
 }
 
@@ -153,8 +155,10 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   resources?: IAddOptions[];
   highPerformance?: boolean;
   dragOffset?: boolean;
-  isViewportMove: boolean;
-  isNodeMove: boolean;
+  isViewportMove?: boolean;
+  isNodeMove?: boolean;
+  maxScale: number = 1.5;
+  minScale: number = 0.1;
   onprogress?: (event: any) => void;
 
   private app: Application;
@@ -191,6 +195,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private watermarkCount: number = 0;
 
   // private currentZoomStep: number = 0;
+  // private zoomFlag: boolean = false;
 
   private onGraphNodeAddedBound = this.onGraphNodeAdded.bind(this);
   private onGraphEdgeAddedBound = this.onGraphEdgeAdded.bind(this);
@@ -205,6 +210,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private onDocumentMouseMoveBound = this.onDocumentMouseMove.bind(this);
   private onDocumentMouseUpBound = this.onDocumentMouseUp.bind(this);
 
+  private onViewportZoomedBound = this.onViewportZoomed.bind(this);
+
   constructor(options: GraphOptions<NodeAttributes, EdgeAttributes>) {
     super();
 
@@ -215,8 +222,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.resources = options.resources;
     this.highPerformance = options.highPerformance;
     this.dragOffset = options.dragOffset;
-    this.isViewportMove = false;
-    this.isNodeMove = false;
+    if (options.maxScale) this.maxScale = options.maxScale;
+    if (options.minScale) this.minScale = options.minScale;
     this.onprogress = options.onprogress;
 
     if (!(this.container instanceof HTMLElement)) {
@@ -252,7 +259,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       .drag()
       .pinch()
       .wheel()
-      .clampZoom({ maxScale: 1.5, minScale: 0.1 });
+      .clampZoom({ maxScale: this.maxScale, minScale: this.minScale });
     // .decelerate()
     this.app.stage.addChild(this.viewport);
 
@@ -320,14 +327,14 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.graph.on('eachNodeAttributesUpdated', this.onGraphEachNodeAttributesUpdatedBound);
       this.graph.on('eachEdgeAttributesUpdated', this.onGraphEachEdgeAttributesUpdatedBound);
 
-      this.viewport.on('drag-start', this.edgeRenderableAllStart.bind(this));
-      this.viewport.on('drag-end', this.edgeRenderableAllEnd.bind(this));
-      this.viewport.on('zoomed', this.edgeRenderableAllStart.bind(this));
-      this.viewport.on('zoomed-end', this.edgeRenderableAllEnd.bind(this));
-      this.viewport.on('snap-start', this.edgeRenderableAllStart.bind(this));
-      this.viewport.on('snap-end', this.edgeRenderableAllEnd.bind(this));
-      this.viewport.on('snap-zoom-start', this.edgeRenderableAllStart.bind(this));
-      this.viewport.on('snap-zoom-end', this.edgeRenderableAllEnd.bind(this));
+      this.viewport.on('drag-start', this.edgeRenderableAllHide.bind(this));
+      this.viewport.on('drag-end', this.edgeRenderableAllShow.bind(this));
+      this.viewport.on('zoomed', this.onViewportZoomedBound);
+      this.viewport.on('zoomed-end', this.edgeRenderableAllShow.bind(this));
+      this.viewport.on('snap-start', this.edgeRenderableAllHide.bind(this));
+      this.viewport.on('snap-end', this.edgeRenderableAllShow.bind(this));
+      this.viewport.on('snap-zoom-start', this.edgeRenderableAllHide.bind(this));
+      this.viewport.on('snap-zoom-end', this.edgeRenderableAllShow.bind(this));
 
       // initial draw
       this.createGraph();
@@ -351,14 +358,14 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.graph.off('eachNodeAttributesUpdated', this.onGraphEachNodeAttributesUpdatedBound);
     this.graph.off('eachEdgeAttributesUpdated', this.onGraphEachEdgeAttributesUpdatedBound);
 
-    this.viewport.off('drag-start', this.edgeRenderableAllStart.bind(this));
-    this.viewport.off('drag-end', this.edgeRenderableAllEnd.bind(this));
-    this.viewport.off('zoomed', this.edgeRenderableAllStart.bind(this));
-    this.viewport.off('zoomed-end', this.edgeRenderableAllEnd.bind(this));
-    this.viewport.off('snap-start', this.edgeRenderableAllStart.bind(this));
-    this.viewport.off('snap-end', this.edgeRenderableAllEnd.bind(this));
-    this.viewport.off('snap-zoom-start', this.edgeRenderableAllStart.bind(this));
-    this.viewport.off('snap-zoom-end', this.edgeRenderableAllEnd.bind(this));
+    this.viewport.off('drag-start', this.edgeRenderableAllHide.bind(this));
+    this.viewport.off('drag-end', this.edgeRenderableAllShow.bind(this));
+    this.viewport.off('zoomed', this.onViewportZoomedBound);
+    this.viewport.off('zoomed-end', this.edgeRenderableAllShow.bind(this));
+    this.viewport.off('snap-start', this.edgeRenderableAllHide.bind(this));
+    this.viewport.off('snap-end', this.edgeRenderableAllShow.bind(this));
+    this.viewport.off('snap-zoom-start', this.edgeRenderableAllHide.bind(this));
+    this.viewport.off('snap-zoom-end', this.edgeRenderableAllShow.bind(this));
 
     this.resizeObserver.disconnect();
     this.resizeObserver = undefined!;
@@ -399,6 +406,16 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.viewport.setZoom(1); // otherwise scale is 0 when initialized in React useEffect
     this.viewport.center = graphCenter;
     this.viewport.fit(true);
+  }
+
+  // 超过minScale和maxScale范围，zoomed-end事件不执行，单独处理zoomed事件，防止线消失
+  private onViewportZoomed() {
+    let scaled = this.viewport.scaled;
+    if (scaled > this.minScale && scaled < this.maxScale) {
+      this.edgeRenderableAllHide();
+    } else {
+      this.edgeRenderableAllShow();
+    }
   }
 
   private onGraphNodeAdded(data: { key: string, attributes: NodeAttributes }) {
@@ -849,14 +866,18 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       edge.updateVisibility(zoomStep);
     });
 
-    // 处理缩小隐藏线之后，再拖拽放大后，线不显示问题 (大量数据缩放会很卡)
-    // if (zoomStep === 1) {
+    // 处理缩小隐藏线之后，拖拽点后再放大后，相关线不显示问题 (大量数据缩放会很卡)
+    // if (zoomStep == 0) {
+    //   this.zoomFlag = true;
+    // }
+    // if (zoomStep == 1 && this.zoomFlag) {
+    //   this.zoomFlag = false;
     //   this.onGraphEachEdgeAttributesUpdated();
     // }
   }
 
-  // 高性能模式下所有线隐藏
-  private edgeRenderableAllStart() {
+  // 高性能模式下隐藏所有线
+  private edgeRenderableAllHide() {
     if (this.highPerformance) {
       if (!this.isViewportMove) {
         this.isViewportMove = true;
@@ -864,8 +885,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       }
     }
   }
-  // 高性能模式下所有线显示
-  private edgeRenderableAllEnd() {
+  // 高性能模式下显示所有线
+  private edgeRenderableAllShow() {
     if (this.highPerformance) {
       this.isViewportMove = false;
       this.edgeRenderableAll(true);
