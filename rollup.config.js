@@ -4,9 +4,9 @@ import resolve from '@rollup/plugin-node-resolve';
 import typescript from 'rollup-plugin-typescript2';
 import visualizer from 'rollup-plugin-visualizer';
 import { terser } from 'rollup-plugin-terser';
-import dts from 'rollup-plugin-dts';
-import serve from "rollup-plugin-serve";
-import livereload from "rollup-plugin-livereload";
+// import dts from 'rollup-plugin-dts';
+// import serve from "rollup-plugin-serve";
+// import livereload from "rollup-plugin-livereload";
 
 const bundle = (format, filename, options = {}) => ({
   input: 'src/index.ts',
@@ -31,22 +31,22 @@ const bundle = (format, filename, options = {}) => ({
     ...(options.stats ? [visualizer({
       filename: filename + '.stats.html',
     })] : []),
-    serve({
-      // open: true,
-      // openPage: '/demo/',
-      contentBase: [""],
-      // host: '127.0.0.1',
-      // port: 10001,
-    }),
-    livereload({ watch: "dist" })
+    // serve({
+    //   // open: true,
+    //   // openPage: '/demo/',
+    //   contentBase: [""],
+    //   // host: '127.0.0.1',
+    //   // port: 10001,
+    // }),
+    // livereload({ watch: "dist" })
   ],
 });
 
 export default [
   // bundle('cjs', pkg.main),
   // bundle('es', pkg.module),
-  bundle('umd', pkg.browser.replace('.min', ''), { resolve: true, stats: true }),
-  // bundle('umd', pkg.browser, { resolve: true, minimize: true }),
+  // bundle('umd', pkg.browser.replace('.min', ''), { resolve: true, stats: true }),
+  bundle('umd', pkg.browser, { resolve: true, minimize: true }),
   // {
   //   input: 'src/index.ts',
   //   output: {

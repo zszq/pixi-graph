@@ -173,7 +173,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   // private frontEdgeLabelLayer: Container;
   // private frontEdgeArrowLayer: Container;
   private nodeLayer: Container;
-  // private nodeLabelLayer: Container;
+  private nodeLabelLayer: Container;
+  private nodeAttachLayer: Container;
   // private frontNodeLayer: Container;
   // private frontNodeLabelLayer: Container;
   private nodeKeyToNodeObject = new Map<string, PixiNode>();
@@ -277,7 +278,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // this.frontEdgeLabelLayer = new Container();
     // this.frontEdgeArrowLayer = new Container();
     this.nodeLayer = new Container();
-    // this.nodeLabelLayer = new Container();
+    this.nodeLabelLayer = new Container();
+    this.nodeAttachLayer = new Container();
     // this.frontNodeLayer = new Container();
     // this.frontNodeLabelLayer = new Container();
     this.viewport.addChild(this.edgeLayer);
@@ -287,7 +289,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // this.viewport.addChild(this.frontEdgeLabelLayer);
     // this.viewport.addChild(this.frontEdgeArrowLayer);
     this.viewport.addChild(this.nodeLayer);
-    // this.viewport.addChild(this.nodeLabelLayer);
+    this.viewport.addChild(this.nodeLabelLayer);
+    this.viewport.addChild(this.nodeAttachLayer);
     // this.viewport.addChild(this.frontNodeLayer);
     // this.viewport.addChild(this.frontNodeLabelLayer);
 
@@ -493,10 +496,12 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // this.frontNodeLayer.addChild(node.nodeGfx);
     // this.frontNodeLabelLayer.addChild(node.nodeLabelGfx);
 
-    const nodeLayerChildrens = this.nodeLayer.children;
-    this.nodeLayer.setChildIndex(node.nodeGfx, nodeLayerChildrens.length - 1);
-    this.nodeLayer.setChildIndex(node.nodeLabelGfx, nodeLayerChildrens.length - 1);
-    this.nodeLayer.setChildIndex(node.nodeAttachGfx, nodeLayerChildrens.length - 1);
+    const nodeLayerChildren = this.nodeLayer.children;
+    const nodeLabelLayerChildren = this.nodeLabelLayer.children;
+    const AttachLayerChildren = this.nodeAttachLayer.children;
+    this.nodeLayer.setChildIndex(node.nodeGfx, nodeLayerChildren.length - 1);
+    this.nodeLabelLayer.setChildIndex(node.nodeLabelGfx, nodeLabelLayerChildren.length - 1);
+    this.nodeAttachLayer.setChildIndex(node.nodeAttachGfx, AttachLayerChildren.length - 1);
   }
 
   private unhoverNode(nodeKey: string) {
@@ -600,13 +605,15 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     if (this.highPerformance) {
       if (!this.isNodeMove) {
         this.isNodeMove = true;
-        this.edgeRenderable(nodeKey, false);
+        this.edgeRenderableAll(false);
+        this.nodeLabelRenderableAll(false);
+        this.nodeAttachRenderableAll(false);
       }
     } else {
       this.graph.edges(nodeKey).forEach(this.updateEdgeStyleByKey.bind(this));
     }
 
-    this.emit('nodeMove', event, nodeKey, point);
+    this.emit('nodeMove', event, nodeKey, newPosition);
   }
 
   private enableNodeDragging(event: MouseEvent, nodeKey: string, point: IPointData) {
@@ -633,7 +640,10 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     if (this.highPerformance) {
       this.isNodeMove = false;
       if (this.mousedownNodeKey) {
-        this.edgeRenderable(this.mousedownNodeKey, true);
+        this.edgeRenderableAll(true);
+        this.graph.edges(nodeKey).forEach(this.updateEdgeStyleByKey.bind(this)); // 防止拖拽后不显示线
+        this.nodeLabelRenderableAll(true);
+        this.nodeAttachRenderableAll(true);
       }
     }
 
@@ -711,7 +721,9 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     //   console.timeEnd('renderNode');
     //   this.nodeKeyToNodeObjectTemp.clear();
     // }, 300)
-    this.nodeLayer.addChild(node.nodeGfx, node.nodeLabelGfx, node.nodeAttachGfx);
+    this.nodeLayer.addChild(node.nodeGfx);
+    this.nodeLabelLayer.addChild(node.nodeLabelGfx);
+    this.nodeAttachLayer.addChild(node.nodeAttachGfx);
 
     // this.nodeLabelLayer.addChild(node.nodeLabelGfx);
     // this.frontNodeLayer.addChild(node.nodePlaceholderGfx);
@@ -782,8 +794,9 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private dropNode(nodeKey: string) {
     const node = this.nodeKeyToNodeObject.get(nodeKey)!;
 
-    this.nodeLayer.removeChild(node.nodeGfx, node.nodeLabelGfx, node.nodeAttachGfx);
-    // this.nodeLabelLayer.removeChild(node.nodeLabelGfx);
+    this.nodeLayer.removeChild(node.nodeGfx);
+    this.nodeLabelLayer.removeChild(node.nodeLabelGfx);
+    this.nodeAttachLayer.removeChild(node.nodeAttachGfx);
     // this.frontNodeLayer.removeChild(node.nodePlaceholderGfx);
     // this.frontNodeLabelLayer.removeChild(node.nodeLabelPlaceholderGfx);
     this.nodeKeyToNodeObject.delete(nodeKey);
@@ -882,6 +895,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       if (!this.isViewportMove) {
         this.isViewportMove = true;
         this.edgeRenderableAll(false);
+        this.nodeLabelRenderableAll(false);
+        this.nodeAttachRenderableAll(false);
       }
     }
   }
@@ -890,6 +905,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     if (this.highPerformance) {
       this.isViewportMove = false;
       this.edgeRenderableAll(true);
+      this.nodeLabelRenderableAll(true);
+      this.nodeAttachRenderableAll(true);
     }
   }
 
@@ -1020,19 +1037,31 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     return this.edgeKeyToEdgeObject;
   }
 
-  // 显示隐藏点相关的线(可渲染)
-  edgeRenderable(nodeKey: string, renderable: boolean) {
-    this.graph.forEachEdge(nodeKey, (edgeKey, attributes, source, target, sourceAttributes, targetAttributes) => {
-      const edgeGfx = this.edgeKeyToEdgeObject.get(edgeKey);
-      if (edgeGfx) edgeGfx.edgeRenderable(renderable);
-      if (renderable) this.updateEdgeStyleByKey(edgeKey);
-    })
-
-  }
   // 显示隐藏所有的线(可渲染)
   edgeRenderableAll(renderable: boolean) {
     this.edgeLayer.renderable = renderable;
     this.edgeLabelLayer.renderable = renderable;
+  }
+  // 显示隐藏所有的线label(可渲染)
+  edgeLabelRenderableAll(renderable: boolean) {
+    this.edgeLabelLayer.renderable = renderable;
+  }
+  // 显示隐藏点相关的线(可渲染)
+  edgeRenderable(nodeKey: string, renderable: boolean) {
+    this.graph.forEachEdge(nodeKey, (edgeKey, attributes, source, target, sourceAttributes, targetAttributes) => {
+      const edge = this.edgeKeyToEdgeObject.get(edgeKey);
+      if (edge) edge.edgeRenderable(renderable);
+      if (renderable) this.updateEdgeStyleByKey(edgeKey);
+    })
+  }
+
+  // 显示隐藏所有的点label(可渲染)
+  nodeLabelRenderableAll(renderable: boolean) {
+    this.nodeLabelLayer.renderable = renderable;
+  }
+  // 显示隐藏所有的点attach(可渲染)
+  nodeAttachRenderableAll(renderable: boolean) {
+    this.nodeAttachLayer.renderable = renderable;
   }
 
 }
