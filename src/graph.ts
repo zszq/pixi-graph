@@ -46,6 +46,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       fontFamily: 'Arial',
       fontSize: 20,
       fontWeight: '400',
+      align: 'left',
       color: '#ffffff',
       stroke: 'black',
       strokeThickness: 0,
@@ -56,6 +57,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       fontFamily: 'Arial',
       fontSize: 12,
       fontWeight: '400',
+      align: 'left',
       color: '#333333', // fill
       stroke: 'black',
       strokeThickness: 0,
@@ -72,6 +74,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
         fontFamily: 'Arial',
         fontSize: 12,
         fontWeight: '400',
+        align: 'left',
         color: '#333333', // fill
         stroke: 'black',
         strokeThickness: 0,
@@ -100,6 +103,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       fontFamily: 'Arial',
       fontSize: 12,
       fontWeight: '400',
+      align: 'left',
       color: '#333333',
       stroke: 'black',
       strokeThickness: 0,
@@ -194,9 +198,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
   private watermark: Container;
   private watermarkCount: number = 0;
-
-  // private currentZoomStep: number = 0;
-  private zoomFlag: boolean = false;
 
   private onGraphNodeAddedBound = this.onGraphNodeAdded.bind(this);
   private onGraphEdgeAddedBound = this.onGraphEdgeAdded.bind(this);
@@ -878,15 +879,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
       edge.updateVisibility(zoomStep);
     });
-
-    // 处理缩小隐藏线之后，拖拽点后再放大后，相关线不显示问题 (大量数据拖拽会延迟卡顿？)
-    if (zoomStep == 0) {
-      this.zoomFlag = true;
-    }
-    if (zoomStep == 1 && this.zoomFlag) {
-      this.zoomFlag = false;
-      this.onGraphEachEdgeAttributesUpdated();
-    }
   }
 
   // 高性能模式下隐藏所有线

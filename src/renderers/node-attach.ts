@@ -62,6 +62,7 @@ export function updateNodeAttachGroup(nodeAttachGfx: Container, nodeStyle: NodeS
           fontFamily: nodeStyle.attach.text.fontFamily,
           fontSize: nodeStyle.attach.text.fontSize,
           fontWeight: nodeStyle.attach.text.fontWeight,
+          align: nodeStyle.attach.text.align,
           color: nodeStyle.attach.text.color,
           stroke: nodeStyle.attach.text.stroke,
           strokeThickness: nodeStyle.attach.text.strokeThickness

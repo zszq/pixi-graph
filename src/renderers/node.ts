@@ -93,6 +93,7 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
         fontFamily: nodeStyle.icon.fontFamily,
         fontSize: nodeStyle.icon.fontSize,
         fontWeight: nodeStyle.icon.fontWeight,
+        align: nodeStyle.icon.align,
         color: nodeStyle.icon.color,
         stroke: nodeStyle.icon.stroke,
         strokeThickness: nodeStyle.icon.strokeThickness

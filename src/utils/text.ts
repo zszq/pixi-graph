@@ -1,4 +1,4 @@
-import { Text } from '@pixi/text';
+import { Text, TextStyleAlign, TextStyleFontWeight } from '@pixi/text';
 import { BitmapText } from '@pixi/text-bitmap';
 
 export enum TextType {
@@ -13,7 +13,8 @@ export enum TextType {
 export interface TextStyle {
   fontFamily: string;
   fontSize: number;
-  fontWeight: any;
+  fontWeight: TextStyleFontWeight;
+  align: TextStyleAlign;
   color: string;
   stroke: string;
   strokeThickness: number;
@@ -27,6 +28,7 @@ export function textToPixi(type: TextType, content: string, style: TextStyle) {
       fontFamily: style.fontFamily,
       fontSize: style.fontSize,
       fontWeight: style.fontWeight,
+      align: style.align,
       fill: style.color,
       stroke: style.stroke,
       strokeThickness: style.strokeThickness,

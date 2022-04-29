@@ -2,7 +2,7 @@ import { Container } from '@pixi/display';
 import { InteractionEvent } from '@pixi/interaction';
 import { IPointData } from '@pixi/math';
 import { TypedEmitter } from 'tiny-typed-emitter';
-import { createEdge, updateEdgeStyle, updateEdgeVisibility } from './renderers/edge';
+import { createEdge, updateEdgeStyle } from './renderers/edge';
 import { createEdgeArrow, updateEdgeArrowStyle, updateEdgeArrowVisibility } from './renderers/edge-arrow';
 import { createEdgeLabel, updateEdgeLabelStyle, updateEdgeLabelVisibility } from './renderers/edge-label';
 import { EdgeStyle, NodeStyle } from './utils/style';
@@ -139,7 +139,9 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
   }
 
   updateVisibility(zoomStep: number) {
-    updateEdgeVisibility(this.edgeGfx, zoomStep, this.isSelfLoop);
+    // updateEdgeVisibility(this.edgeGfx, zoomStep, this.isSelfLoop);
+    this.edgeGfx.renderable = this.edgeGfx.renderable && zoomStep >= 1; // 修复 缩小至线隐藏 在拖拽点 在放大后 线不显示问题
+    // 可以更细粒度控制图元的显示隐藏
     updateEdgeLabelVisibility(this.edgeLabelGfx, zoomStep);
     updateEdgeArrowVisibility(this.edgeArrowGfx, zoomStep, this.isSelfLoop);
   }

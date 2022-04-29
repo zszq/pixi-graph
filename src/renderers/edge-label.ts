@@ -43,6 +43,7 @@ export function updateEdgeLabelStyle(edgeLabelGfx: Container, edgeStyle: EdgeSty
       fontFamily: edgeStyle.label.fontFamily,
       fontSize: edgeStyle.label.fontSize,
       fontWeight: edgeStyle.label.fontWeight,
+      align: edgeStyle.label.align,
       color: edgeStyle.label.color,
       stroke: edgeStyle.label.stroke,
       strokeThickness: edgeStyle.label.strokeThickness

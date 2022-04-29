@@ -1,6 +1,6 @@
 import deepmerge from 'deepmerge';
 import { BaseNodeAttributes, BaseEdgeAttributes } from '../attributes';
-import { TextType } from './text';
+import { TextType, TextStyle } from './text';
 
 export interface GraphStyle {
   node: {
@@ -16,7 +16,8 @@ export interface GraphStyle {
       type: TextType;
       fontFamily: string;
       fontSize: number;
-      fontWeight: string;
+      fontWeight: TextStyle['fontWeight'];
+      align: TextStyle['align'];
       color: string;
       stroke: string;
       strokeThickness: number;
@@ -26,29 +27,31 @@ export interface GraphStyle {
       type: TextType;
       fontFamily: string;
       fontSize: number;
-      fontWeight: string;
+      fontWeight: TextStyle['fontWeight'];
+      align: TextStyle['align'];
       color: string; // fill
       stroke: string;
-      strokeThickness: number,
+      strokeThickness: number;
       backgroundColor: string;
       padding: number;
     };
     attach: {
-      group: [],
-      shape: string,
-      size: number,
-      colors: {},
+      group: [];
+      shape: string;
+      size: number;
+      colors: {};
       text: {
-        type: TextType,
-        fontFamily: string,
-        fontSize: number,
-        fontWeight: string,
-        color: string, // fill
-        stroke: string,
-        strokeThickness: number,
-      },
-      colGap: number,
-      rowGap: number,
+        type: TextType;
+        fontFamily: string;
+        fontSize: number;
+        fontWeight: TextStyle['fontWeight'];
+        align: TextStyle['align'];
+        color: string; // fill
+        stroke: string;
+        strokeThickness: number;
+      };
+      colGap: number;
+      rowGap: number;
       crevice: number
     }
   };
@@ -56,25 +59,26 @@ export interface GraphStyle {
     width: number;
     color: string;
     selefLoop: {
-      radius: number,
+      radius: number;
       cross: number
-    },
-    gap: number,
-    bilateralKey: string,
+    };
+    gap: number;
+    bilateralKey: string;
     arrow: {
-      show: boolean,
+      show: boolean;
       size: number
-    },
+    };
     label: {
-      type: TextType,
-      fontFamily: string,
-      fontSize: number,
-      fontWeight: string,
-      content: string,
-      color: string, // fill
-      stroke: string,
-      strokeThickness: number,
-      backgroundColor: string,
+      type: TextType;
+      fontFamily: string;
+      fontSize: number;
+      fontWeight: TextStyle['fontWeight'];
+      align: TextStyle['align'];
+      content: string;
+      color: string; // fill
+      stroke: string;
+      strokeThickness: number;
+      backgroundColor: string;
       padding: number
     }
   };

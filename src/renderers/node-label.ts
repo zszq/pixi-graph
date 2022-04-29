@@ -45,6 +45,7 @@ export function updateNodeLabelStyle(nodeLabelGfx: Container, nodeStyle: NodeSty
       fontFamily: nodeStyle.label.fontFamily,
       fontSize: nodeStyle.label.fontSize,
       fontWeight: nodeStyle.label.fontWeight,
+      align: nodeStyle.label.align,
       color: nodeStyle.label.color,
       stroke: nodeStyle.label.stroke,
       strokeThickness: nodeStyle.label.strokeThickness
