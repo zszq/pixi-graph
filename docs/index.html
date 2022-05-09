@@ -515,7 +515,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   // });
   // 加载下一级
   pixiGraph.on('nodeClick', (event, nodeKey, nodeStyle) => {
-    // pixiGraph.dragEnable();
     console.log('nodeClick', event, nodeKey, nodeStyle, pixiGraph.checkNodeVisibility(nodeKey));
     // style.node.label.fontWeight = 'bolder';
     // addLeaf(nodeKey);
@@ -529,7 +528,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     // pixiGraph.viewport.snap(worldPosition.x, worldPosition.y, { removeOnComplete: true, removeOnInterrupt: true });
   });
   pixiGraph.on('nodeRightclick', (event, nodeKey, nodeStyle) => {
-    // pixiGraph.dragEnable();
     console.log('nodeRightclick', event, nodeKey, nodeStyle);
   });
   // pixiGraph.on('nodeMousemove', (event, nodeKey) => console.log('nodeMousemove', event, nodeKey));
@@ -540,11 +538,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   // pixiGraph.on('nodeMousedown', (event, nodeKey) => console.log('nodeMousedown', event, nodeKey));
   // pixiGraph.on('nodeMouseup', (event, nodeKey) => console.log('nodeMouseup', event, nodeKey));
   pixiGraph.on('edgeClick', (event, edgeKey, edgeStyle) => {
-    // pixiGraph.dragDisable();
     console.log('edgeClick', event, edgeKey, edgeStyle, pixiGraph.checkEdgeVisibility(edgeKey));
   });
   pixiGraph.on('edgeRightclick', (event, edgeKey, edgeStyle) => {
-    // pixiGraph.dragDisable();
     console.log('edgeRightclick', event, edgeKey, edgeStyle);
   });
   // pixiGraph.on('edgeMousemove', (event, edgeKey) => console.log('edgeMousemove', event, edgeKey));
@@ -631,8 +627,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('show').addEventListener('click', () => {
     pixiGraph.nodeVisibility('node0', true);
     pixiGraph.edgeVisibility('node0->node4', true);
-    // pixiGraph.getAllNodeObject();
-    // pixiGraph.getAllEdgeObject();
   });
   // 创建水印
   document.getElementById('createWatermark').addEventListener('click', () => {

@@ -860,6 +860,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     edge.updatePosition(sourceNodePosition, targetNodePosition, edgeStyle, sourceNodeStyle, targetNodeStyle);
   }
 
+
+
   // 可见性（剔除）
   private updateGraphVisibility() {
     this.culling();
@@ -879,6 +881,16 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
       edge.updateVisibility(zoomStep);
     });
+  }
+  
+  // 剔除
+  culling() {
+    this.cull.addAll((this.viewport.children as Container[]).map(layer => layer.children).flat());
+    this.cull.cull(this.app.renderer.screen);
+  }
+  // 取消剔除
+  uncull() {
+    this.cull.uncull();
   }
 
   // 高性能模式下隐藏所有线
@@ -900,17 +912,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.nodeLabelRenderableAll(true);
       this.nodeAttachRenderableAll(true);
     }
-  }
-
-
-  // 剔除
-  culling() {
-    this.cull.addAll((this.viewport.children as Container[]).map(layer => layer.children).flat());
-    this.cull.cull(this.app.renderer.screen);
-  }
-  // 取消剔除
-  uncull() {
-    this.cull.uncull();
   }
 
   // 设置缩放
@@ -991,15 +992,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     });
   }
 
-  // 激活拖拽
-  dragEnable() {
-    this.viewport.pause = false;
-  }
-  // 暂停拖拽
-  dragDisable() {
-    this.viewport.pause = true;
-  }
-
   // 添加水印
   createWatermark(option: WatermarkOption) {
     let containerWidth = this.container.clientWidth;
@@ -1018,15 +1010,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   // 清除所有水印
   clearWatermark() {
     this.watermark.removeChildren();
-  }
-
-  // 获取所有的点容器信息
-  getAllNodeObject() {
-    return this.nodeKeyToNodeObject;
-  }
-  // 获取所有的线容器信息
-  getAllEdgeObject() {
-    return this.edgeKeyToEdgeObject;
   }
 
   // 显示隐藏所有的线(可渲染)
