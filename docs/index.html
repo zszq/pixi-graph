@@ -246,10 +246,10 @@ window.addEventListener('DOMContentLoaded', async () => {
         // type: PixiGraph.TextType.IMAGE, // TEXT or IMAGE
         type: PixiGraph.TextType.TEXT, // TEXT or IMAGE
         content: (node) => {
-          return '';
+          return '＋';
           // return node.icon ? node.icon : 'http://127.0.0.1:8080/docs/images/bz.jpeg'; // 使用图片方法(PixiGraph.TextType.IMAGE，返回相应图片路径)
           
-          // 使用字体图表的方法(导入相关字体文件后使用);
+          // 使用字体图标的方法(导入相关字体文件后使用);
           // let unicode = '&#xe7f8;';
           // if (unicode === "") return "";
           // const num = unicode.replace("&#x", "").replace(";", "");
@@ -257,7 +257,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           // return str;
         },
         fontFamily: 'iconfont',
-        fontSize: node => 12,
+        fontSize: node => 50,
         color: '#ffffff',
       },
       label: {

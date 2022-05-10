@@ -48,7 +48,7 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     nodeGfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
     nodeGfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
     nodeGfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
-    createNode(nodeGfx, this.nodeStyle);
+    createNode(nodeGfx);
     return nodeGfx;
   }
 

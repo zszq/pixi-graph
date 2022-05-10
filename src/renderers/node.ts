@@ -16,7 +16,7 @@ const NODE_CIRCLE = 'NODE_CIRCLE';
 const NODE_CIRCLE_BORDER = 'NODE_CIRCLE_BORDER';
 const NODE_ICON = 'NODE_ICON';
 
-export function createNode(nodeGfx: Container, nodeStyle: NodeStyle) {
+export function createNode(nodeGfx: Container) {
   // nodeGfx
   nodeGfx.hitArea = new Circle(0, 0);
   
@@ -36,14 +36,6 @@ export function createNode(nodeGfx: Container, nodeStyle: NodeStyle) {
   const nodeIcon = new Sprite();
   nodeIcon.name = NODE_ICON;
   nodeIcon.anchor.set(0.5);
-  
-  let mask = new Graphics();
-  mask.beginFill(0xFF3333, 0.01);
-  mask.drawCircle(0, 0, nodeStyle.size);
-  mask.endFill();
-  // nodeIcon.mask = mask;
-
-  // nodeGfx.addChild(mask);
   nodeGfx.addChild(nodeIcon);
 }
 
