@@ -1,0 +1,60 @@
+{
+  "nodes": [
+    {
+      "id": "node0",
+      "group": [4],
+      "label": "标签0",
+      "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+    },
+    {
+      "id": "node1",
+      "group": 0,
+      "label": "标签1",
+      "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+    },
+    {
+      "id": "node2",
+      "group": 4,
+      "label": "标签2",
+      "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+    }
+  ],
+  "links": [
+    {
+      "source": "node0",
+      "target": "node0",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node0",
+      "target": "node1",
+      "label": "交易500元",
+      "value": 4
+    },
+    {
+      "source": "node1",
+      "target": "node0",
+      "label": "交易500元",
+      "value": 9
+    },
+    {
+      "source": "node0",
+      "target": "node2",
+      "label": "交易500元",
+      "value": 1
+    },
+    {
+      "source": "node2",
+      "target": "node0",
+      "label": "交易500元",
+      "value": 6
+    },
+    {
+      "source": "node1",
+      "target": "node2",
+      "label": "交易500元",
+      "value": 1
+    }
+  ]
+}
