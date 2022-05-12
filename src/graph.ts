@@ -122,7 +122,7 @@ export interface GraphOptions<NodeAttributes extends BaseNodeAttributes = BaseNo
   hoverStyle: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   resources?: IAddOptions[]; // bitmap font
   dragOffset?: boolean; // 拖拽保持偏移
-  highPerformance?: boolean; // 高性能模式
+  highPerformance?: { nodeNumber: number, edgeNumber: number }; // 高性能模式
   maxScale?: number;
   minScale?: number;
   onprogress?: (event: any) => void;
@@ -157,7 +157,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   style: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   hoverStyle: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   resources?: IAddOptions[];
-  highPerformance?: boolean;
+  highPerformance?: { nodeNumber: number, edgeNumber: number };
   dragOffset?: boolean;
   isViewportMove?: boolean;
   isNodeMove?: boolean;
@@ -348,6 +348,20 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       // const worldLine = new Graphics().lineStyle(3, 0xff0000).drawRect(0, 0, this.viewport.worldWidth, this.viewport.worldHeight);
       // this.viewport.addChild(worldLine);
     });
+  }
+
+  private createGraph() {
+    console.time('create-render');
+    // this.emit('progress', 0); // 渲染阻塞，不能处理进度条等渲染操作
+    this.onprogress && this.onprogress(0);
+    this.graph.forEachNode(this.createNode.bind(this));
+    // this.emit('progress', 50);
+    this.onprogress && this.onprogress(50);
+    this.graph.forEachEdge(this.createEdge.bind(this));
+    // this.emit('progress', 100);
+    this.onprogress && this.onprogress(100);
+    console.timeEnd('create-render');
+    console.log(this.graph.mapNodes((nodeKey, attributes) => attributes), this.graph.mapEdges((edgeKey, attributes) => attributes));
   }
 
   destroy() {
@@ -603,7 +617,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
     // update style
     this.updateNodeStyleByKey(nodeKey); // 在这里更新节点，比在nodeAttributesUpdated事件监听里性能更好 why？
-    if (this.highPerformance) {
+    if(this.checkHighPerformance()) {
       if (!this.isNodeMove) {
         this.isNodeMove = true;
         this.edgeRenderableAll(false);
@@ -638,7 +652,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private onDocumentMouseUp(event: MouseEvent, nodeKey: string) {
     this.viewport.pause = false; // enable viewport dragging
 
-    if (this.highPerformance) {
+    if(this.checkHighPerformance()) {
       this.isNodeMove = false;
       if (this.mousedownNodeKey) {
         this.edgeRenderableAll(true);
@@ -654,19 +668,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     const eventPosition = new Point(event.offsetX, event.offsetY);
     const point = this.viewport.toWorld(eventPosition);
     this.emit('nodeMoveEnd', event, nodeKey, point);
-  }
-
-  private createGraph() {
-    console.time('create-render');
-    // this.emit('progress', 0); // 渲染阻塞，不能处理进度条等渲染操作
-    this.onprogress && this.onprogress(0);
-    this.graph.forEachNode(this.createNode.bind(this));
-    // this.emit('progress', 50);
-    this.onprogress && this.onprogress(50);
-    this.graph.forEachEdge(this.createEdge.bind(this));
-    // this.emit('progress', 100);
-    this.onprogress && this.onprogress(100);
-    console.timeEnd('create-render');
   }
 
   private createNode(nodeKey: string, nodeAttributes: NodeAttributes) {
@@ -895,7 +896,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
   // 高性能模式下隐藏所有线
   private edgeRenderableAllHide() {
-    if (this.highPerformance) {
+    if(this.checkHighPerformance()) {
       if (!this.isViewportMove) {
         this.isViewportMove = true;
         this.edgeRenderableAll(false);
@@ -906,11 +907,32 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
   // 高性能模式下显示所有线
   private edgeRenderableAllShow() {
-    if (this.highPerformance) {
+    if(this.checkHighPerformance()) {
       this.isViewportMove = false;
       this.edgeRenderableAll(true);
       this.nodeLabelRenderableAll(true);
       this.nodeAttachRenderableAll(true);
+    }
+  }
+
+  // 检查highPerformance
+  private checkHighPerformance(): boolean {
+    if (this.highPerformance) {
+      let order = this.graph.order;
+      let size = this.graph.size;
+      let nodeNumber = this.highPerformance.nodeNumber;
+      let edgeNumber = this.highPerformance.edgeNumber;
+      let nodeNumberType = Object.prototype.toString.call(nodeNumber) == '[object Number]';
+      let edgeNumberType = Object.prototype.toString.call(edgeNumber) == '[object Number]';
+      
+      if (nodeNumberType && edgeNumberType) {
+        return order >= nodeNumber || size >= edgeNumber;
+      } else {
+        console.error('highPerformance选项必须是数字!');
+        return false;
+      }
+    } else {
+      return false;
     }
   }
 
