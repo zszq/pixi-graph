@@ -212,7 +212,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private onDocumentMouseMoveBound = this.onDocumentMouseMove.bind(this);
   private onDocumentMouseUpBound = this.onDocumentMouseUp.bind(this);
 
-  private onViewportZoomedBound = this.onViewportZoomed.bind(this);
 
   constructor(options: GraphOptions<NodeAttributes, EdgeAttributes>) {
     super();
@@ -333,7 +332,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
       this.viewport.on('drag-start', this.edgeRenderableAllHide.bind(this));
       this.viewport.on('drag-end', this.edgeRenderableAllShow.bind(this));
-      this.viewport.on('zoomed', this.onViewportZoomedBound);
+      this.viewport.on('zoomed', this.onViewportZoomed.bind(this));
       this.viewport.on('zoomed-end', this.edgeRenderableAllShow.bind(this));
       this.viewport.on('snap-start', this.edgeRenderableAllHide.bind(this));
       this.viewport.on('snap-end', this.edgeRenderableAllShow.bind(this));
@@ -378,7 +377,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
     this.viewport.off('drag-start', this.edgeRenderableAllHide.bind(this));
     this.viewport.off('drag-end', this.edgeRenderableAllShow.bind(this));
-    this.viewport.off('zoomed', this.onViewportZoomedBound);
+    this.viewport.off('zoomed', this.onViewportZoomed.bind(this));
     this.viewport.off('zoomed-end', this.edgeRenderableAllShow.bind(this));
     this.viewport.off('snap-start', this.edgeRenderableAllHide.bind(this));
     this.viewport.off('snap-end', this.edgeRenderableAllShow.bind(this));
@@ -617,7 +616,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
     // update style
     this.updateNodeStyleByKey(nodeKey); // 在这里更新节点，比在nodeAttributesUpdated事件监听里性能更好 why？
-    if(this.checkHighPerformance()) {
+    if (this.checkHighPerformance()) {
       if (!this.isNodeMove) {
         this.isNodeMove = true;
         this.edgeRenderableAll(false);
@@ -652,7 +651,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private onDocumentMouseUp(event: MouseEvent, nodeKey: string) {
     this.viewport.pause = false; // enable viewport dragging
 
-    if(this.checkHighPerformance()) {
+    if (this.checkHighPerformance()) {
       this.isNodeMove = false;
       if (this.mousedownNodeKey) {
         this.edgeRenderableAll(true);
@@ -883,7 +882,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       edge.updateVisibility(zoomStep);
     });
   }
-  
+
   // 剔除
   culling() {
     this.cull.addAll((this.viewport.children as Container[]).map(layer => layer.children).flat());
@@ -896,7 +895,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
   // 高性能模式下隐藏所有线
   private edgeRenderableAllHide() {
-    if(this.checkHighPerformance()) {
+    if (this.checkHighPerformance()) {
       if (!this.isViewportMove) {
         this.isViewportMove = true;
         this.edgeRenderableAll(false);
@@ -907,7 +906,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
   // 高性能模式下显示所有线
   private edgeRenderableAllShow() {
-    if(this.checkHighPerformance()) {
+    if (this.checkHighPerformance()) {
       this.isViewportMove = false;
       this.edgeRenderableAll(true);
       this.nodeLabelRenderableAll(true);
@@ -924,7 +923,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       let edgeNumber = this.highPerformance.edgeNumber;
       let nodeNumberType = Object.prototype.toString.call(nodeNumber) == '[object Number]';
       let edgeNumberType = Object.prototype.toString.call(edgeNumber) == '[object Number]';
-      
+
       if (nodeNumberType && edgeNumberType) {
         return order >= nodeNumber || size >= edgeNumber;
       } else {
