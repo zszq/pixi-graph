@@ -12,7 +12,7 @@ Developing a full-featured graph visualization library is a significant effort. 
 
 [Demo](https://zakjan.github.io/pixi-graph/)
 
-<img src="docs/screenshot@2x.jpg" alt="Screenshot" width="640" height="320">
+<img src="demo/screenshot@2x.jpg" alt="Screenshot" width="640" height="320">
 
 ## Install
 
