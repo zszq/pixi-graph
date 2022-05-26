@@ -161,8 +161,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   dragOffset?: boolean;
   isViewportMove?: boolean;
   isNodeMove?: boolean;
-  maxScale: number = 1.5;
   minScale: number = 0.1;
+  maxScale: number = 1.5;
   onprogress?: (event: any) => void;
 
   private app: Application;
@@ -223,8 +223,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.resources = options.resources;
     this.highPerformance = options.highPerformance;
     this.dragOffset = options.dragOffset;
-    if (options.maxScale) this.maxScale = options.maxScale;
     if (options.minScale) this.minScale = options.minScale;
+    if (options.maxScale) this.maxScale = options.maxScale;
     this.onprogress = options.onprogress;
 
     if (!(this.container instanceof HTMLElement)) {
@@ -240,6 +240,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
+      // autoStart: false,
       powerPreference: "high-performance"
     });
     this.container.appendChild(this.app.view);
@@ -260,7 +261,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       .drag()
       .pinch()
       .wheel()
-      .clampZoom({ maxScale: this.maxScale, minScale: this.minScale });
+      .clampZoom({ minScale: this.minScale, maxScale: this.maxScale });
     // .decelerate()
     this.app.stage.addChild(this.viewport);
 
