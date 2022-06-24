@@ -4,24 +4,11 @@ import resolve from "@rollup/plugin-node-resolve";
 import typescript from "rollup-plugin-typescript2";
 import visualizer from "rollup-plugin-visualizer";
 import { terser } from "rollup-plugin-terser";
-// import dts from 'rollup-plugin-dts';
+import dts from "rollup-plugin-dts";
 import serve from "rollup-plugin-serve";
 import livereload from "rollup-plugin-livereload";
 
-function devEnvPlugins() {
-  let livereloadPlugins = livereload({ watch: "dist" });
-  let servePlugins = serve({
-    // open: true,
-    // openPage: '/demo/',
-    contentBase: [""],
-    // host: '127.0.0.1',
-    // port: 10001,
-  });
-
-  return process.env.ENV === "development"
-    ? [servePlugins, livereloadPlugins]
-    : [];
-}
+const isDevelopment = process.env.ENV === "development" ? true : false;
 
 const bundle = (format, filename, options = {}) => ({
   input: "src/index.ts",
@@ -43,29 +30,41 @@ const bundle = (format, filename, options = {}) => ({
     ...(options.stats
       ? [visualizer({ filename: filename + ".stats.html" })]
       : []),
-    ...devEnvPlugins(),
+    ...(isDevelopment
+      ? [
+          serve({
+            // open: true,
+            // openPage: '/demo/',
+            contentBase: [""],
+            // host: '127.0.0.1',
+            // port: 10001,
+          }),
+        ]
+      : []),
+    ...(isDevelopment ? [livereload({ watch: "dist" })] : []),
   ],
 });
+
+const name = isDevelopment ? pkg.browser.replace(".min", "") : pkg.browser;
+const generate_dts = () => {
+  return isDevelopment
+    ? []
+    : [
+        {
+          input: "src/index.ts",
+          output: { file: pkg.types, format: "es" },
+          plugins: [dts()],
+        },
+      ];
+};
 
 export default [
   // bundle('cjs', pkg.main),
   // bundle('es', pkg.module),
-  bundle(
-    "umd",
-    process.env.ENV === "development"
-      ? pkg.browser.replace(".min", "")
-      : pkg.browser,
-    { resolve: true, stats: true }
-  ),
-  // bundle('umd', pkg.browser, { resolve: true, minimize: true }),
-  // {
-  //   input: 'src/index.ts',
-  //   output: {
-  //     file: pkg.types,
-  //     format: 'es',
-  //   },
-  //   plugins: [
-  //     dts(),
-  //   ],
-  // },
+  bundle("umd", name, {
+    resolve: true,
+    stats: isDevelopment,
+    minimize: !isDevelopment,
+  }),
+  ...generate_dts(),
 ];
