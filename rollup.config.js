@@ -1,19 +1,34 @@
-import pkg from './package.json';
-import commonjs from '@rollup/plugin-commonjs';
-import resolve from '@rollup/plugin-node-resolve';
-import typescript from 'rollup-plugin-typescript2';
-import visualizer from 'rollup-plugin-visualizer';
-import { terser } from 'rollup-plugin-terser';
+import pkg from "./package.json";
+import commonjs from "@rollup/plugin-commonjs";
+import resolve from "@rollup/plugin-node-resolve";
+import typescript from "rollup-plugin-typescript2";
+import visualizer from "rollup-plugin-visualizer";
+import { terser } from "rollup-plugin-terser";
 // import dts from 'rollup-plugin-dts';
 import serve from "rollup-plugin-serve";
 import livereload from "rollup-plugin-livereload";
 
+function devEnvPlugins() {
+  let livereloadPlugins = livereload({ watch: "dist" });
+  let servePlugins = serve({
+    // open: true,
+    // openPage: '/demo/',
+    contentBase: [""],
+    // host: '127.0.0.1',
+    // port: 10001,
+  });
+
+  return process.env.ENV === "development"
+    ? [servePlugins, livereloadPlugins]
+    : [];
+}
+
 const bundle = (format, filename, options = {}) => ({
-  input: 'src/index.ts',
+  input: "src/index.ts",
   output: {
     file: filename,
     format: format,
-    name: 'PixiGraph',
+    name: "PixiGraph",
     sourcemap: true,
   },
   external: [
@@ -23,29 +38,25 @@ const bundle = (format, filename, options = {}) => ({
   plugins: [
     ...(options.resolve ? [resolve({ preferBuiltins: false })] : []),
     commonjs(),
-    typescript({
-      typescript: require('typescript'),
-      clean: options.stats,
-    }),
+    typescript({ typescript: require("typescript"), clean: options.stats }),
     ...(options.minimize ? [terser()] : []),
-    ...(options.stats ? [visualizer({
-      filename: filename + '.stats.html',
-    })] : []),
-    serve({
-      // open: true,
-      // openPage: '/demo/',
-      contentBase: [""],
-      // host: '127.0.0.1',
-      // port: 10001,
-    }),
-    livereload({ watch: "dist" })
+    ...(options.stats
+      ? [visualizer({ filename: filename + ".stats.html" })]
+      : []),
+    ...devEnvPlugins(),
   ],
 });
 
 export default [
   // bundle('cjs', pkg.main),
   // bundle('es', pkg.module),
-  bundle('umd', pkg.browser.replace('.min', ''), { resolve: true, stats: true }),
+  bundle(
+    "umd",
+    process.env.ENV === "development"
+      ? pkg.browser.replace(".min", "")
+      : pkg.browser,
+    { resolve: true, stats: true }
+  ),
   // bundle('umd', pkg.browser, { resolve: true, minimize: true }),
   // {
   //   input: 'src/index.ts',
