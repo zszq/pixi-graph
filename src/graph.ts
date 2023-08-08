@@ -899,7 +899,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       if (nodeNumberType && edgeNumberType) {
         return order >= nodeNumber || size >= edgeNumber;
       } else {
-        console.error('highPerformance选项必须是数字!');
+        console.error('highPerformance选项错误! { nodeNumber: number, edgeNumber: number }');
         return false;
       }
     } else {
