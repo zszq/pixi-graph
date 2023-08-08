@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "id": "node0",
+      "group": 4,
+      "label": "标签0source"
+    },
+    {
+      "id": "node1",
+      "group": 1,
+      "label": "标签1target"
+    }
+  ],
+  "links": [
+    {
+      "source": "node0",
+      "target": "node1",
+      "label": "交易500元",
+      "value": 4
+    },
+    {
+      "source": "node0",
+      "target": "node0",
+      "label": "交易500元",
+      "value": 4
+    }
+  ]
+}

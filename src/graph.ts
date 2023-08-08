@@ -984,10 +984,88 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     }
   }
 
-  // 提取图片
+  // 提取图片（锯齿严重，图大截图不完全）
   extract(full: boolean = true, format: string = 'image/png', quality: number = 0.92) {
     full && this.uncull();
     return this.app.renderer.plugins.extract.base64(this.viewport, format, quality);
+  }
+  // 提取图片，多次截图合并（无锯齿，图大截图不完全）
+  extractWithScreenShot() {
+    // this.uncull();
+    const corner = this.viewport.corner;
+    const scaled = this.viewport.scaled;
+    this.viewport.setZoom(1);
+
+    const nodesX = this.graph.mapNodes((nodeKey, attributes) => attributes.x);
+    const nodesY = this.graph.mapNodes((nodeKey, attributes) => attributes.y);
+
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    const minX = Math.min(...nodesX);
+    const maxX = Math.max(...nodesX);
+    const minY = Math.min(...nodesY);
+    const maxY = Math.max(...nodesY);
+    const startX = minX - WORLD_PADDING;
+    const startY = minY - WORLD_PADDING;
+
+    const rows = Math.ceil(((maxY - minY) + WORLD_PADDING * 2) / height);
+    const cols = Math.ceil(((maxX - minX) + WORLD_PADDING * 2) / width);
+
+    const canvas = document.createElement("canvas");
+    let limit = 16384 * 16384;
+    let viewWidth = width * cols;
+    let viewHeight = height * rows;
+
+    if (viewWidth * viewHeight > limit) {
+      this.viewport.setZoom(scaled);
+      return Promise.reject('图片过大无法导出');
+    }
+
+    canvas.width = viewWidth;
+    canvas.height = viewHeight;
+    const context = canvas.getContext("2d")!;
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const execute = async () => {
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          await moveAndDraw(
+            startX + i * width,
+            startY + j * height,
+            width * i,
+            height * j
+          );
+        }
+      }
+      this.viewport.setZoom(scaled);
+      this.viewport.moveCorner(corner);
+      // this.culling();
+      return canvas.toDataURL();
+    };
+
+    const moveAndDraw = async (
+      moveX: number,
+      moveY: number,
+      canvasX: number,
+      canvasY: number
+    ) => {
+      return new Promise((resolve, reject) => {
+        this.viewport.moveCorner(moveX, moveY);
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            let img: HTMLImageElement | null = new Image();
+            img.src = this.app.view.toDataURL("image/png");
+            img.onload = () => {
+              context.drawImage(<HTMLImageElement>img, canvasX, canvasY, width, height);
+              img = null;
+              resolve(undefined);
+            };
+          });
+        }, 16.7);
+      });
+    };
+    return execute();
   }
 
   // 移动到视图中心并取消缩放

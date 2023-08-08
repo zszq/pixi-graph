@@ -100,7 +100,7 @@
 //   '#17becf',
 // ];
 
-const NODE_COLOR_NORMAL = '#1f77b4';
+const NODE_COLOR_NORMAL = '#C6CCF5';
 const EDGE_COLOR_NORMAL = '#cccccc';
 const COLOR_SELECTED = '#ff7f0e';
 
@@ -132,11 +132,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     multi: true,
     type: 'undirected'
   });
-  // const { nodes, links } = await (await fetch('miserables.json')).json();
-  const { nodes, links } = await (await fetch('data500-1000.json')).json();
-  // const { nodes, links } = await (await fetch('data1000-5000.json')).json();
-  // const { nodes, links } = await (await fetch('data-10000-10000.json')).json();
-  // const { nodes, links } = await (await fetch('socfb-Caltech36.json')).json();
+  // const { nodes, links } = await (await fetch('./data/miserables.json')).json();
+  const { nodes, links } = await (await fetch('./data/data6-5.json')).json();
+  // const { nodes, links } = await (await fetch('./data/data500-1000.json')).json();
+  // const { nodes, links } = await (await fetch('./data/data1000-5000.json')).json();
+  // const { nodes, links } = await (await fetch('./data/data-10000-10000.json')).json();
+  // const { nodes, links } = await (await fetch('./data/socfb-Caltech36.json')).json();
   nodes.forEach(node => {
     graph.addNode(node.id, {...node});
   });
@@ -153,9 +154,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     graph.setNodeAttribute(node, 'y', Math.random());
   });
   console.time('compute');
-  forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 200 }});
+  forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 2000 }});
   console.timeEnd('compute');
-  // const positions = await (await fetch('position2.json')).json();
+  // const positions = await (await fetch('./data/position2.json')).json();
   // graph.forEachNode(node => {
   //   const position = positions[node];
   //   graph.setNodeAttribute(node, 'x', position.x);
@@ -239,8 +240,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       size: node => 15,
       color: node => NODE_COLOR_NORMAL,
       border: {
-        width: 3,
-        color: '#ccc',
+        width: 4,
+        color: '#4A5FE2',
       },
       icon: {
         // type: PixiGraph.TextType.IMAGE, // TEXT or IMAGE
@@ -302,7 +303,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     },
     edge: {
       width: edge => 1,
-      color: edge => '#000',
+      color: edge => '#999',
       selefLoop: { // 自循环线的样式
         radius: 30,  // 圆环半径
         cross: 10 // 点线相交距离
@@ -362,10 +363,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     minScale: 0.1,
     maxScale: 1.5,
     highPerformance: {
+      // 达到点线设定值值，拖拽不显示线，性能会更好
       nodeNumber: 0,
       edgeNumber: 0
     },
-    // dragOffset: true,
+    // dragOffset: true, // false 拖拽鼠标不偏移到点中心，拖拽过快会漂移
     onprogress: (percentage) => {console.log(percentage)}
   });
   console.log('pixiGraph===', pixiGraph);
@@ -598,17 +600,22 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   // 提取图片
   document.getElementById('extract').addEventListener('click', () => {
-    let src = pixiGraph.extract(true);
-    extract(src);
+    // let src = pixiGraph.extract(true);
+    // extract(src);
+    pixiGraph.extract()
+      .then(res => extract(res))
+      .catch(err => {
+        confirm(err);
+      })
   });
-  function extract(src) {
-    let img = document.createElement('img');
-    img.src = src;
-    let thumbnail_box = document.querySelector('#thumbnail');
-    let thumbnail_img = document.querySelector('#thumbnail img');
-    if (thumbnail_img) thumbnail_box.removeChild(thumbnail_img);
-    thumbnail_box.appendChild(img);
-  }
+  // function extract(src) {
+  //   let img = document.createElement('img');
+  //   img.src = src;
+  //   let thumbnail_box = document.querySelector('#thumbnail');
+  //   let thumbnail_img = document.querySelector('#thumbnail img');
+  //   if (thumbnail_img) thumbnail_box.removeChild(thumbnail_img);
+  //   thumbnail_box.appendChild(img);
+  // }
   function downloadImg(src) {
     let a = document.createElement('a');
     a.href = src;

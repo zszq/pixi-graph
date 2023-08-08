@@ -1,0 +1,85 @@
+{
+    "nodes": [
+        {
+            "id": "node0",
+            "group": [
+                1,
+                2,
+                3
+            ],
+            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+        },
+        {
+            "id": "node1",
+            "group": [
+                1,
+                2,
+                3
+            ],
+            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+        },
+        {
+            "id": "node2",
+            "group": [
+                1,
+                2,
+                3
+            ],
+            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+        },
+        {
+            "id": "node3",
+            "group": [
+                1,
+                2,
+                3
+            ],
+            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+        },
+        {
+            "id": "node4",
+            "group": [
+                1,
+                2,
+                3
+            ],
+            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+        },
+        {
+            "id": "node5",
+            "group": [
+                1,
+                2,
+                3
+            ],
+            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+        }
+    ],
+    "links": [
+        {
+            "source": "node0",
+            "target": "node1",
+            "value": 4
+        },
+        {
+            "source": "node0",
+            "target": "node2",
+            "value": 4
+        },
+        {
+            "source": "node0",
+            "target": "node3",
+            "value": 4
+        },
+        {
+            "source": "node0",
+            "target": "node4",
+            "value": 4
+        },
+        {
+            "source": "node0",
+            "target": "node5",
+            "value": 4
+        }
+    ]
+}
