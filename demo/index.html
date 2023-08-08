@@ -57,8 +57,6 @@
     <button id="add-node">Add Node</button>
     <button id="add-edge">Add Edge</button>
     <button id="extract">extract</button>
-    <button id="add-group">add group</button>
-    <button id="drop-group">drop group</button>
     <button id="show">visible-show</button>
     <button id="hide">visible-hide</button>
     <button id="createWatermark">createWatermark</button>
@@ -86,25 +84,9 @@
   <div id="thumbnail"></div>
 
 <script>
-// d3.schemeCategory10
-// const colors = [
-//   '#1f77b4',
-//   '#ff7f0e',
-//   '#2ca02c',
-//   '#d62728',
-//   '#9467bd',
-//   '#8c564b',
-//   '#e377c2',
-//   '#7f7f7f',
-//   '#bcbd22',
-//   '#17becf',
-// ];
-
 const NODE_COLOR_NORMAL = '#C6CCF5';
 const EDGE_COLOR_NORMAL = '#cccccc';
 const COLOR_SELECTED = '#ff7f0e';
-
-
 
 window.addEventListener('DOMContentLoaded', async () => {
   // let statusSelected = false;
@@ -156,60 +138,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   console.time('compute');
   forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 2000 }});
   console.timeEnd('compute');
-  // const positions = await (await fetch('./data/position2.json')).json();
-  // graph.forEachNode(node => {
-  //   const position = positions[node];
-  //   graph.setNodeAttribute(node, 'x', position.x);
-  //   graph.setNodeAttribute(node, 'y', position.y);
-  // });
-  // graph.addNode('node0', {
-  //   id: "node0",
-  //   group: [],
-  //   label: "标签0",
-  //   icon: 'http://127.0.0.1:8080/docs/images/ba.png',
-  //   // icon: 'http://127.0.0.1:8080/docs/images/bz.jpeg',
-  //   x: 1,
-  //   y: 2
-  // });
-  // graph.addNode('node1', {
-  //   id: "node1",
-  //   group: [1, 5],
-  //   label: "标签1",
-  //   icon: 'http://127.0.0.1:8080/docs/images/ok.png',
-  //   // icon: 'http://127.0.0.1:8080/docs/images/yz.png',
-  //   // icon: 'http://192.168.224.78:8080/chain/virtual/node/icon/exchange-OkLink.com.png',
-  //   x: 1,
-  //   y: 300
-  // });
-  // graph.addNode('node2', {
-  //   id: "node2",
-  //   group: [1],
-  //   label: "标签2",
-  //   icon: 'http://127.0.0.1:8080/docs/images/ok.png',
-  //   // icon: 'http://127.0.0.1:8080/docs/images/bz.jpeg',
-  //   // icon: 'http://192.168.224.78:8080/chain/virtual/node/icon/exchange-OkLink.com.png',
-  //   x: 300,
-  //   y: 2
-  // });
-  // graph.addEdgeWithKey(`node0->node1`, 'node0', 'node1', {
-  //   source: "node0",
-  //   target: "node1",
-  //   label: "交易500元",
-  //   value: 4
-  // });
-  // graph.addEdgeWithKey(`node0->node2`, 'node0', 'node2', {
-  //   source: "node0",
-  //   target: "node2",
-  //   label: "交易500元",
-  //   value: 4
-  // });
-  // graph.addEdgeWithKey(`node1->node2`, 'node1', 'node2', {
-  //   source: "node1",
-  //   target: "node2",
-  //   label: "交易500元",
-  //   value: 4
-  // });
-  // graph.clear();
+
   // function setCenter() {
   //   const WORLD_PADDING = 100;
   //   const nodesX = graph.nodes().map(nodeKey => graph.getNodeAttribute(nodeKey, 'x'));
@@ -273,32 +202,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         strokeThickness: 3,
         backgroundColor: 'rgba(255, 255, 255, 0)',
         padding: 2,
-      },
-      attach: {
-        group: node => node.group ? node.group : [],
-        shape: 'rect', // circle or rect
-        size: 15,
-        colors: node => ({
-          0: '#F08BB4',
-          1: '#5B8FF9',
-          2: '#61DDAA',
-          3: '#65789B',
-          4: '#F6BD16',
-          5: '#7262FD',
-          6: '#78D3F8',
-          7: '#9661BC',
-          8: '#BF5600',
-          9: '#008685'
-        }),
-        text: {
-          type: PixiGraph.TextType.TEXT, // TEXT
-          // fontFamily: 'iconfont',
-          fontSize: node => 12,
-          color: '#fff',
-        },
-        colGap: 4, // 分组图标之间的左右间距
-        rowGap: 4, // 行之间的上下间距
-        crevice: 5 // 与点之间的上下距离
       }
     },
     edge: {
@@ -474,9 +377,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     // 可通过graphology-layout-forceatlas2进行布局
     let data = {
       nodes: [
-        {id: "node100", group: [5, 6], label: "标签100", icon: '', x: nodeAttr.x+50, y: nodeAttr.y+50},
-        {id: "node200", group: [4, 5], label: "标签200", icon: '', x: nodeAttr.x+100, y: nodeAttr.y+100},
-        {id: "node300", group: [2], label: "标签300", icon: '', x: nodeAttr.x+150, y: nodeAttr.y+150}
+        {id: "node100", label: "标签100", icon: '', x: nodeAttr.x+50, y: nodeAttr.y+50},
+        {id: "node200", label: "标签200", icon: '', x: nodeAttr.x+100, y: nodeAttr.y+100},
+        {id: "node300", label: "标签300", icon: '', x: nodeAttr.x+150, y: nodeAttr.y+150}
       ],
       links: [
         {source: "node100", target: "node200", label: "交易200元", value: 4, reverse: true},
@@ -570,7 +473,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   //   graph.addNode(node.id, node);
     graph.addNode('node5', {
       id: "node5",
-      group: [4],
       label: "标签5",
       icon: 'http://127.0.0.1:8080/docs/images/ba.png',
       x: 100,
@@ -578,7 +480,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
     graph.addNode('node6', {
       id: "node6",
-      group: [1],
       label: "标签6",
       icon: 'http://127.0.0.1:8080/docs/images/ok.png',
       x: 500,
@@ -622,14 +523,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     a.download = 'extract_' + new Date().getTime();
     a.click();
   }
-  // 新增分组
-  document.getElementById('add-group').addEventListener('click', () => {
-    graph.setNodeAttribute('node0', 'group', [0, 1, 2, 3, 4, 5, 6, 7, 8]);
-  });
-  // 删除分组
-  document.getElementById('drop-group').addEventListener('click', () => {
-    graph.setNodeAttribute('node0', 'group', [0, 1, 2, 3, 4, 5, 6]);
-  });
   // 隐藏
   document.getElementById('hide').addEventListener('click', () => {
     pixiGraph.nodeVisibility('node0', false);
@@ -733,9 +626,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // const updateNode = () => {
   //   const nodeKeys = graph.nodes();
   //   const nodeKey = nodeKeys[Math.floor((nodeKeys.length - 1) * Math.random())];
-  //   const group = graph.getNodeAttribute(nodeKey, 'group');
 
-  //   graph.setNodeAttribute(nodeKey, 'group', (group + 1) % colors.length);
   // };
   // document.getElementById('update-node').addEventListener('click', updateNode);
 
@@ -752,7 +643,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     graph.updateEachNodeAttributes((nodeKey, nodeAttributes) => {
       return {
         ...nodeAttributes,
-        // group: (nodeAttributes.group + 1) % colors.length
       };
     });
   };

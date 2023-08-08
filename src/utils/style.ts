@@ -35,25 +35,6 @@ export interface GraphStyle {
       backgroundColor: string;
       padding: number;
     };
-    attach: {
-      group: [];
-      shape: string;
-      size: number;
-      colors: {};
-      text: {
-        type: TextType;
-        fontFamily: string;
-        fontSize: number;
-        fontWeight: TextStyle['fontWeight'];
-        align: TextStyle['align'];
-        color: string; // fill
-        stroke: string;
-        strokeThickness: number;
-      };
-      colGap: number;
-      rowGap: number;
-      crevice: number
-    }
   };
   edge: {
     width: number;

@@ -180,7 +180,7 @@
 
       const style = {
         node: {
-          size: node => node.group + 20,
+          size: 20,
           color: node => '#1f77b4',
           border: {
             width: 2,
@@ -528,7 +528,6 @@
             }
             return {
               ...nodeAttributes,
-              // group: (nodeAttributes.group + 1) % colors.length
             };
           });
           updateNodes()
@@ -810,8 +809,6 @@
       // const updateNode = () => {
       //   const nodekeys = graph.nodes();
       //   const nodekey = nodekeys[Math.floor((nodekeys.length - 1) * Math.random())];
-      //   const group = graph.getNodeAttribute(nodekey, 'group');
-      //   // graph.setNodeAttribute(nodekey, 'group', (group + 1) % colors.length);
       // };
       // document.getElementById('update-node').addEventListener('click', updateNode);
 
@@ -827,7 +824,6 @@
         graph.updateEachNodeAttributes((nodekey, nodeAttributes) => {
           return {
             ...nodeAttributes,
-            // group: (nodeAttributes.group + 1) % colors.length
           };
         });
       };

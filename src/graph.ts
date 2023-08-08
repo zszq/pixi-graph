@@ -63,25 +63,6 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       strokeThickness: 0,
       backgroundColor: 'rgba(0, 0, 0, 0)',
       padding: 4,
-    },
-    attach: {
-      group: [],
-      shape: 'rect', // circle or rect
-      size: 20,
-      colors: {},
-      text: {
-        type: TextType.TEXT, // TEXT or IMAGE
-        fontFamily: 'Arial',
-        fontSize: 12,
-        fontWeight: '400',
-        align: 'left',
-        color: '#333333', // fill
-        stroke: 'black',
-        strokeThickness: 0,
-      },
-      colGap: 5, // 分组图标列间距
-      rowGap: 5, // 分组图标行间距
-      crevice: 5 // 与目标之间的上下距离
     }
   },
   edge: {
@@ -178,7 +159,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   // private frontEdgeArrowLayer: Container;
   private nodeLayer: Container;
   private nodeLabelLayer: Container;
-  private nodeAttachLayer: Container;
   // private frontNodeLayer: Container;
   // private frontNodeLabelLayer: Container;
   private nodeKeyToNodeObject = new Map<string, PixiNode>();
@@ -280,7 +260,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // this.frontEdgeArrowLayer = new Container();
     this.nodeLayer = new Container();
     this.nodeLabelLayer = new Container();
-    this.nodeAttachLayer = new Container();
     // this.frontNodeLayer = new Container();
     // this.frontNodeLabelLayer = new Container();
     this.viewport.addChild(this.edgeLayer);
@@ -289,7 +268,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // this.viewport.addChild(this.frontEdgeLayer);
     // this.viewport.addChild(this.frontEdgeLabelLayer);
     // this.viewport.addChild(this.frontEdgeArrowLayer);
-    this.viewport.addChild(this.nodeAttachLayer);
     this.viewport.addChild(this.nodeLabelLayer);
     this.viewport.addChild(this.nodeLayer);
     // this.viewport.addChild(this.frontNodeLayer);
@@ -513,10 +491,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
     const nodeLayerChildren = this.nodeLayer.children;
     const nodeLabelLayerChildren = this.nodeLabelLayer.children;
-    const AttachLayerChildren = this.nodeAttachLayer.children;
     this.nodeLayer.setChildIndex(node.nodeGfx, nodeLayerChildren.length - 1);
     this.nodeLabelLayer.setChildIndex(node.nodeLabelGfx, nodeLabelLayerChildren.length - 1);
-    this.nodeAttachLayer.setChildIndex(node.nodeAttachGfx, AttachLayerChildren.length - 1);
   }
 
   private unhoverNode(nodeKey: string) {
@@ -622,7 +598,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
         this.isNodeMove = true;
         this.edgeRenderableAll(false);
         this.nodeLabelRenderableAll(false);
-        this.nodeAttachRenderableAll(false);
       }
     } else {
       this.graph.edges(nodeKey).forEach(this.updateEdgeStyleByKey.bind(this));
@@ -658,7 +633,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
         this.edgeRenderableAll(true);
         this.graph.edges(nodeKey).forEach(this.updateEdgeStyleByKey.bind(this)); // 防止拖拽后不显示线
         this.nodeLabelRenderableAll(true);
-        this.nodeAttachRenderableAll(true);
       }
     }
 
@@ -725,7 +699,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // }, 300)
     this.nodeLayer.addChild(node.nodeGfx);
     this.nodeLabelLayer.addChild(node.nodeLabelGfx);
-    this.nodeAttachLayer.addChild(node.nodeAttachGfx);
 
     // this.nodeLabelLayer.addChild(node.nodeLabelGfx);
     // this.frontNodeLayer.addChild(node.nodePlaceholderGfx);
@@ -798,7 +771,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
     this.nodeLayer.removeChild(node.nodeGfx);
     this.nodeLabelLayer.removeChild(node.nodeLabelGfx);
-    this.nodeAttachLayer.removeChild(node.nodeAttachGfx);
     // this.frontNodeLayer.removeChild(node.nodePlaceholderGfx);
     // this.frontNodeLabelLayer.removeChild(node.nodeLabelPlaceholderGfx);
     this.nodeKeyToNodeObject.delete(nodeKey);
@@ -901,7 +873,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
         this.isViewportMove = true;
         this.edgeRenderableAll(false);
         this.nodeLabelRenderableAll(false);
-        this.nodeAttachRenderableAll(false);
       }
     }
   }
@@ -911,7 +882,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.isViewportMove = false;
       this.edgeRenderableAll(true);
       this.nodeLabelRenderableAll(true);
-      this.nodeAttachRenderableAll(true);
     }
   }
 
@@ -1133,10 +1103,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   // 显示隐藏所有的点label(可渲染)
   nodeLabelRenderableAll(renderable: boolean) {
     this.nodeLabelLayer.renderable = renderable;
-  }
-  // 显示隐藏所有的点attach(可渲染)
-  nodeAttachRenderableAll(renderable: boolean) {
-    this.nodeAttachLayer.renderable = renderable;
   }
 
 }
