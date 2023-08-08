@@ -62,7 +62,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       stroke: 'black',
       strokeThickness: 0,
       backgroundColor: 'rgba(0, 0, 0, 0)',
-      padding: 4,
+      padding: 4
     }
   },
   edge: {
@@ -90,6 +90,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       strokeThickness: 0,
       backgroundColor: 'rgba(0, 0, 0, 0)',
       padding: 4,
+      parallel: true
     },
   },
 };

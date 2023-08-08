@@ -7,7 +7,7 @@
     "outDir": "dist",
     "sourceMap": true,
     "strict": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "noUnusedParameters": false,
     "allowSyntheticDefaultImports": true
   },

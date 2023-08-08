@@ -60,7 +60,8 @@ export interface GraphStyle {
       stroke: string;
       strokeThickness: number;
       backgroundColor: string;
-      padding: number
+      padding: number;
+      parallel: boolean;
     }
   };
 }

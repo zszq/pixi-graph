@@ -95,40 +95,48 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
       // edge -> label
       this.edgeLabelGfx.position.copyFrom({ x: tangentcircles.x, y: tangentcircles.y + selefLoopCross - this.edgeLabelGfx.height / 2 });
     } else {
+      const radian = Math.atan2(targetNodePosition.y - sourceNodePosition.y, targetNodePosition.x - sourceNodePosition.x); // 两点的弧度
+      // 下面代码需要梳理
+      // -----------------------start------------------------
       const rotation = -Math.atan2(targetNodePosition.x - sourceNodePosition.x, targetNodePosition.y - sourceNodePosition.y);
       const st_length = Math.hypot(targetNodePosition.x - sourceNodePosition.x, targetNodePosition.y - sourceNodePosition.y);
       // const line_length = st_length - sourceNodeStyle.size - sourceNodeStyle.border.width - targetNodeStyle.size - targetNodeStyle.border.width;
       const line_length = st_length - Math.sqrt(3) / 2 * edgeStyle.arrow.size - targetNodeStyle.size - sourceNodeStyle.size - targetNodeStyle.border.width - sourceNodeStyle.border.width;
       const line_length_half = line_length / 2 + targetNodeStyle.size + Math.sqrt(3) / 2 * edgeStyle.arrow.size + targetNodeStyle.border.width;
       // 一条起点为P1（x1，y1）和终点为P2（x2，y2）的线。这条线是从圆心开始的。圆半径为r。圆线相交点
-      // phi = atan2(y2-y1, x2-x1)
-      // x = x1 + r * cos(phi)
-      // y = y1 + r * sin(phi)
+      // radian = atan2(y2-y1, x2-x1)
+      // x = x1 + r * cos(radian)
+      // y = y1 + r * sin(radian)
       // https://blog.csdn.net/m0_37885651/article/details/91041342
-      const position = { x: targetNodePosition.x + Math.sin(rotation) * line_length_half, y: targetNodePosition.y - Math.cos(rotation) * line_length_half };
+      const centerPosition = { x: targetNodePosition.x + Math.sin(rotation) * line_length_half, y: targetNodePosition.y - Math.cos(rotation) * line_length_half };
       if (this.isBilateral) {
-        position.x = position.x - Math.cos(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
-        position.y = position.y - Math.sin(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
+        centerPosition.x = centerPosition.x - Math.cos(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
+        centerPosition.y = centerPosition.y - Math.sin(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
       }
 
       // edge
-      this.edgeGfx.position.copyFrom(position);
+      this.edgeGfx.position.copyFrom(centerPosition);
       this.edgeGfx.rotation = rotation;
       this.edgeGfx.height = line_length;
+      // -----------------------end------------------------
 
       // edge -> label
-      this.edgeLabelGfx.position.copyFrom(position);
+      this.edgeLabelGfx.position.copyFrom(centerPosition);
+      if (edgeStyle.label.parallel) {
+        // 是否和线同向，文字排列自动变化
+        let degrees = radian * (180 / Math.PI);
+        this.edgeLabelGfx.rotation = degrees > -90 && degrees <= 90 ? radian : radian + Math.PI;
+      }
 
       // edge -> arrow
       const radius = targetNodeStyle.size + targetNodeStyle.border.width + (Math.sqrt(3) / 4 * edgeStyle.arrow.size);
-      const phi = Math.atan2(targetNodePosition.y - sourceNodePosition.y, targetNodePosition.x - sourceNodePosition.x);
-      const arrowPosition = { x: targetNodePosition.x - Math.cos(phi) * radius, y: targetNodePosition.y - Math.sin(phi) * radius };
+      const arrowPosition = { x: targetNodePosition.x - Math.cos(radian) * radius, y: targetNodePosition.y - Math.sin(radian) * radius };
       if (this.isBilateral) {
         arrowPosition.x = arrowPosition.x - Math.cos(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
         arrowPosition.y = arrowPosition.y - Math.sin(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
       }
       this.edgeArrowGfx.position.copyFrom(arrowPosition);
-      this.edgeArrowGfx.rotation = phi + Math.PI / 2;
+      this.edgeArrowGfx.rotation = radian + Math.PI / 2;
     }
   }
 
