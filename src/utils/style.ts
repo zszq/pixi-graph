@@ -4,9 +4,10 @@ import { TextType, TextStyle } from './text';
 
 export interface GraphStyle {
   node: {
+    shape: string;
     size: number;
     color: string;
-    shape: string
+    alpha: number;
     border: {
       width: number;
       color: string;
@@ -39,6 +40,7 @@ export interface GraphStyle {
   edge: {
     width: number;
     color: string;
+    alpha: number;
     selefLoop: {
       radius: number;
       cross: number

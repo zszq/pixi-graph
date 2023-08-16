@@ -73,6 +73,11 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     updateNodeLabelStyle(this.nodeLabelGfx, nodeStyle, textureCache);
   }
 
+  updateAlpha(nodeStyle: NodeStyle) {
+    this.nodeGfx.alpha = nodeStyle.alpha;
+    this.nodeLabelGfx.alpha = nodeStyle.alpha;
+  }
+
   updateVisibility(zoomStep: number) {
     updateNodeVisibility(this.nodeGfx, zoomStep);
     updateNodeLabelVisibility(this.nodeLabelGfx, zoomStep);

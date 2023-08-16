@@ -146,6 +146,12 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
     updateEdgeLabelStyle(this.edgeLabelGfx, edgeStyle, textureCache);
   }
 
+  updateAlpha(edgeStyle: EdgeStyle) {
+    this.edgeGfx.alpha = edgeStyle.alpha;
+    this.edgeArrowGfx.alpha = edgeStyle.alpha;
+    this.edgeLabelGfx.alpha = edgeStyle.alpha;
+  }
+
   updateVisibility(zoomStep: number) {
     // updateEdgeVisibility(this.edgeGfx, zoomStep, this.isSelfLoop);
     this.edgeGfx.renderable = this.edgeGfx.renderable && zoomStep >= 1; // 修复 缩小至线隐藏 在拖拽点 在放大后 线不显示问题

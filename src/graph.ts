@@ -36,6 +36,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
     shape: 'circle', //circle or rect
     size: 20,
     color: '#000',
+    alpha: 1,
     border: {
       width: 2,
       color: '#ffffff',
@@ -68,6 +69,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
   edge: {
     width: 1,
     color: '#cccccc',
+    alpha: 1,
     selefLoop: {
       radius: 30,
       cross: 10
@@ -339,7 +341,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // this.emit('progress', 100);
     this.onprogress && this.onprogress(100);
     console.timeEnd('create-render');
-    console.log(this.graph.mapNodes((nodeKey, attributes) => attributes), this.graph.mapEdges((edgeKey, attributes) => attributes));
   }
 
   destroy() {
@@ -812,6 +813,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     const nodeStyleDefinitions = [DEFAULT_STYLE.node, this.style.node, node.hovered ? this.hoverStyle.node : undefined];
     const nodeStyle = resolveStyleDefinitions(nodeStyleDefinitions, nodeAttributes);
     node.updateStyle(nodeStyle, this.textureCache);
+
+    node.updateAlpha(nodeStyle);
   }
 
   private updateEdgeStyleByKey(edgeKey: string) {
@@ -841,6 +844,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     const targetNodePosition = { x: targetNodeAttributes.x, y: targetNodeAttributes.y };
 
     edge.updatePosition(sourceNodePosition, targetNodePosition, edgeStyle, sourceNodeStyle, targetNodeStyle);
+
+    edge.updateAlpha(edgeStyle);
   }
 
 

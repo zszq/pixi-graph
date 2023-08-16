@@ -168,6 +168,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       shape: node => 'circle', // circle or rect
       size: node => 15,
       color: node => NODE_COLOR_NORMAL,
+      alpha: 0.1,
       border: {
         width: 3,
         color: '#4A5FE2',
@@ -207,6 +208,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     edge: {
       width: edge => 1,
       color: edge => '#999',
+      alpha: 0.1,
       selefLoop: { // 自循环线的样式
         radius: 30,  // 圆环半径
         cross: 10 // 点线相交距离
@@ -233,6 +235,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   };
   const hoverStyle = {
     node: {
+      alpha: 1,
       border: {
         color: COLOR_SELECTED,
       },
@@ -244,6 +247,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     },
     edge: {
       color: COLOR_SELECTED,
+      alpha: 1,
       label: {
         backgroundColor: 'rgba(255, 255, 255, 0.6)',
         // color: '#ffffff',
