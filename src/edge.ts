@@ -29,11 +29,11 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
 
   hovered: boolean = false;
 
-  constructor(option: { selfLoop: boolean, bilateral: boolean }) {
+  constructor(option: { selfLoop: boolean }) {
     super();
 
     this.isSelfLoop = option.selfLoop;
-    this.isBilateral = option.bilateral;
+    this.isBilateral = false;
     this.edgeGfx = this.createEdge();
     this.edgeLabelGfx = this.createEdgeLabel();
     this.edgeArrowGfx = this.createEdgeArrow();

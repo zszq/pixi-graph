@@ -169,7 +169,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       size: node => 15,
       color: node => NODE_COLOR_NORMAL,
       border: {
-        width: 4,
+        width: 3,
         color: '#4A5FE2',
       },
       icon: {
@@ -212,7 +212,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         cross: 10 // 点线相交距离
       },
       gap: 20, // 两根平行线之间的间距
-      bilateralKey: 'reverse', // 判断是否存在相反线的关键字，用于查看下级节点时使用，需在线属性设置此key和相应的boolean值。
       arrow: {
         show: true,
         size: edge => (Math.log((edge.value || 0) + 1) + 2) * 3, // 根据edge.width设置避免被覆盖,如果不能被2整除会自动加1像素，防止发生偏移
@@ -472,23 +471,23 @@ window.addEventListener('DOMContentLoaded', async () => {
   //   const node = { id, x, y };
 
   //   graph.addNode(node.id, node);
-    graph.addNode('node5', {
-      id: "node5",
-      label: "标签5",
+    graph.addNode('node55', {
+      id: "node55",
+      label: "标签55",
       icon: 'http://127.0.0.1:8080/docs/images/ba.png',
-      x: 100,
+      x: 200,
       y: 200
     });
-    graph.addNode('node6', {
-      id: "node6",
-      label: "标签6",
+    graph.addNode('node66', {
+      id: "node66",
+      label: "标签66",
       icon: 'http://127.0.0.1:8080/docs/images/ok.png',
-      x: 500,
-      y: 800
+      x: 300,
+      y: 300
     });
-    graph.addEdgeWithKey(`node5->node6`, 'node5', 'node6', {
-      source: "node5",
-      target: "node6",
+    graph.addEdgeWithKey(`node55->node66`, 'node55', 'node66', {
+      source: "node55",
+      target: "node66",
       label: "交易500元",
       value: 4
     });
@@ -498,7 +497,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('add-node').addEventListener('click', addNode);
   // 新增边
   document.getElementById('add-edge').addEventListener('click', () => {
-    graph.addEdgeWithKey('node32-node52', 'node32', 'node52', {"source":"node32","target":"node52","value":5});
+    graph.addEdgeWithKey('node2-node55', 'node2', 'node55', {"source":"node2","target":"node55","value":5});
+    graph.addEdgeWithKey(`node66->node55`, 'node66', 'node55', { source: "node66", target: "node55", label: "交易500元", value: 4 });
   });
   // 提取图片
   document.getElementById('extract').addEventListener('click', () => {

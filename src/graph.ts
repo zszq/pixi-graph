@@ -73,7 +73,6 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
       cross: 10
     },
     gap: 15,
-    bilateralKey: 'brother',
     arrow: {
       show: false,
       size: 15
@@ -713,11 +712,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     const selfLoop = sourceNodeKey === targetNodeKey;
     const edgeStyleDefinitions = [DEFAULT_STYLE.edge, this.style.edge, undefined];
     const edgeStyle = resolveStyleDefinitions(edgeStyleDefinitions, edgeAttributes);
-    const bilateralByKey = edgeAttributes[edgeStyle.bilateralKey];
-    const bilateralByGraph = this.graph.edges(targetNodeKey, sourceNodeKey).length > 1;
-    const bilateral = (bilateralByKey === true ? bilateralByKey : false) || bilateralByGraph;
 
-    const edge = new PixiEdge({ selfLoop, bilateral });
+    const edge = new PixiEdge({ selfLoop });
     edge.on('mousemove', (event: MouseEvent) => {
       this.emit('edgeMousemove', event, edgeKey, edgeStyle);
     });
@@ -763,8 +759,21 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     // this.frontEdgeLabelLayer.addChild(edge.edgeLabelPlaceholderGfx);
     // this.frontEdgeArrowLayer.addChild(edge.edgeArrowPlaceholderGfx);
     this.edgeKeyToEdgeObject.set(edgeKey, edge);
-
-    this.updateEdgeStyle(edgeKey, edgeAttributes, sourceNodeKey, targetNodeKey, sourceNodeAttributes, targetNodeAttributes);
+    
+    const allLinesBetweenNodes = this.graph.edges(targetNodeKey, sourceNodeKey);
+    if (allLinesBetweenNodes.length > 1) {
+      // 更新此线两点间所有线样式，以更新先添加的相反线位置，防止间距太小label互相覆盖
+      allLinesBetweenNodes.forEach(edgeKey => {
+        const edge = this.edgeKeyToEdgeObject.get(edgeKey);
+        if(edge) {
+          edge.isBilateral = true;
+          this.updateEdgeStyleByKey(edgeKey);
+        }
+      })
+    } else {
+      // 直接更新当前线样式
+      this.updateEdgeStyle(edgeKey, edgeAttributes, sourceNodeKey, targetNodeKey, sourceNodeAttributes, targetNodeAttributes);
+    }
   }
 
   private dropNode(nodeKey: string) {

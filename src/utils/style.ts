@@ -44,7 +44,6 @@ export interface GraphStyle {
       cross: number
     };
     gap: number;
-    bilateralKey: string;
     arrow: {
       show: boolean;
       size: number
