@@ -132,6 +132,7 @@ interface PixiGraphEvents {
   edgeMouseup: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   edgeRightclick: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
 
+  viewportRightClick: (event: InteractionEvent) => void;
   blankClick: (event: InteractionEvent) => void;
 
   // progress: (percentage: number) => void;
@@ -324,7 +325,10 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.viewport.on('snap-zoom-end', this.edgeRenderableAllShow.bind(this));
       this.viewport.on('clicked', (event) => this.emit('blankClick', event)); // 点线做了处理，只有点击空白处会触发
 
-      // this.viewport.on('click', (event) => console.log('viewport-click', event));
+      this.viewport.on('rightclick', (event) => {
+        this.clickPauseViewport();
+        this.emit('viewportRightClick', event);
+      });
 
       // initial draw
       this.createGraph();
@@ -725,10 +729,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     edge.on('mousedown', (event: MouseEvent) => {
       this.edgeMouseX = event.offsetX;
       this.edgeMouseY = event.offsetY;
+      this.clickPauseViewport();
       this.emit('edgeMousedown', event, edgeKey, edgeStyle);
-      // 禁止触发viewport点击事件
-      this.viewport.pause = true;
-      document.addEventListener('mouseup', (event) => this.viewport.pause = false, { once: true });
     });
     edge.on('mouseup', (event: MouseEvent) => {
       this.emit('edgeMouseup', event, edgeKey, edgeStyle);
@@ -838,6 +840,12 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
 
 
+  // 暂停viewport，防止触发viewport点击事件
+  private clickPauseViewport() {
+    this.viewport.pause = true;
+    document.addEventListener('mouseup', (event) => this.viewport.pause = false, { once: true });
+  }
+  
   // 可见性（剔除）
   private updateGraphVisibility() {
     this.culling();
