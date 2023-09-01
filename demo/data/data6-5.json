@@ -58,6 +58,11 @@
     "links": [
         {
             "source": "node0",
+            "target": "node0",
+            "value": 4
+        },
+        {
+            "source": "node0",
             "target": "node1",
             "value": 4
         },

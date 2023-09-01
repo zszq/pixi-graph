@@ -168,7 +168,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       shape: node => 'circle', // circle or rect
       size: node => 15,
       color: node => NODE_COLOR_NORMAL,
-      alpha: 0.1,
+      alpha: 1,
       border: {
         width: 3,
         color: '#4A5FE2',
@@ -208,7 +208,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     edge: {
       width: edge => 1,
       color: edge => '#999',
-      alpha: 0.1,
+      alpha: 1,
       selefLoop: { // 自循环线的样式
         radius: 30,  // 圆环半径
         cross: 10 // 点线相交距离
@@ -271,14 +271,17 @@ window.addEventListener('DOMContentLoaded', async () => {
     maxScale: 1.5,
     highPerformance: {
       // 达到点线设定值值，拖拽不显示线，性能会更好
-      nodeNumber: 0,
-      edgeNumber: 0
+      nodeNumber: 100,
+      edgeNumber: 100
     },
     // dragOffset: true, // false 拖拽鼠标不偏移到点中心，拖拽过快会漂移
     onprogress: (percentage) => {console.log(percentage)}
   });
   console.log('pixiGraph===', pixiGraph);
 
+  // pixiGraph.on('blankClick', (event) => {
+  //   console.log('blankClick', event);
+  // })
   // pixiGraph.on('nodeMoveStart', (event, nodeKey, point) => {
   //   console.log('nodeMoveStart', event, nodeKey, point);
   // })

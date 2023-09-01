@@ -22,6 +22,7 @@ import { EdgeStyle } from './utils/style';
 import { Extract } from '@pixi/extract';
 import { skipHello } from '@pixi/utils';
 import { makeWatermark, WatermarkOption } from './watermark';
+import { InteractionEvent } from '@pixi/interaction';
 // import { Graphics } from '@pixi/graphics';
 
 Application.registerPlugin(TickerPlugin);
@@ -130,6 +131,8 @@ interface PixiGraphEvents {
   edgeMousedown: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   edgeMouseup: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   edgeRightclick: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
+
+  blankClick: (event: InteractionEvent) => void;
 
   // progress: (percentage: number) => void;
 }
@@ -319,6 +322,9 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.viewport.on('snap-end', this.edgeRenderableAllShow.bind(this));
       this.viewport.on('snap-zoom-start', this.edgeRenderableAllHide.bind(this));
       this.viewport.on('snap-zoom-end', this.edgeRenderableAllShow.bind(this));
+      this.viewport.on('clicked', (event) => this.emit('blankClick', event)); // 点线做了处理，只有点击空白处会触发
+
+      // this.viewport.on('click', (event) => console.log('viewport-click', event));
 
       // initial draw
       this.createGraph();
@@ -687,17 +693,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     node.on('rightclick', (event: MouseEvent) => {
       this.emit('nodeRightclick', event, nodeKey, nodeStyle);
     });
-    // 添加更新防抖
-    // this.nodeKeyToNodeObjectTemp.set(nodeKey, node);
-    // if (this.nodeTimer) clearTimeout(this.nodeTimer);
-    // this.nodeTimer = setTimeout(() => {
-    //   console.time('renderNode');
-    //   this.nodeKeyToNodeObjectTemp.forEach((node) => {
-    //     this.nodeLayer.addChild(node.nodeGfx, node.nodeLabelGfx);
-    //   })
-    //   console.timeEnd('renderNode');
-    //   this.nodeKeyToNodeObjectTemp.clear();
-    // }, 300)
+
     this.nodeLayer.addChild(node.nodeGfx);
     this.nodeLabelLayer.addChild(node.nodeLabelGfx);
 
@@ -710,9 +706,9 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
 
   private createEdge(edgeKey: string, edgeAttributes: EdgeAttributes, sourceNodeKey: string, targetNodeKey: string, sourceNodeAttributes: NodeAttributes, targetNodeAttributes: NodeAttributes) {
-    const selfLoop = sourceNodeKey === targetNodeKey;
     const edgeStyleDefinitions = [DEFAULT_STYLE.edge, this.style.edge, undefined];
     const edgeStyle = resolveStyleDefinitions(edgeStyleDefinitions, edgeAttributes);
+    const selfLoop = sourceNodeKey === targetNodeKey;
 
     const edge = new PixiEdge({ selfLoop });
     edge.on('mousemove', (event: MouseEvent) => {
@@ -730,6 +726,9 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.edgeMouseX = event.offsetX;
       this.edgeMouseY = event.offsetY;
       this.emit('edgeMousedown', event, edgeKey, edgeStyle);
+      // 禁止触发viewport点击事件
+      this.viewport.pause = true;
+      document.addEventListener('mouseup', (event) => this.viewport.pause = false, { once: true });
     });
     edge.on('mouseup', (event: MouseEvent) => {
       this.emit('edgeMouseup', event, edgeKey, edgeStyle);
@@ -741,17 +740,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.emit('edgeRightclick', event, edgeKey, edgeStyle);
     });
 
-    // this.edgeKeyToNodeObjectTemp.set(edgeKey, edge);
-    // if (this.edgeTimer) clearTimeout(this.edgeTimer);
-    // this.edgeTimer = setTimeout(() => {
-    //   console.time('renderEdge');
-    //   this.edgeKeyToNodeObjectTemp.forEach((edge) => {
-    //     this.edgeLayer.addChild(edge.edgeGfx, edge.edgeArrowGfx);
-    //     this.edgeLabelLayer.addChild(edge.edgeLabelGfx);
-    //   })
-    //   console.timeEnd('renderEdge');
-    //   this.edgeKeyToNodeObjectTemp.clear();
-    // }, 300)
     this.edgeLayer.addChild(edge.edgeGfx, edge.edgeArrowGfx);
     this.edgeLabelLayer.addChild(edge.edgeLabelGfx);
 
