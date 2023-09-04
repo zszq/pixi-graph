@@ -113,12 +113,12 @@ export interface GraphOptions<NodeAttributes extends BaseNodeAttributes = BaseNo
 }
 
 interface PixiGraphEvents {
-  nodeClick: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeMousemove: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeMouseover: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeMouseout: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeMousedown: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeMouseup: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
+  nodeClick: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeRightclick: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeMoveStart: (event: MouseEvent, nodeKey: string, point: IPointData) => void;
   nodeMove: (event: MouseEvent, nodeKey: string, point: IPointData) => void;
@@ -132,8 +132,8 @@ interface PixiGraphEvents {
   edgeMouseup: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   edgeRightclick: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
 
+  viewportClick: (event: InteractionEvent) => void;
   viewportRightClick: (event: InteractionEvent) => void;
-  blankClick: (event: InteractionEvent) => void;
 
   // progress: (percentage: number) => void;
 }
@@ -323,11 +323,15 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.viewport.on('snap-end', this.edgeRenderableAllShow.bind(this));
       this.viewport.on('snap-zoom-start', this.edgeRenderableAllHide.bind(this));
       this.viewport.on('snap-zoom-end', this.edgeRenderableAllShow.bind(this));
-      this.viewport.on('clicked', (event) => this.emit('blankClick', event)); // 点线做了处理，只有点击空白处会触发
-
-      this.viewport.on('rightclick', (event) => {
-        this.clickPauseViewport();
-        this.emit('viewportRightClick', event);
+      this.viewport.on('clicked', (event) => {
+        if (event.event.target === this.viewport) {
+          const mouseButton = event.event.data.originalEvent.button;
+          if (mouseButton === 0) {
+            this.emit('viewportClick', event);
+          } else if (mouseButton === 2) {
+            this.emit('viewportRightClick', event);
+          }
+        }
       });
 
       // initial draw
@@ -678,19 +682,22 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     node.on('mousedown', (event: MouseEvent) => {
       const eventPosition = new Point(event.offsetX, event.offsetY);
       const worldPosition = this.viewport.toWorld(eventPosition);
-
       this.nodeMouseOffsetX = Math.abs(node.nodeGfx.x - worldPosition.x);
       this.nodeMouseOffsetY = Math.abs(node.nodeGfx.y - worldPosition.y);
 
       this.nodeMouseX = event.offsetX;
       this.nodeMouseY = event.offsetY;
+
       this.mousedownNodeKey = nodeKey;
       this.enableNodeDragging(event, nodeKey, worldPosition);
       this.emit('nodeMousedown', event, nodeKey, nodeStyle);
     });
     node.on('mouseup', (event: MouseEvent) => {
       this.emit('nodeMouseup', event, nodeKey, nodeStyle);
+    });
+    node.on('click', (event: MouseEvent) => {
       if (this.nodeMouseX === event.offsetX && this.nodeMouseY === event.offsetY) {
+        // 防止拖拽出发点击事件
         this.emit('nodeClick', event, nodeKey, nodeStyle);
       }
     });
@@ -729,12 +736,14 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     edge.on('mousedown', (event: MouseEvent) => {
       this.edgeMouseX = event.offsetX;
       this.edgeMouseY = event.offsetY;
-      this.clickPauseViewport();
       this.emit('edgeMousedown', event, edgeKey, edgeStyle);
     });
     edge.on('mouseup', (event: MouseEvent) => {
       this.emit('edgeMouseup', event, edgeKey, edgeStyle);
+    });
+    edge.on('click', (event: MouseEvent) => {
       if (this.edgeMouseX === event.offsetX && this.edgeMouseY === event.offsetY) {
+        // 防止拖拽出发点击事件
         this.emit('edgeClick', event, edgeKey, edgeStyle);
       }
     });
@@ -838,14 +847,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     edge.updateAlpha(edgeStyle);
   }
 
-
-
-  // 暂停viewport，防止触发viewport点击事件
-  private clickPauseViewport() {
-    this.viewport.pause = true;
-    document.addEventListener('mouseup', (event) => this.viewport.pause = false, { once: true });
-  }
-  
   // 可见性（剔除）
   private updateGraphVisibility() {
     this.culling();

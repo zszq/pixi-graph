@@ -52,7 +52,7 @@
   </style>
 </head>
 <body>
-  <div id="graph"></div>
+  <div id="graph" oncontextmenu="return false"></div>
   <div id="controls">
     <button id="add-node">Add Node</button>
     <button id="add-edge">Add Edge</button>
@@ -82,6 +82,7 @@
     <button id="correlation">关联</button> -->
   </div>
   <div id="thumbnail"></div>
+  <div id="context" style="width: 100px; height: 120px; background-color: antiquewhite; position: absolute; top: 0; z-index: 999;" oncontextmenu="return false"></div>
 
 <script>
 const NODE_COLOR_NORMAL = '#C6CCF5';
@@ -279,9 +280,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   console.log('pixiGraph===', pixiGraph);
 
-  // pixiGraph.on('blankClick', (event) => {
-  //   console.log('blankClick', event);
-  // })
+  pixiGraph.on('viewportClick', (event) => {
+    console.log('viewportClick', event);
+  })
+  pixiGraph.on('viewportRightClick', (event) => {
+    console.log('viewportRightClick', event);
+  })
   // pixiGraph.on('nodeMoveStart', (event, nodeKey, point) => {
   //   console.log('nodeMoveStart', event, nodeKey, point);
   // })
@@ -446,6 +450,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   pixiGraph.on('nodeRightclick', (event, nodeKey, nodeStyle) => {
     console.log('nodeRightclick', event, nodeKey, nodeStyle);
+    // contextmenuPosition(event);
   });
   // pixiGraph.on('nodeMousemove', (event, nodeKey) => console.log('nodeMousemove', event, nodeKey));
   // pixiGraph.on('nodeMouseover', (event, nodeKey, nodeStyle) => {
@@ -459,6 +464,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   pixiGraph.on('edgeRightclick', (event, edgeKey, edgeStyle) => {
     console.log('edgeRightclick', event, edgeKey, edgeStyle);
+    // contextmenuPosition(event);
   });
   // pixiGraph.on('edgeMousemove', (event, edgeKey) => console.log('edgeMousemove', event, edgeKey));
   // pixiGraph.on('edgeMouseover', (event, edgeKey) => console.log('edgeMouseover', event, edgeKey));
@@ -683,6 +689,40 @@ window.addEventListener('DOMContentLoaded', async () => {
   // };
   // document.getElementById('import').addEventListener('click', importGraph);
 });
+
+// 设置右键菜单位置
+function contextmenuPosition(event) {
+  // console.log('contextmenuPosition', event);
+  let graphDom = document.querySelector('#graph');
+  let contextDom = document.querySelector('#context');
+  let mouseX = event.clientX;
+  let mouseY = event.clientY;
+  let graphBounding = graphDom.getBoundingClientRect();
+  let graphWidth = graphBounding.width;
+  let graphHeight = graphBounding.height;
+  let graphTop = graphBounding.top;
+  let graphBottom = graphBounding.bottom;
+  let graphLeft = graphBounding.left;
+  let graphRight = graphBounding.right;
+  let contextMenuWidth = contextDom.offsetWidth;
+  let contextMenuHeight = contextDom.offsetHeight;
+  let top = 0;
+  let left = 0;
+
+  if (graphRight - mouseX < contextMenuWidth) {
+    left = graphWidth - contextMenuWidth;
+  } else {
+    left = mouseX - graphLeft;
+  }
+  if (graphBottom - mouseY < contextMenuHeight) {
+    top = graphHeight - contextMenuHeight;
+  } else {
+    top = mouseY - graphTop;
+  }
+
+  contextDom.style.left = left + 'px';
+  contextDom.style.top = top + 'px';
+}
 
 
 (function(){

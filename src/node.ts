@@ -13,6 +13,7 @@ interface PixiNodeEvents {
   mouseout: (event: MouseEvent) => void;
   mousedown: (event: MouseEvent) => void;
   mouseup: (event: MouseEvent) => void;
+  click: (event: MouseEvent) => void;
   rightclick: (event: MouseEvent) => void;
 }
 
@@ -35,16 +36,21 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     // this.nodeLabelPlaceholderGfx = new Container();
   }
 
+  private addCommonEventListener(gfx: Container) {
+    gfx.on('mousemove', (event: InteractionEvent) => this.emit('mousemove', event.data.originalEvent as MouseEvent));
+    gfx.on('mouseover', (event: InteractionEvent) => this.emit('mouseover', event.data.originalEvent as MouseEvent));
+    gfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
+    gfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
+    gfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
+    gfx.on('click', (event: InteractionEvent) => this.emit('click', event.data.originalEvent as MouseEvent));
+    gfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
+  }
+
   private createNode() {
     const nodeGfx = new Container();
     nodeGfx.interactive = true;
     nodeGfx.buttonMode = true;
-    nodeGfx.on('mousemove', (event: InteractionEvent) => this.emit('mousemove', event.data.originalEvent as MouseEvent));
-    nodeGfx.on('mouseover', (event: InteractionEvent) => this.emit('mouseover', event.data.originalEvent as MouseEvent));
-    nodeGfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
-    nodeGfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
-    nodeGfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
-    nodeGfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
+    this.addCommonEventListener(nodeGfx);
     createNode(nodeGfx);
     return nodeGfx;
   }
@@ -53,12 +59,7 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     const nodeLabelGfx = new Container();
     nodeLabelGfx.interactive = true;
     nodeLabelGfx.buttonMode = true;
-    nodeLabelGfx.on('mousemove', (event: InteractionEvent) => this.emit('mousemove', event.data.originalEvent as MouseEvent));
-    nodeLabelGfx.on('mouseover', (event: InteractionEvent) => this.emit('mouseover', event.data.originalEvent as MouseEvent));
-    nodeLabelGfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
-    nodeLabelGfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
-    nodeLabelGfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
-    nodeLabelGfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
+    this.addCommonEventListener(nodeLabelGfx);
     createNodeLabel(nodeLabelGfx);
     return nodeLabelGfx;
   }
