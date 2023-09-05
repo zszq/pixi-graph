@@ -52,7 +52,7 @@
   </style>
 </head>
 <body>
-  <div id="graph" oncontextmenu="return false"></div>
+  <div id="graph"></div>
   <div id="controls">
     <button id="add-node">Add Node</button>
     <button id="add-edge">Add Edge</button>
@@ -82,8 +82,8 @@
     <button id="correlation">关联</button> -->
   </div>
   <div id="thumbnail"></div>
-  <div id="context" style="width: 100px; height: 120px; background-color: antiquewhite; position: absolute; top: 0; z-index: 999;" oncontextmenu="return false"></div>
-
+  <!-- <div id="context" style="width: 100px; height: 120px; background-color: antiquewhite; position: absolute; top: 0; z-index: 999;" oncontextmenu="return false"></div> -->
+  <div style="width: 500px; height: 500px; background-color: antiquewhite;"></div>
 <script>
 const NODE_COLOR_NORMAL = '#C6CCF5';
 const EDGE_COLOR_NORMAL = '#cccccc';

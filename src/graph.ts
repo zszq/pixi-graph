@@ -242,13 +242,23 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       screenHeight: this.container.clientHeight,
       worldWidth: this.container.clientWidth,
       worldHeight: this.container.clientHeight,
-      interaction: this.app.renderer.plugins.interaction
+      interaction: this.app.renderer.plugins.interaction,
+      divWheel: this.container,
+      disableOnContextMenu: true
     })
-      .drag()
+      .drag({
+        mouseButtons: 'left',
+        keyToPress: ['Space'],
+      })
       .pinch()
       .wheel()
       .clampZoom({ minScale: this.minScale, maxScale: this.maxScale });
     // .decelerate()
+
+    this.handleSpaceDrag();
+
+    console.log('pixi-viewport', this.viewport);
+
     this.app.stage.addChild(this.viewport);
 
     // create cull
@@ -1117,4 +1127,29 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.nodeLabelLayer.renderable = renderable;
   }
 
+  // 空格拖拽时禁止空格滚动页面及鼠标样式修改
+  private handleSpaceDrag() {
+    const down = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        this.container.style.cursor = 'grab';
+      }
+    }
+    const up = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        this.container.style.cursor = 'default';
+      }
+    }
+
+    this.container.addEventListener('mouseenter', () => {
+      document.addEventListener('keydown', down);
+      document.addEventListener('keyup', up);
+    });
+
+    this.container.addEventListener('mouseleave', () => {
+      document.removeEventListener('keydown', down);
+      document.removeEventListener('keyup', up);
+      this.container.style.cursor = 'default';
+    });
+  }
 }
