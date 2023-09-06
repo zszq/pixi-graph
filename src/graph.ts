@@ -22,8 +22,8 @@ import { EdgeStyle } from './utils/style';
 import { Extract } from '@pixi/extract';
 import { skipHello } from '@pixi/utils';
 import { makeWatermark, WatermarkOption } from './watermark';
-import { InteractionEvent } from '@pixi/interaction';
 // import { Graphics } from '@pixi/graphics';
+import type { ViewportEvent } from './types/viewport';
 
 Application.registerPlugin(TickerPlugin);
 Application.registerPlugin(AppLoaderPlugin);
@@ -132,8 +132,8 @@ interface PixiGraphEvents {
   edgeMouseup: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   edgeRightclick: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
 
-  viewportClick: (event: InteractionEvent) => void;
-  viewportRightClick: (event: InteractionEvent) => void;
+  viewportClick: (event: ViewportEvent) => void;
+  viewportRightClick: (event: ViewportEvent) => void;
 
   // progress: (percentage: number) => void;
 }
@@ -347,9 +347,10 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       // initial draw
       this.createGraph();
       this.resetView(this.graph.nodes());
+
       // const screenLine = new Graphics().lineStyle(3, 0x0379f3).drawRect(0, 0, this.viewport.screenWidth, this.viewport.screenHeight);
       // this.app.stage.addChild(screenLine);
-      // const worldLine = new Graphics().lineStyle(3, 0xff0000).drawRect(0, 0, this.viewport.worldWidth, this.viewport.worldHeight);
+      // const worldLine = new Graphics().lineStyle(1, 0xff0000).drawRect(0, 0, this.viewport.worldWidth, this.viewport.worldHeight);
       // this.viewport.addChild(worldLine);
     });
   }
