@@ -23,7 +23,7 @@ import { Extract } from '@pixi/extract';
 import { skipHello } from '@pixi/utils';
 import { makeWatermark, WatermarkOption } from './watermark';
 // import { Graphics } from '@pixi/graphics';
-import type { ViewportEvent } from './types/viewport';
+// import type { ViewportEvent } from './types/viewport';
 
 Application.registerPlugin(TickerPlugin);
 Application.registerPlugin(AppLoaderPlugin);
@@ -132,8 +132,8 @@ interface PixiGraphEvents {
   edgeMouseup: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   edgeRightclick: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
 
-  viewportClick: (event: ViewportEvent) => void;
-  viewportRightClick: (event: ViewportEvent) => void;
+  viewportClick: (event: MouseEvent) => void;
+  viewportRightClick: (event: MouseEvent) => void;
 
   // progress: (percentage: number) => void;
 }
@@ -335,11 +335,11 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.viewport.on('snap-zoom-end', this.edgeRenderableAllShow.bind(this));
       this.viewport.on('clicked', (event) => {
         if (event.event.target === this.viewport) {
-          const mouseButton = event.event.data.originalEvent.button;
-          if (mouseButton === 0) {
-            this.emit('viewportClick', event);
-          } else if (mouseButton === 2) {
-            this.emit('viewportRightClick', event);
+          const mouseEvent = event.event.data.originalEvent;
+          if (mouseEvent.button === 0) {
+            this.emit('viewportClick', mouseEvent as MouseEvent);
+          } else if (mouseEvent.button === 2) {
+            this.emit('viewportRightClick', mouseEvent as MouseEvent);
           }
         }
       });
