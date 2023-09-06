@@ -300,8 +300,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   // 加载进度对外接口
   // pixiGraph.on('progress', (percentage) => console.log('progress', percentage));
 
-  pixiGraph.on('nodeMouseover', () => {
-    // console.log('nodeMouseover');
+  pixiGraph.on('nodeMouseover', (event, nodeKey) => {
+    console.log('nodeMouseover', event, nodeKey);
   })
 
   // pixiGraph.on('nodeClick', (event, nodeKey) => {
@@ -467,7 +467,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     // contextmenuPosition(event);
   });
   // pixiGraph.on('edgeMousemove', (event, edgeKey) => console.log('edgeMousemove', event, edgeKey));
-  // pixiGraph.on('edgeMouseover', (event, edgeKey) => console.log('edgeMouseover', event, edgeKey));
+  pixiGraph.on('edgeMouseover', (event, edgeKey) => console.log('edgeMouseover', event, edgeKey));
   // pixiGraph.on('edgeMouseout', (event, edgeKey) => console.log('edgeMouseout', event, edgeKey));
   // pixiGraph.on('edgeMousedown', (event, edgeKey) => console.log('edgeMousedown', event, edgeKey));
   // pixiGraph.on('edgeMouseup', (event, edgeKey) => console.log('edgeMouseup', event, edgeKey));

@@ -175,6 +175,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   // private edgeTimer: ReturnType<typeof setTimeout> | null = null;
 
   private mousedownNodeKey: string | null = null;
+  private isDraging: boolean = false;
   private nodeMouseX: number = 0;
   private nodeMouseY: number = 0;
   private edgeMouseX: number = 0;
@@ -325,8 +326,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.graph.on('eachNodeAttributesUpdated', this.onGraphEachNodeAttributesUpdatedBound);
       this.graph.on('eachEdgeAttributesUpdated', this.onGraphEachEdgeAttributesUpdatedBound);
 
-      this.viewport.on('drag-start', this.edgeRenderableAllHide.bind(this));
-      this.viewport.on('drag-end', this.edgeRenderableAllShow.bind(this));
+      this.viewport.on('drag-start', this.onViewportDragStart.bind(this));
+      this.viewport.on('drag-end', this.onViewportDragEnd.bind(this));
       this.viewport.on('zoomed', this.onViewportZoomed.bind(this));
       this.viewport.on('zoomed-end', this.edgeRenderableAllShow.bind(this));
       this.viewport.on('snap-start', this.edgeRenderableAllHide.bind(this));
@@ -380,8 +381,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.graph.off('eachNodeAttributesUpdated', this.onGraphEachNodeAttributesUpdatedBound);
     this.graph.off('eachEdgeAttributesUpdated', this.onGraphEachEdgeAttributesUpdatedBound);
 
-    this.viewport.off('drag-start', this.edgeRenderableAllHide.bind(this));
-    this.viewport.off('drag-end', this.edgeRenderableAllShow.bind(this));
+    this.viewport.off('drag-start', this.onViewportDragStart.bind(this));
+    this.viewport.off('drag-end', this.onViewportDragEnd.bind(this));
     this.viewport.off('zoomed', this.onViewportZoomed.bind(this));
     this.viewport.off('zoomed-end', this.edgeRenderableAllShow.bind(this));
     this.viewport.off('snap-start', this.edgeRenderableAllHide.bind(this));
@@ -430,6 +431,14 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.viewport.fit(true);
   }
 
+  private onViewportDragStart() {
+    this.isDraging = true;
+    this.edgeRenderableAllHide();
+  }
+  private onViewportDragEnd() {
+    this.isDraging = false;
+    this.edgeRenderableAllShow();
+  }
   // 超过minScale和maxScale范围，zoomed-end事件不执行，单独处理zoomed事件，防止线消失
   private onViewportZoomed() {
     let scaled = this.viewport.scaled;
@@ -679,16 +688,18 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.emit('nodeMousemove', event, nodeKey, nodeStyle);
     });
     node.on('mouseover', (event: MouseEvent) => {
-      if (!this.mousedownNodeKey) {
+      if (!this.mousedownNodeKey && !this.isDraging) {
+        // 防止拖拽时触发
         this.hoverNode(nodeKey);
+        this.emit('nodeMouseover', event, nodeKey, nodeStyle);
       }
-      this.emit('nodeMouseover', event, nodeKey, nodeStyle);
     });
     node.on('mouseout', (event: MouseEvent) => {
-      if (!this.mousedownNodeKey) {
+      if (!this.mousedownNodeKey && !this.isDraging) {
+        // 防止拖拽时触发
         this.unhoverNode(nodeKey);
+        this.emit('nodeMouseout', event, nodeKey, nodeStyle);
       }
-      this.emit('nodeMouseout', event, nodeKey, nodeStyle);
     });
     node.on('mousedown', (event: MouseEvent) => {
       const eventPosition = new Point(event.offsetX, event.offsetY);
@@ -708,7 +719,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     });
     node.on('click', (event: MouseEvent) => {
       if (this.nodeMouseX === event.offsetX && this.nodeMouseY === event.offsetY) {
-        // 防止拖拽出发点击事件
+        // 防止拖拽触发点击事件
         this.emit('nodeClick', event, nodeKey, nodeStyle);
       }
     });
@@ -737,12 +748,16 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.emit('edgeMousemove', event, edgeKey, edgeStyle);
     });
     edge.on('mouseover', (event: MouseEvent) => {
-      this.hoverEdge(edgeKey);
-      this.emit('edgeMouseover', event, edgeKey, edgeStyle);
+      if (!this.mousedownNodeKey && !this.isDraging) {
+        this.hoverEdge(edgeKey);
+        this.emit('edgeMouseover', event, edgeKey, edgeStyle);
+      }
     });
     edge.on('mouseout', (event: MouseEvent) => {
-      this.unhoverEdge(edgeKey);
-      this.emit('edgeMouseout', event, edgeKey, edgeStyle);
+      if (!this.mousedownNodeKey && !this.isDraging) {
+        this.unhoverEdge(edgeKey);
+        this.emit('edgeMouseout', event, edgeKey, edgeStyle);
+      }
     });
     edge.on('mousedown', (event: MouseEvent) => {
       this.edgeMouseX = event.offsetX;
