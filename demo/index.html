@@ -272,11 +272,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     maxScale: 1.5,
     highPerformance: {
       // 达到点线设定值值，拖拽不显示线，性能会更好
-      nodeNumber: 100,
-      edgeNumber: 100
+      nodeNumber: 7,
+      edgeNumber: 8
     },
+    // spaceDrag: true, // 使用按住空格拖拽
     // dragOffset: true, // false 拖拽鼠标不偏移到点中心，拖拽过快会漂移
-    onprogress: (percentage) => {console.log(percentage)}
   });
   console.log('pixiGraph===', pixiGraph);
 

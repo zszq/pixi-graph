@@ -1,3 +1,7 @@
+// 是否是整数
+export function isInteger(value: any): boolean {
+  return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
+}
 
 // 验证是否为URL
 export function isUrl(str:string) {
@@ -6,26 +10,26 @@ export function isUrl(str:string) {
 }
 
 // 获取两个数组不同值
-export function arrayComplement(arr1: any[], arr2: any[]) {
-  let difference = arr1.filter(x => arr2.indexOf(x) == -1).concat(arr2.filter(x => arr1.indexOf(x) == -1));
-  return difference;
-}
+// export function arrayComplement(arr1: any[], arr2: any[]) {
+//   let difference = arr1.filter(x => arr2.indexOf(x) == -1).concat(arr2.filter(x => arr1.indexOf(x) == -1));
+//   return difference;
+// }
 
 // 去抖
-export const Debounced = (fn: Function, time: number = 300, immediate: boolean = false) => {
-  let timer: ReturnType<typeof setTimeout> | null;
-  return function (this: any, ...args: any[]) {
-    if (timer) clearTimeout(timer);
-    if (immediate) { // 立即执行
-      if (!timer) fn.apply(this, args);
-      timer = setTimeout(() => {
-        timer = null;
-      }, time)
-    } else { // 最后执行
-      timer = setTimeout(() => fn.apply(this, args), time);
-    }
-  };
-};
+// export const Debounced = (fn: Function, time: number = 300, immediate: boolean = false) => {
+//   let timer: ReturnType<typeof setTimeout> | null;
+//   return function (this: any, ...args: any[]) {
+//     if (timer) clearTimeout(timer);
+//     if (immediate) { // 立即执行
+//       if (!timer) fn.apply(this, args);
+//       timer = setTimeout(() => {
+//         timer = null;
+//       }, time)
+//     } else { // 最后执行
+//       timer = setTimeout(() => fn.apply(this, args), time);
+//     }
+//   };
+// };
 
 // export const isEqual = (object1: any, object2: any) => {
 //     if (Object.prototype.toString.call(object1) !== Object.prototype.toString.call(object2)) return false;
