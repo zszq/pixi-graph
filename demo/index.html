@@ -63,6 +63,7 @@
     <button id="removeWatermark">removeWatermark</button>
     <button id="clearWatermark">clearWatermark</button>
     <button id="snapViewport">snapViewport</button>
+    <button id="choose">choose</button>
     <!-- <button id="add-edge">Add Edge</button>
     <button id="drop-node">Drop Node</button>
     <button id="drop-edge">Drop Edge</button>
@@ -280,29 +281,21 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   console.log('pixiGraph===', pixiGraph);
 
+  // 框选
+  document.getElementById('choose').addEventListener('click', () => {
+    pixiGraph.choose.start((selected) => {console.log('choose-selected', selected)});
+  })
+
   pixiGraph.on('viewportClick', (event) => {
     console.log('viewportClick', event);
   })
   pixiGraph.on('viewportRightClick', (event) => {
     console.log('viewportRightClick', event);
   })
-  // pixiGraph.on('nodeMoveStart', (event, nodeKey, point) => {
-  //   console.log('nodeMoveStart', event, nodeKey, point);
-  // })
-  // pixiGraph.on('nodeMove', (event, nodeKey, point) => {
-  //   console.log('nodeMove', event, nodeKey, point);
-  // })
-  // pixiGraph.on('nodeMoveEnd', (event, nodeKey, point) => {
-  //   console.log('nodeMoveEnd', event, nodeKey, point);
-  // })
-
-
-  // 加载进度对外接口
-  // pixiGraph.on('progress', (percentage) => console.log('progress', percentage));
-
-  pixiGraph.on('nodeMouseover', (event, nodeKey) => {
-    console.log('nodeMouseover', event, nodeKey);
-  })
+  // pixiGraph.on('nodeMoveStart', (event, nodeKey, point) => console.log('nodeMoveStart', event, nodeKey, point))
+  // pixiGraph.on('nodeMove', (event, nodeKey, point) => console.log('nodeMove', event, nodeKey, point))
+  // pixiGraph.on('nodeMoveEnd', (event, nodeKey, point) => console.log('nodeMoveEnd', event, nodeKey, point))
+  // pixiGraph.on('nodeMouseover', (event, nodeKey) => console.log('nodeMouseover', event, nodeKey))
 
   // pixiGraph.on('nodeClick', (event, nodeKey) => {
   //   console.log('nodeClick', event.type, nodeKey)
@@ -467,7 +460,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     // contextmenuPosition(event);
   });
   // pixiGraph.on('edgeMousemove', (event, edgeKey) => console.log('edgeMousemove', event, edgeKey));
-  pixiGraph.on('edgeMouseover', (event, edgeKey) => console.log('edgeMouseover', event, edgeKey));
+  // pixiGraph.on('edgeMouseover', (event, edgeKey) => console.log('edgeMouseover', event, edgeKey));
   // pixiGraph.on('edgeMouseout', (event, edgeKey) => console.log('edgeMouseout', event, edgeKey));
   // pixiGraph.on('edgeMousedown', (event, edgeKey) => console.log('edgeMousedown', event, edgeKey));
   // pixiGraph.on('edgeMouseup', (event, edgeKey) => console.log('edgeMouseup', event, edgeKey));

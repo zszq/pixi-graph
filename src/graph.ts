@@ -25,6 +25,7 @@ import { skipHello } from '@pixi/utils';
 import { makeWatermark, WatermarkOption } from './watermark';
 // import { Graphics } from '@pixi/graphics';
 // import type { ViewportEvent } from './types/viewport';
+import Choose from './functional/choose/choose.js';
 
 Application.registerPlugin(TickerPlugin);
 Application.registerPlugin(AppLoaderPlugin);
@@ -135,8 +136,6 @@ interface PixiGraphEvents {
 
   viewportClick: (event: MouseEvent) => void;
   viewportRightClick: (event: MouseEvent) => void;
-
-  // progress: (percentage: number) => void;
 }
 
 export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> extends TypedEmitter<PixiGraphEvents> {
@@ -150,6 +149,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   dragOffset?: boolean;
   minScale: number = 0.1;
   maxScale: number = 1.5;
+
+  choose: Choose;
 
   private app: Application;
   private textureCache: TextureCache;
@@ -200,7 +201,16 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private onGraphEachEdgeAttributesUpdatedBound = this.onGraphEachEdgeAttributesUpdated.bind(this);
   private onDocumentMouseMoveBound = this.onDocumentMouseMove.bind(this);
   private onDocumentMouseUpBound = this.onDocumentMouseUp.bind(this);
-
+  
+  private onViewportDragStartBound = this.onViewportDragStart.bind(this);
+  private onViewportDragEndBound = this.onViewportDragEnd.bind(this);
+  private onViewportZoomedBound = this.onViewportZoomed.bind(this);
+  private onViewportZoomedEndBound = this.onViewportZoomedEnd.bind(this);
+  private onViewportSnapStartBound = this.highEdgeRenderableAllHide.bind(this);
+  private onViewportSnapEndBound = this.highEdgeRenderableAllShow.bind(this);
+  private onViewportSnapZoomStartBound = this.highEdgeRenderableAllHide.bind(this);
+  private onViewportSnapZoomEndBound = this.highEdgeRenderableAllShow.bind(this);
+  private onViewportClickedBound = this.onViewportClicked.bind(this);
 
   constructor(options: GraphOptions<NodeAttributes, EdgeAttributes>) {
     super();
@@ -219,6 +229,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     if (!(this.container instanceof HTMLElement)) {
       throw new Error('container should be a HTMLElement');
     }
+
+    
 
     // create PIXI application
     skipHello();
@@ -257,12 +269,12 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       .wheel()
       .clampZoom({ minScale: this.minScale, maxScale: this.maxScale });
     // .decelerate()
-
     this.spaceDrag && this.handleSpaceDrag();
-
     console.log('pixi-viewport', this.viewport);
-
     this.app.stage.addChild(this.viewport);
+
+    // 框选
+    this.choose = new Choose(this.container, this.graph, this.viewport);
 
     // create cull
     this.cull = new Cull({
@@ -328,24 +340,15 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       this.graph.on('eachNodeAttributesUpdated', this.onGraphEachNodeAttributesUpdatedBound);
       this.graph.on('eachEdgeAttributesUpdated', this.onGraphEachEdgeAttributesUpdatedBound);
 
-      this.viewport.on('drag-start', this.onViewportDragStart.bind(this));
-      this.viewport.on('drag-end', this.onViewportDragEnd.bind(this));
-      this.viewport.on('zoomed', this.onViewportZoomed.bind(this));
-      this.viewport.on('zoomed-end', this.onViewportZoomedEnd.bind(this));
-      this.viewport.on('snap-start', this.highEdgeRenderableAllHide.bind(this));
-      this.viewport.on('snap-end', this.highEdgeRenderableAllShow.bind(this));
-      this.viewport.on('snap-zoom-start', this.highEdgeRenderableAllHide.bind(this));
-      this.viewport.on('snap-zoom-end', this.highEdgeRenderableAllShow.bind(this));
-      this.viewport.on('clicked', (event) => {
-        if (event.event.target === this.viewport) {
-          const mouseEvent = event.event.data.originalEvent;
-          if (mouseEvent.button === 0) {
-            this.emit('viewportClick', mouseEvent as MouseEvent);
-          } else if (mouseEvent.button === 2) {
-            this.emit('viewportRightClick', mouseEvent as MouseEvent);
-          }
-        }
-      });
+      this.viewport.on('drag-start', this.onViewportDragStartBound);
+      this.viewport.on('drag-end', this.onViewportDragEndBound);
+      this.viewport.on('zoomed', this.onViewportZoomedBound);
+      this.viewport.on('zoomed-end', this.onViewportZoomedEndBound);
+      this.viewport.on('snap-start', this.onViewportSnapStartBound);
+      this.viewport.on('snap-end', this.onViewportSnapEndBound);
+      this.viewport.on('snap-zoom-start', this.onViewportSnapZoomStartBound);
+      this.viewport.on('snap-zoom-end', this.onViewportSnapZoomEndBound);
+      this.viewport.on('clicked', this.onViewportClickedBound);
 
       // initial draw
       this.createGraph();
@@ -378,14 +381,15 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.graph.off('eachNodeAttributesUpdated', this.onGraphEachNodeAttributesUpdatedBound);
     this.graph.off('eachEdgeAttributesUpdated', this.onGraphEachEdgeAttributesUpdatedBound);
 
-    this.viewport.off('drag-start', this.onViewportDragStart.bind(this));
-    this.viewport.off('drag-end', this.onViewportDragEnd.bind(this));
-    this.viewport.off('zoomed', this.onViewportZoomed.bind(this));
-    this.viewport.off('zoomed-end', this.onViewportZoomedEnd.bind(this));
-    this.viewport.off('snap-start', this.highEdgeRenderableAllHide.bind(this));
-    this.viewport.off('snap-end', this.highEdgeRenderableAllShow.bind(this));
-    this.viewport.off('snap-zoom-start', this.highEdgeRenderableAllHide.bind(this));
-    this.viewport.off('snap-zoom-end', this.highEdgeRenderableAllShow.bind(this));
+    this.viewport.off('drag-start', this.onViewportDragStartBound);
+    this.viewport.off('drag-end', this.onViewportDragEndBound);
+    this.viewport.off('zoomed', this.onViewportZoomedBound);
+    this.viewport.off('zoomed-end', this.onViewportZoomedEndBound);
+    this.viewport.off('snap-start', this.onViewportSnapStartBound);
+    this.viewport.off('snap-end', this.onViewportSnapEndBound);
+    this.viewport.off('snap-zoom-start', this.onViewportSnapZoomStartBound);
+    this.viewport.off('snap-zoom-end', this.onViewportSnapZoomEndBound);
+    this.viewport.off('clicked', this.onViewportClickedBound);
 
     this.resizeObserver.disconnect();
     this.resizeObserver = undefined!;
@@ -450,6 +454,18 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   private onViewportZoomedEnd() {
     this.highEdgeRenderableAllShow();
   }
+
+  private onViewportClicked(event: any) {
+    if (event.event.target === this.viewport) {
+      const mouseEvent = event.event.data.originalEvent;
+      if (mouseEvent.button === 0) {
+        this.emit('viewportClick', mouseEvent as MouseEvent);
+      } else if (mouseEvent.button === 2) {
+        this.emit('viewportRightClick', mouseEvent as MouseEvent);
+      }
+    }
+  }
+
 
   private onGraphNodeAdded(data: { key: string, attributes: NodeAttributes }) {
     this.high = this.checkHighPerformance();
