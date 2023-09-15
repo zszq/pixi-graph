@@ -19,6 +19,7 @@ export default class ChooseManual {
   private mousedownBound = this.mousedown.bind(this);
   private mousemoveBound = this.mousemove.bind(this);
   private mouseupBound = this.mouseup.bind(this);
+  private cancelBound = this.cancel.bind(this);
 
   constructor(container: HTMLElement, graph: AbstractGraph, viewport: Viewport, complete: CB) {
     this.container = container;
@@ -107,10 +108,16 @@ export default class ChooseManual {
       this.callback(data);
     }
 
+    this.cancel();
+  }
+
+  cancel() {
     this.overlay!.style.display = 'none';
     this.selectedArea!.style.display = 'none';
     this.isChoose = false;
     this.overlay!.removeEventListener('mousemove', this.mousemoveBound);
+
+    document.removeEventListener('keydown', this.cancelBound);
   }
 
   start(complete?: CB) {
@@ -120,5 +127,7 @@ export default class ChooseManual {
     if (complete) {
       this.callback = complete;
     }
+
+    document.addEventListener('keydown', this.cancelBound);
   }
 }
