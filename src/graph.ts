@@ -22,10 +22,9 @@ import { NodeStyle } from './utils/style';
 import { EdgeStyle } from './utils/style';
 import { Extract } from '@pixi/extract';
 import { skipHello } from '@pixi/utils';
-import { makeWatermark, WatermarkOption } from './watermark';
 // import { Graphics } from '@pixi/graphics';
-// import type { ViewportEvent } from './types/viewport';
-import Choose from './functional/choose/choose.js';
+import { makeWatermark, WatermarkOption } from './watermark';
+import { ChooseManual, chooseAuto } from './functional/choose/index';
 
 Application.registerPlugin(TickerPlugin);
 Application.registerPlugin(AppLoaderPlugin);
@@ -146,11 +145,10 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   resources?: IAddOptions[];
   highPerformance?: { nodeNumber: number, edgeNumber: number };
   spaceDrag?: boolean; // 启用按住空格拖拽
+  choose: any;
   dragOffset?: boolean;
   minScale: number = 0.1;
   maxScale: number = 1.5;
-
-  choose: Choose;
 
   private app: Application;
   private textureCache: TextureCache;
@@ -273,9 +271,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     console.log('pixi-viewport', this.viewport);
     this.app.stage.addChild(this.viewport);
 
-    // 框选
-    this.choose = new Choose(this.container, this.graph, this.viewport);
-
     // create cull
     this.cull = new Cull({
       // recursive: false,
@@ -303,10 +298,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.viewport.addChild(this.nodeLayer);
     // this.viewport.addChild(this.frontNodeLayer);
     // this.viewport.addChild(this.frontNodeLabelLayer);
-
-    // create watermark
-    this.watermark = new Container();
-    this.app.stage.addChildAt(this.watermark, 0);
 
     this.resizeObserver = new ResizeObserver(() => {
       this.app.resize();
@@ -353,12 +344,11 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       // initial draw
       this.createGraph();
       this.resetView(this.graph.nodes());
-
-      // const screenLine = new Graphics().lineStyle(3, 0x0379f3).drawRect(0, 0, this.viewport.screenWidth, this.viewport.screenHeight);
-      // this.app.stage.addChild(screenLine);
-      // const worldLine = new Graphics().lineStyle(1, 0xff0000).drawRect(0, 0, this.viewport.worldWidth, this.viewport.worldHeight);
-      // this.viewport.addChild(worldLine);
     });
+
+    // 创建水印
+    this.watermark = new Container();
+    this.app.stage.addChildAt(this.watermark, 0);
   }
 
   private createGraph() {
@@ -453,6 +443,12 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
   private onViewportZoomedEnd() {
     this.highEdgeRenderableAllShow();
+
+    // // test
+    // const screenLine = new Graphics().lineStyle(3, 0x0379f3).drawRect(0, 0, this.viewport.screenWidth, this.viewport.screenHeight);
+    // const worldLine = new Graphics().lineStyle(1, 0xff0000).drawRect(0, 0, this.viewport.worldWidth, this.viewport.worldHeight);
+    // this.app.stage.addChild(screenLine);
+    // this.viewport.addChild(worldLine);
   }
 
   private onViewportClicked(event: any) {
@@ -1089,16 +1085,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
   // 移动到视图中心并取消缩放
   moveCenter() {
-    // const nodesX: number[] = [];
-    // const nodesY: number[] = [];
-    // this.graph.forEachNode((node, attributes) => {
-    //   nodesX.push(attributes.x);
-    //   nodesY.push(attributes.y);
-    // })
-    // const graphWidth = Math.abs(Math.max(...nodesX) - Math.min(...nodesX));
-    // const graphHeight = Math.abs(Math.max(...nodesY) - Math.min(...nodesY));
-    // console.log(graphWidth/2, graphHeight/2);
-
     this.viewport.snapZoom({
       width: this.viewport.worldWidth,
       height: this.viewport.worldHeight,
@@ -1159,11 +1145,13 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     const down = (event: KeyboardEvent) => {
       if (event.code === 'Space') {
         event.preventDefault();
+        this.isDragging = true;
         this.container.style.cursor = 'grab';
       }
     }
     const up = (event: KeyboardEvent) => {
       if (event.code === 'Space') {
+        this.isDragging = false;
         this.container.style.cursor = 'default';
       }
     }
@@ -1176,7 +1164,18 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     this.container.addEventListener('mouseleave', () => {
       document.removeEventListener('keydown', down);
       document.removeEventListener('keyup', up);
+
       this.container.style.cursor = 'default';
     });
+  }
+
+  // 启用框选
+  choosesEnable(cb: () => {}, auto?: boolean | undefined) {
+    // 自动框选（空格拖拽才会生效）
+    if (auto && this.spaceDrag) {
+      chooseAuto(this.graph, this.viewport, cb, this);
+    }
+    // 手动框选（启用框选默认生效）
+    this.choose = new ChooseManual(this.container, this.graph, this.viewport, cb);
   }
 }
