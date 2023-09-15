@@ -120,6 +120,7 @@ interface PixiGraphEvents {
   nodeMousedown: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeMouseup: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeClick: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
+  nodeDbclick: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeRightclick: (event: MouseEvent, nodeKey: string, nodeStyle: NodeStyle) => void;
   nodeMoveStart: (event: MouseEvent, nodeKey: string, point: IPointData) => void;
   nodeMove: (event: MouseEvent, nodeKey: string, point: IPointData) => void;
@@ -729,6 +730,12 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       if (this.nodeMouseX === event.offsetX && this.nodeMouseY === event.offsetY) {
         // 防止拖拽触发点击事件
         this.emit('nodeClick', event, nodeKey, nodeStyle);
+      }
+    });
+    node.on('dbclick', (event: MouseEvent) => {
+      if (this.nodeMouseX === event.offsetX && this.nodeMouseY === event.offsetY) {
+        // 防止拖拽触发点击事件
+        this.emit('nodeDbclick', event, nodeKey, nodeStyle);
       }
     });
     node.on('rightclick', (event: MouseEvent) => {

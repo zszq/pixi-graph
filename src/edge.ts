@@ -97,8 +97,9 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
       const rotation = -Math.atan2(targetNodePosition.x - sourceNodePosition.x, targetNodePosition.y - sourceNodePosition.y);
       const st_length = Math.hypot(targetNodePosition.x - sourceNodePosition.x, targetNodePosition.y - sourceNodePosition.y);
       // const line_length = st_length - sourceNodeStyle.size - sourceNodeStyle.border.width - targetNodeStyle.size - targetNodeStyle.border.width;
-      const line_length = st_length - Math.sqrt(3) / 2 * edgeStyle.arrow.size - targetNodeStyle.size - sourceNodeStyle.size - targetNodeStyle.border.width - sourceNodeStyle.border.width;
-      const line_length_half = line_length / 2 + targetNodeStyle.size + Math.sqrt(3) / 2 * edgeStyle.arrow.size + targetNodeStyle.border.width;
+      const line_length =
+        st_length - (Math.sqrt(3) / 2) * edgeStyle.arrow.size - targetNodeStyle.size - sourceNodeStyle.size - targetNodeStyle.border.width - sourceNodeStyle.border.width;
+      const line_length_half = line_length / 2 + targetNodeStyle.size + (Math.sqrt(3) / 2) * edgeStyle.arrow.size + targetNodeStyle.border.width;
       // 一条起点为P1（x1，y1）和终点为P2（x2，y2）的线。这条线是从圆心开始的。圆半径为r。圆线相交点
       // radian = atan2(y2-y1, x2-x1)
       // x = x1 + r * cos(radian)
@@ -125,7 +126,7 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
       }
 
       // edge -> arrow
-      const radius = targetNodeStyle.size + targetNodeStyle.border.width + (Math.sqrt(3) / 4 * edgeStyle.arrow.size);
+      const radius = targetNodeStyle.size + targetNodeStyle.border.width + (Math.sqrt(3) / 4) * edgeStyle.arrow.size;
       const arrowPosition = { x: targetNodePosition.x - Math.cos(radian) * radius, y: targetNodePosition.y - Math.sin(radian) * radius };
       if (this.isBilateral) {
         arrowPosition.x = arrowPosition.x - Math.cos(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);

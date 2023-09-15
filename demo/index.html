@@ -432,7 +432,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // });
   // 加载下一级
   pixiGraph.on('nodeClick', (event, nodeKey, nodeStyle) => {
-    console.log('nodeClick', event, nodeKey, nodeStyle, pixiGraph.checkNodeVisibility(nodeKey));
+    console.log('nodeClick', event, nodeKey, nodeStyle);
     // style.node.label.fontWeight = 'bolder';
     // addLeaf(nodeKey);
     // let nodeAttributes = graph.getNodeAttributes(nodeKey);
@@ -443,6 +443,9 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // const worldPosition = pixiGraph.viewport.toWorld({x:event.x, y:event.y});
     // pixiGraph.viewport.snap(worldPosition.x, worldPosition.y, { removeOnComplete: true, removeOnInterrupt: true });
+  });
+  pixiGraph.on('nodeDbclick', (event, nodeKey, nodeStyle) => {
+    console.log('nodeDbclick', event, nodeKey, nodeStyle);
   });
   pixiGraph.on('nodeRightclick', (event, nodeKey, nodeStyle) => {
     console.log('nodeRightclick', event, nodeKey, nodeStyle);

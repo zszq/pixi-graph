@@ -13,8 +13,9 @@ interface PixiNodeEvents {
   mouseout: (event: MouseEvent) => void;
   mousedown: (event: MouseEvent) => void;
   mouseup: (event: MouseEvent) => void;
-  click: (event: MouseEvent) => void;
   rightclick: (event: MouseEvent) => void;
+  click: (event: MouseEvent) => void;
+  dbclick: (event: MouseEvent) => void;
 }
 
 export class PixiNode extends TypedEmitter<PixiNodeEvents> {
@@ -26,7 +27,7 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
 
   hovered: boolean = false;
 
-  constructor(option: {nodeStyle: NodeStyle}) {
+  constructor(option: { nodeStyle: NodeStyle }) {
     super();
 
     this.nodeStyle = option.nodeStyle;
@@ -42,8 +43,22 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     gfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
     gfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
     gfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
-    gfx.on('click', (event: InteractionEvent) => this.emit('click', event.data.originalEvent as MouseEvent));
     gfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
+
+    const doubleClickDelay = 200;
+    let clickTimeout: number | null;
+    gfx.on('click', (event: InteractionEvent) => {
+      if (clickTimeout) {
+        clearTimeout(clickTimeout);
+        clickTimeout = null;
+        this.emit('dbclick', event.data.originalEvent as MouseEvent);
+      } else {
+        clickTimeout = window.setTimeout(() => {
+          clickTimeout = null;
+          this.emit('click', event.data.originalEvent as MouseEvent);
+        }, doubleClickDelay);
+      }
+    });
   }
 
   private createNode() {

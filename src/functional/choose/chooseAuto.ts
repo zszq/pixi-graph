@@ -31,6 +31,7 @@ function mousedown(e: InteractionEvent) {
 
   isChoose = true;
   startPoint = e.data.getLocalPosition(viewport);
+  endPointer = startPoint;
 
   viewport.on('mousemove', mousemove);
   document.addEventListener('mouseup', mouseup, {
@@ -39,35 +40,33 @@ function mousedown(e: InteractionEvent) {
 }
 
 function mousemove(e: InteractionEvent) {
-  if (isChoose) {
-    const currentPoint = e.data.getLocalPosition(viewport);
+  const currentPoint = e.data.getLocalPosition(viewport);
 
-    const width = Math.abs(currentPoint.x - startPoint.x);
-    const height = Math.abs(currentPoint.y - startPoint.y);
-    const left = Math.min(startPoint.x, currentPoint.x);
-    const top = Math.min(startPoint.y, currentPoint.y);
+  const width = Math.abs(currentPoint.x - startPoint.x);
+  const height = Math.abs(currentPoint.y - startPoint.y);
+  const left = Math.min(startPoint.x, currentPoint.x);
+  const top = Math.min(startPoint.y, currentPoint.y);
 
-    graphics.clear();
-    graphics.lineStyle(1, 0x0379f3).drawRect(left, top, width, height);
+  graphics.clear();
+  graphics.lineStyle(1, 0x0379f3).drawRect(left, top, width, height);
 
-    endPointer = currentPoint;
-  }
+  endPointer = currentPoint;
 }
 
 function mouseup() {
-  if (isChoose) {
-    const startPointToScreen = viewport.toScreen(startPoint);
-    const endPointerToScreen = viewport.toScreen(endPointer);
+  graphics.clear();
+  isChoose = false;
+  viewport.off('mousemove', mousemove);
 
-    const data = judge(graph, viewport, startPointToScreen, endPointerToScreen);
-
-    if (callback) {
-      callback(data);
-    }
-
-    graphics.clear();
-    isChoose = false;
+  if (startPoint.x === endPointer.x && startPoint.y === endPointer.y) {
+    return;
   }
 
-  viewport.off('mousemove', mousemove);
+  const startPointToScreen = viewport.toScreen(startPoint);
+  const endPointerToScreen = viewport.toScreen(endPointer);
+  const data = judge(graph, viewport, startPointToScreen, endPointerToScreen);
+
+  if (callback) {
+    callback(data);
+  }
 }

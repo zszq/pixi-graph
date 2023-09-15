@@ -65,7 +65,7 @@ export default class ChooseManual {
   }
 
   mousedown(e: MouseEvent) {
-    this.isChoose = true;
+    if (!this.isChoose) return;
 
     this.startX = e.offsetX;
     this.startY = e.offsetY;
@@ -84,44 +84,41 @@ export default class ChooseManual {
   }
 
   mousemove(e: MouseEvent) {
-    if (this.isChoose) {
-      const moveX = e.offsetX;
-      const moveY = e.offsetY;
-      const selectedArea = this.selectedArea!;
-      const width = Math.abs(moveX - this.startX);
-      const height = Math.abs(moveY - this.startY);
-      const left = Math.min(this.startX, moveX);
-      const top = Math.min(this.startY, moveY);
+    const moveX = e.offsetX;
+    const moveY = e.offsetY;
+    const selectedArea = this.selectedArea!;
+    const width = Math.abs(moveX - this.startX);
+    const height = Math.abs(moveY - this.startY);
+    const left = Math.min(this.startX, moveX);
+    const top = Math.min(this.startY, moveY);
 
-      selectedArea.style.width = width + 'px';
-      selectedArea.style.height = height + 'px';
-      selectedArea.style.left = left + 'px';
-      selectedArea.style.top = top + 'px';
-    }
+    selectedArea.style.width = width + 'px';
+    selectedArea.style.height = height + 'px';
+    selectedArea.style.left = left + 'px';
+    selectedArea.style.top = top + 'px';
   }
 
   mouseup(e: MouseEvent) {
-    if (this.isChoose) {
-      const startPoint = { x: this.startX, y: this.startY };
-      const endPoint = { x: e.offsetX, y: e.offsetY };
-      const data = judge(this.graph, this.viewport, startPoint, endPoint);
+    const startPoint = { x: this.startX, y: this.startY };
+    const endPoint = { x: e.offsetX, y: e.offsetY };
+    const data = judge(this.graph, this.viewport, startPoint, endPoint);
 
-      if (this.callback) {
-        this.callback(data);
-      }
-
-      this.overlay!.style.display = 'none';
-      this.selectedArea!.style.display = 'none';
-      this.isChoose = false;
+    if (this.callback) {
+      this.callback(data);
     }
 
+    this.overlay!.style.display = 'none';
+    this.selectedArea!.style.display = 'none';
+    this.isChoose = false;
     this.overlay!.removeEventListener('mousemove', this.mousemoveBound);
   }
 
   start(complete?: CB) {
+    this.isChoose = true;
+    this.overlay!.style.display = 'block';
+
     if (complete) {
       this.callback = complete;
     }
-    this.overlay!.style.display = 'block';
   }
 }
