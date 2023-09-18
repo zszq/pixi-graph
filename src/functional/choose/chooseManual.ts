@@ -41,14 +41,15 @@ export default class ChooseManual {
     overlay.style.right = '0px';
     overlay.style.top = '0px';
     overlay.style.bottom = '0px';
-    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+    overlay.style.backgroundColor = '#000';
+    overlay.style.opacity = '0.2';
     overlay.style.zIndex = this.container.style.zIndex + 1;
     overlay.style.display = 'none';
 
     const selectedArea = document.createElement('div');
     selectedArea.style.position = 'absolute';
-    selectedArea.style.backgroundColor = '#5a72f8';
-    selectedArea.style.opacity = '0.4';
+    selectedArea.style.backgroundColor = '#fff';
+    selectedArea.style.opacity = '1';
     selectedArea.style.border = '1px dashed blue';
     selectedArea.style.width = '10px';
     selectedArea.style.height = '10px';
