@@ -42,23 +42,27 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     gfx.on('mouseover', (event: InteractionEvent) => this.emit('mouseover', event.data.originalEvent as MouseEvent));
     gfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
     gfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
-    gfx.on('mouseup', (event: InteractionEvent) => this.emit('mouseup', event.data.originalEvent as MouseEvent));
-    gfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
 
-    const doubleClickDelay = 200;
+    const doubleClickDelay = 180;
     let clickTimeout: number | null;
-    gfx.on('click', (event: InteractionEvent) => {
+    gfx.on('mouseup', (event: InteractionEvent) => {
+      let originalEvent = event.data.originalEvent as MouseEvent;
+      this.emit('mouseup', originalEvent);
+
       if (clickTimeout) {
         clearTimeout(clickTimeout);
         clickTimeout = null;
-        this.emit('dbclick', event.data.originalEvent as MouseEvent);
+        this.emit('dbclick', originalEvent);
       } else {
         clickTimeout = window.setTimeout(() => {
           clickTimeout = null;
-          this.emit('click', event.data.originalEvent as MouseEvent);
+          this.emit('click', originalEvent);
         }, doubleClickDelay);
       }
     });
+    gfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
+
+    // gfx.on('click', (event: InteractionEvent) => {}); // 通过mouseup上面实现单双击事件，防止单击后移动鼠标由于延迟原因造成的坐标数据为移动后的。
   }
 
   private createNode() {

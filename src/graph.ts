@@ -1177,10 +1177,10 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
 
   // 启用框选
-  choosesEnable(cb: () => {}, auto?: boolean | undefined) {
+  choosesEnable(cb?: () => {}, auto?: boolean | undefined) {
     // 自动框选（空格拖拽才会生效）
     if (auto && this.spaceDrag) {
-      chooseAuto(this.graph, this.viewport, cb, this);
+      chooseAuto(this.graph, this.viewport, this, cb);
     }
     // 手动框选（启用框选默认生效）
     this.choose = new ChooseManual(this.container, this.graph, this.viewport, cb);

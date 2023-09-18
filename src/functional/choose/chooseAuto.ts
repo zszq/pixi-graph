@@ -14,9 +14,9 @@ let pixiGraph: any;
 let graphics = new Graphics();
 let startPoint = new Point(0, 0);
 let endPointer = new Point(0, 0);
-let callback: CB;
+let callback: CB | undefined;
 
-export default function chooseAuto(graphParam: AbstractGraph, viewportParam: Viewport, complete: CB, pixiGraphParam: any) {
+export default function chooseAuto(graphParam: AbstractGraph, viewportParam: Viewport, pixiGraphParam: any, complete?: CB) {
   graph = graphParam;
   viewport = viewportParam;
   pixiGraph = pixiGraphParam;

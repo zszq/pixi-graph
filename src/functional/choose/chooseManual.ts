@@ -14,14 +14,14 @@ export default class ChooseManual {
   selectedArea: HTMLElement | null;
 
   private isChoose = false;
-  private callback: CB;
+  private callback: CB | undefined;
 
   private mousedownBound = this.mousedown.bind(this);
   private mousemoveBound = this.mousemove.bind(this);
   private mouseupBound = this.mouseup.bind(this);
   private cancelBound = this.cancel.bind(this);
 
-  constructor(container: HTMLElement, graph: AbstractGraph, viewport: Viewport, complete: CB) {
+  constructor(container: HTMLElement, graph: AbstractGraph, viewport: Viewport, complete?: CB) {
     this.container = container;
     this.graph = graph;
     this.viewport = viewport;
