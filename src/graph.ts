@@ -45,7 +45,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
     },
     icon: {
       type: TextType.TEXT,
-      content: '',
+      content: 'node_icon_content',
       fontFamily: 'Arial',
       fontSize: 20,
       fontWeight: '400',
@@ -56,7 +56,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
     },
     label: {
       type: TextType.TEXT,
-      content: '',
+      content: 'node_label_content',
       fontFamily: 'Arial',
       fontSize: 12,
       fontWeight: '400',
@@ -78,12 +78,12 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
     },
     gap: 15,
     arrow: {
-      show: false,
+      show: true,
       size: 15
     },
     label: {
       type: TextType.TEXT,
-      content: '',
+      content: 'edge_label_content',
       fontFamily: 'Arial',
       fontSize: 12,
       fontWeight: '400',
