@@ -1,11 +1,12 @@
 import { Container } from '@pixi/display';
-import { InteractionEvent } from '@pixi/interaction';
-import { IPointData } from '@pixi/math';
+import { IPointData } from '@pixi/core';
+import { FederatedPointerEvent } from '@pixi/events';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import { createNode, updateNodeStyle, updateNodeVisibility } from './renderers/node';
 import { createNodeLabel, updateNodeLabelStyle, updateNodeLabelVisibility } from './renderers/node-label';
 import { NodeStyle } from './utils/style';
 import { TextureCache } from './texture-cache';
+// import { SmoothGraphics as Graphics } from '@pixi/graphics-smooth';
 
 interface PixiNodeEvents {
   mousemove: (event: MouseEvent) => void;
@@ -38,37 +39,41 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
   }
 
   private addCommonEventListener(gfx: Container) {
-    gfx.on('mousemove', (event: InteractionEvent) => this.emit('mousemove', event.data.originalEvent as MouseEvent));
-    gfx.on('mouseover', (event: InteractionEvent) => this.emit('mouseover', event.data.originalEvent as MouseEvent));
-    gfx.on('mouseout', (event: InteractionEvent) => this.emit('mouseout', event.data.originalEvent as MouseEvent));
-    gfx.on('mousedown', (event: InteractionEvent) => this.emit('mousedown', event.data.originalEvent as MouseEvent));
+    gfx.on('mousemove', event => this.emit('mousemove', event.originalEvent as FederatedPointerEvent));
+    gfx.on('mouseover', event => this.emit('mouseover', event.originalEvent as FederatedPointerEvent));
+    gfx.on('mouseout', event => this.emit('mouseout', event.originalEvent as FederatedPointerEvent));
+    gfx.on('mousedown', event => {
+      gfx.cursor = 'grabbing';
+      this.emit('mousedown', event.originalEvent as FederatedPointerEvent);
+    });
 
     const doubleClickDelay = 180;
     let clickTimeout: number | null;
-    gfx.on('mouseup', (event: InteractionEvent) => {
-      let originalEvent = event.data.originalEvent as MouseEvent;
-      this.emit('mouseup', originalEvent);
+    gfx.on('mouseup', event => {
+      gfx.cursor = 'pointer';
+      let originalEvent = event.originalEvent;
+      this.emit('mouseup', originalEvent as FederatedPointerEvent);
 
       if (clickTimeout) {
         clearTimeout(clickTimeout);
         clickTimeout = null;
-        this.emit('dbclick', originalEvent);
+        this.emit('dbclick', originalEvent as FederatedPointerEvent);
       } else {
         clickTimeout = window.setTimeout(() => {
           clickTimeout = null;
-          this.emit('click', originalEvent);
+          this.emit('click', originalEvent as FederatedPointerEvent);
         }, doubleClickDelay);
       }
     });
-    gfx.on('rightclick', (event: InteractionEvent) => this.emit('rightclick', event.data.originalEvent as MouseEvent));
+    gfx.on('rightclick', event => this.emit('rightclick', event.originalEvent as FederatedPointerEvent));
 
-    // gfx.on('click', (event: InteractionEvent) => {}); // 通过mouseup上面实现单双击事件，防止单击后移动鼠标由于延迟原因造成的坐标数据为移动后的。
+    // gfx.on('click', (event) => {}); // 通过mouseup上面实现单双击事件，防止单击后移动鼠标由于延迟原因造成的坐标数据为移动后的。
   }
 
   private createNode() {
     const nodeGfx = new Container();
-    nodeGfx.interactive = true;
-    nodeGfx.buttonMode = true;
+    nodeGfx.eventMode = 'static';
+    nodeGfx.cursor = 'pointer';
     this.addCommonEventListener(nodeGfx);
     createNode(nodeGfx);
     return nodeGfx;
@@ -76,8 +81,8 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
 
   private createNodeLabel() {
     const nodeLabelGfx = new Container();
-    nodeLabelGfx.interactive = true;
-    nodeLabelGfx.buttonMode = true;
+    nodeLabelGfx.eventMode = 'static';
+    nodeLabelGfx.cursor = 'pointer';
     this.addCommonEventListener(nodeLabelGfx);
     createNodeLabel(nodeLabelGfx);
     return nodeLabelGfx;

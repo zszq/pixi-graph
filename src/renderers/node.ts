@@ -1,5 +1,5 @@
 import { Container } from '@pixi/display';
-import { Circle } from '@pixi/math';
+import { Circle } from '@pixi/core';
 import { Sprite } from '@pixi/sprite';
 import { Graphics } from '@pixi/graphics';
 import { Texture } from '@pixi/core';

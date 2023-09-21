@@ -279,7 +279,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     spaceDrag: true, // 使用按住空格拖拽
     // dragOffset: true, // false 拖拽鼠标不偏移到点中心，拖拽过快会漂移
   });
-  console.log('pixiGraph===', pixiGraph);
+  console.log('pixiGraph', pixiGraph);
 
   // 启用框选 param1：完成回调 param2：是否自动框选
   pixiGraph.choosesEnable((selected) => {console.log('choose-data', selected)}, true);
@@ -514,22 +514,24 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   // 提取图片
   document.getElementById('extract').addEventListener('click', () => {
-    // let src = pixiGraph.extract(true);
-    // extract(src);
-    pixiGraph.extract()
-      .then(res => extract(res))
-      .catch(err => {
-        confirm(err);
-      })
+    pixiGraph.extract(true).then(src => {
+      extract(src);
+    })
+    
+    // pixiGraph.extract()
+    //   .then(res => extract(res))
+    //   .catch(err => {
+    //     confirm(err);
+    //   })
   });
-  // function extract(src) {
-  //   let img = document.createElement('img');
-  //   img.src = src;
-  //   let thumbnail_box = document.querySelector('#thumbnail');
-  //   let thumbnail_img = document.querySelector('#thumbnail img');
-  //   if (thumbnail_img) thumbnail_box.removeChild(thumbnail_img);
-  //   thumbnail_box.appendChild(img);
-  // }
+  function extract(src) {
+    let img = document.createElement('img');
+    img.src = src;
+    let thumbnail_box = document.querySelector('#thumbnail');
+    let thumbnail_img = document.querySelector('#thumbnail img');
+    if (thumbnail_img) thumbnail_box.removeChild(thumbnail_img);
+    thumbnail_box.appendChild(img);
+  }
   function downloadImg(src) {
     let a = document.createElement('a');
     a.href = src;

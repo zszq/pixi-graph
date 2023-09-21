@@ -1,6 +1,6 @@
 import { AbstractGraph } from 'graphology-types';
 import { Viewport } from 'pixi-viewport';
-import { IPointData } from '@pixi/math';
+import { IPointData } from '@pixi/core';
 
 export default function judge(graph: AbstractGraph, viewport: Viewport, startPoint: IPointData, endPoint: IPointData) {
   const nodes = new Set();

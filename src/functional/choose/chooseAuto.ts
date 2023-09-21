@@ -1,8 +1,8 @@
-import { AbstractGraph } from 'graphology-types';
-import { Viewport } from 'pixi-viewport';
+import { Point } from '@pixi/core';
 import { Graphics } from '@pixi/graphics';
-import { InteractionEvent } from '@pixi/interaction';
-import { Point } from '@pixi/math';
+import { FederatedPointerEvent } from '@pixi/events';
+import { Viewport } from 'pixi-viewport';
+import { AbstractGraph } from 'graphology-types';
 import judge from './judgeSelected';
 
 type CB = ((p: { nodes: string[]; edges: string[] }) => void) | null;
@@ -26,11 +26,11 @@ export default function chooseAuto(graphParam: AbstractGraph, viewportParam: Vie
   viewport.on('mousedown', mousedown);
 }
 
-function mousedown(e: InteractionEvent) {
+function mousedown(e: FederatedPointerEvent) {
   if (e.target !== viewport || pixiGraph.isDragging) return;
 
   isChoose = true;
-  startPoint = e.data.getLocalPosition(viewport);
+  startPoint = e.getLocalPosition(viewport);
   endPointer = startPoint;
 
   viewport.on('mousemove', mousemove);
@@ -39,8 +39,8 @@ function mousedown(e: InteractionEvent) {
   });
 }
 
-function mousemove(e: InteractionEvent) {
-  const currentPoint = e.data.getLocalPosition(viewport);
+function mousemove(e: FederatedPointerEvent) {
+  const currentPoint = e.getLocalPosition(viewport);
 
   const width = Math.abs(currentPoint.x - startPoint.x);
   const height = Math.abs(currentPoint.y - startPoint.y);

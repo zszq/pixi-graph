@@ -1,11 +1,6 @@
+import { Point, IPointData, TickerPlugin, settings } from '@pixi/core';
 import { Application } from '@pixi/app';
-import { TickerPlugin } from '@pixi/ticker';
-import { AppLoaderPlugin, Loader } from '@pixi/loaders';
-import { BitmapFontLoader } from '@pixi/text-bitmap';
-import { Renderer, BatchRenderer } from '@pixi/core';
-import { InteractionManager } from '@pixi/interaction';
 import { Container } from '@pixi/display';
-import { Point, IPointData } from '@pixi/math';
 import { Viewport } from 'pixi-viewport';
 import { Cull } from '@pixi-essentials/cull';
 import { AbstractGraph } from 'graphology-types';
@@ -18,20 +13,13 @@ import { BaseNodeAttributes, BaseEdgeAttributes } from './attributes';
 import { TextureCache } from './texture-cache';
 import { PixiNode } from './node';
 import { PixiEdge } from './edge';
-import { NodeStyle } from './utils/style';
-import { EdgeStyle } from './utils/style';
-import { Extract } from '@pixi/extract';
-import { skipHello } from '@pixi/utils';
+import { NodeStyle, EdgeStyle } from './utils/style';
 // import { Graphics } from '@pixi/graphics';
 import { makeWatermark, WatermarkOption } from './watermark';
 import { ChooseManual, chooseAuto } from './functional/choose/index';
 
-Application.registerPlugin(TickerPlugin);
-Application.registerPlugin(AppLoaderPlugin);
-Loader.registerPlugin(BitmapFontLoader);
-Renderer.registerPlugin('batch', BatchRenderer);
-Renderer.registerPlugin('interaction', InteractionManager);
-Renderer.registerPlugin('extract', Extract);
+import "@pixi/events";
+import '@pixi/extract';
 
 const DEFAULT_STYLE: GraphStyleDefinition = {
   node: {
@@ -232,7 +220,6 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     
 
     // create PIXI application
-    skipHello();
     this.app = new Application({
       resizeTo: this.container,
       // resolution: window.devicePixelRatio,
@@ -243,10 +230,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       // autoStart: false,
       powerPreference: "high-performance"
     });
-    this.container.appendChild(this.app.view);
-
-    this.app.renderer.plugins.interaction.moveWhenInside = true;
-    this.app.view.addEventListener('wheel', event => { event.preventDefault() });
+    this.container.appendChild(this.app.view as HTMLCanvasElement);
 
     this.textureCache = new TextureCache(this.app.renderer);
 
@@ -256,9 +240,10 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       screenHeight: this.container.clientHeight,
       worldWidth: this.container.clientWidth,
       worldHeight: this.container.clientHeight,
-      interaction: this.app.renderer.plugins.interaction,
-      divWheel: this.container,
-      disableOnContextMenu: true
+      events: this.app.renderer.events,
+      disableOnContextMenu: true,
+      passiveWheel: false,
+      // stopPropagation: true
     })
       .drag({
         mouseButtons: 'left',
@@ -307,10 +292,10 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     });
 
     // preload resources
-    if (this.resources) {
-      this.app.loader.add(this.resources);
-    }
-    this.app.loader.load(() => {
+    // if (this.resources) {
+    //   this.app.loader.add(this.resources);
+    // }
+    // this.app.loader.load(() => {
       this.viewport.on('frame-end', () => {
         if (this.viewport.dirty) {
           this.updateGraphVisibility();
@@ -345,7 +330,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
       // initial draw
       this.createGraph();
       this.resetView(this.graph.nodes());
-    });
+    // });
 
     // 创建水印
     this.watermark = new Container();
@@ -685,6 +670,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 
     const eventPosition = new Point(event.offsetX, event.offsetY);
     const point = this.viewport.toWorld(eventPosition);
+    
     this.emit('nodeMoveEnd', event, nodeKey, point);
   }
 
@@ -705,7 +691,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
     });
     node.on('mouseout', (event: MouseEvent) => {
       if (!this.mousedownNodeKey && !this.isDragging) {
-        // 防止拖拽时触发
+        // 防止拖拽时触发hover
         this.unhoverNode(nodeKey);
         this.emit('nodeMouseout', event, nodeKey, nodeStyle);
       }
@@ -1009,7 +995,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   // 提取图片（锯齿严重，图大截图不完全）
   extract(full: boolean = true, format: string = 'image/png', quality: number = 0.92) {
     full && this.uncull();
-    return this.app.renderer.plugins.extract.base64(this.viewport, format, quality);
+    return this.app.renderer.extract.base64(this.viewport, format, quality);
   }
   // 提取图片，多次截图合并（无锯齿，图大截图不完全）
   extractWithScreenShot() {
@@ -1077,7 +1063,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
         setTimeout(() => {
           requestAnimationFrame(() => {
             let img: HTMLImageElement | null = new Image();
-            img.src = this.app.view.toDataURL("image/png");
+            img.src = this.app.view.toDataURL ? this.app.view.toDataURL("image/png") : '';
             img.onload = () => {
               context.drawImage(<HTMLImageElement>img, canvasX, canvasY, width, height);
               img = null;
@@ -1116,8 +1102,8 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
   }
   // 删除指定水印
   removeWatermark(name: string) {
-    let children = this.watermark.getChildByName!(name);
-    this.watermark.removeChild(children);
+    let children = this.watermark.getChildByName(name);
+    if (children) this.watermark.removeChild(children);
   }
   // 清除所有水印
   clearWatermark() {

@@ -1,25 +1,29 @@
-import { AbstractRenderer } from '@pixi/core';
+import { IRenderer } from '@pixi/core';
 import { Container } from '@pixi/display';
 import { Texture } from '@pixi/core';
-import { Rectangle } from '@pixi/math';
-import { SCALE_MODES } from '@pixi/constants';
+import { Rectangle } from '@pixi/core';
+import { MSAA_QUALITY } from '@pixi/core';
 
 export class TextureCache {
-  renderer: AbstractRenderer;
+  renderer: IRenderer;
 
   private textures = new Map<string, Texture>();
 
-  constructor(renderer: AbstractRenderer) {
+  constructor(renderer: IRenderer) {
     this.renderer = renderer;
   }
 
   get(key: string, defaultCallback: () => Container): Texture {
-    let texture = this.textures.get(key);
+    let texture = this.textures.get(key)!;
     if (!texture) {
       const container = defaultCallback();
       const region = container.getLocalBounds(undefined, true);
       const roundedRegion = new Rectangle(Math.floor(region.x), Math.floor(region.y), Math.ceil(region.width), Math.ceil(region.height));
-      texture = this.renderer.generateTexture(container, SCALE_MODES.LINEAR, this.renderer.resolution, roundedRegion);
+      texture = this.renderer.generateTexture(container, {
+        region: roundedRegion,
+        resolution: this.renderer.resolution,
+        multisample: MSAA_QUALITY.LOW
+      });
       this.textures.set(key, texture);
     }
     return texture;
@@ -37,7 +41,7 @@ export class TextureCache {
     let texture = this.textures.get(key);
     return texture ? true : false;
   }
-  
+
   delete(key: string) {
     const texture = this.textures.get(key);
     if (!texture) {
