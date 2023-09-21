@@ -31,7 +31,7 @@ export function textToPixi(type: TextType, content: string, style: TextStyle) {
       align: style.align,
       fill: style.color,
       stroke: style.stroke,
-      strokeThickness: style.strokeThickness,
+      strokeThickness: style.strokeThickness
       // wordWrap: true,
       // wordWrapWidth: 200
     });

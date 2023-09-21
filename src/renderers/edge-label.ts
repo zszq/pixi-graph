@@ -29,10 +29,10 @@ export function createEdgeLabel(edgeLabelGfx: Container) {
 
 export function updateEdgeLabelStyle(edgeLabelGfx: Container, edgeStyle: EdgeStyle, textureCache: TextureCache) {
   const edgeLabelTextTextureKey = [
-    EDGE_LABEL_TEXT, 
-    edgeStyle.label.fontFamily, 
-    edgeStyle.label.fontSize, 
-    edgeStyle.label.fontWeight, 
+    EDGE_LABEL_TEXT,
+    edgeStyle.label.fontFamily,
+    edgeStyle.label.fontSize,
+    edgeStyle.label.fontWeight,
     edgeStyle.label.color,
     edgeStyle.label.stroke,
     edgeStyle.label.strokeThickness,
@@ -68,7 +68,7 @@ export function updateEdgeLabelVisibility(edgeLabelGfx: Container, zoomStep: num
   // edgeLabelGfx -> edgeLabelBackground
   const edgeLabelBackground = edgeLabelGfx.getChildByName!(EDGE_LABEL_BACKGROUND) as Sprite;
   edgeLabelBackground.renderable = edgeLabelBackground.renderable && zoomStep >= 3;
-  
+
   // edgeLabelGfx -> edgeLabelText
   const edgeLabelText = edgeLabelGfx.getChildByName!(EDGE_LABEL_TEXT) as BitmapText;
   edgeLabelText.renderable = edgeLabelText.renderable && zoomStep >= 2;

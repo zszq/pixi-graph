@@ -31,10 +31,10 @@ export function updateNodeLabelStyle(nodeLabelGfx: Container, nodeStyle: NodeSty
   const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
 
   const nodeLabelTextTextureKey = [
-    NODE_LABEL_TEXT, 
-    nodeStyle.label.fontFamily, 
-    nodeStyle.label.fontSize, 
-    nodeStyle.label.fontWeight, 
+    NODE_LABEL_TEXT,
+    nodeStyle.label.fontFamily,
+    nodeStyle.label.fontSize,
+    nodeStyle.label.fontWeight,
     nodeStyle.label.color,
     nodeStyle.label.stroke,
     nodeStyle.label.strokeThickness,
@@ -70,7 +70,7 @@ export function updateNodeLabelVisibility(nodeLabelGfx: Container, zoomStep: num
   // nodeLabelGfx -> nodeLabelBackground
   const nodeLabelBackground = nodeLabelGfx.getChildByName!(NODE_LABEL_BACKGROUND) as Sprite;
   nodeLabelBackground.renderable = nodeLabelBackground.renderable && zoomStep >= 3;
-  
+
   // nodeLabelGfx -> nodeLabelText
   const nodeLabelText = nodeLabelGfx.getChildByName!(NODE_LABEL_TEXT) as BitmapText;
   nodeLabelText.renderable = nodeLabelText.renderable && zoomStep >= 2;

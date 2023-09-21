@@ -4,19 +4,19 @@ import { Texture } from '@pixi/core';
 import { Text } from '@pixi/text';
 
 export interface WatermarkOption {
-  type: string,
-  content: string,
-  cover: boolean,
-  row: number,
-  column: number,
-  position: {x: number, y: number},
-  rotation: number,
+  type: string;
+  content: string;
+  cover: boolean;
+  row: number;
+  column: number;
+  position: { x: number; y: number };
+  rotation: number;
   style: {
     fontFamily: string;
     fontSize: number;
     fontWeight: any;
     color: string;
-  },
+  };
 }
 // make wtermark
 export function makeWatermark(containerWidth: number, containerHeight: number, option: WatermarkOption) {
@@ -45,7 +45,7 @@ export function makeWatermark(containerWidth: number, containerHeight: number, o
   // watermark.position.set(watermark.width / 2, watermark.height / 2);
   // watermark.pivot.set(watermark.width / 2, watermark.height / 2);
   // watermark.rotation = option.rotation;
-  
+
   return watermark;
 }
 // image sprite
@@ -67,14 +67,14 @@ function makeTextWatermark(option: WatermarkOption) {
     fontFamily: 'Arial',
     fontSize: 26,
     fontWeight: 'normal',
-    color: 'black',
-  }
+    color: 'black'
+  };
   const style = Object.assign(styleDefault, option.style);
   const watermarkText = new Text(option.content, {
-    fontFamily: style.fontFamily ,
+    fontFamily: style.fontFamily,
     fontSize: style.fontSize,
     fontWeight: style.fontWeight,
-    fill: style.color,
+    fill: style.color
   });
   watermarkText.anchor.set(0.5);
   watermarkText.rotation = option.rotation;
@@ -98,8 +98,8 @@ function coverScreen(containerWidth: number, containerHeight: number, sprite: Sp
   for (let i = 0; i < row; i++) {
     for (let j = 0; j < column; j++) {
       const sprite = new Sprite(texture);
-      let x = containerWidth / column * j + containerWidth / column / 2;
-      let y = containerHeight / row * i + containerHeight / row / 2;
+      let x = (containerWidth / column) * j + containerWidth / column / 2;
+      let y = (containerHeight / row) * i + containerHeight / row / 2;
       // sprite.anchor.set(0.5);
       sprite.rotation = option.rotation;
       // cover为true时均匀铺满全屏，position无效
@@ -114,6 +114,6 @@ function coverScreen(containerWidth: number, containerHeight: number, sprite: Sp
       sprites.push(sprite);
     }
   }
-  
+
   return sprites;
 }

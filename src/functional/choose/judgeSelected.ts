@@ -4,7 +4,7 @@ import { IPointData } from '@pixi/core';
 
 export default function judge(graph: AbstractGraph, viewport: Viewport, startPoint: IPointData, endPoint: IPointData) {
   const nodes = new Set();
-  const edges = new Set();
+  const edges = new Set(); 
 
   const endX = endPoint.x;
   const endY = endPoint.y;

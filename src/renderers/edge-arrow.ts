@@ -34,14 +34,10 @@ export function updateEdgeArrowStyle(edgeArrowGfx: Container, edgeStyle: EdgeSty
     const arrowSize = edgeStyle.arrow.size % 2 === 0 ? edgeStyle.arrow.size : edgeStyle.arrow.size + 1;
     const graphics = new Graphics();
     graphics.beginFill(WHITE);
-    graphics.drawPolygon([
-      -arrowSize / 2, arrowSize, 
-      arrowSize / 2, arrowSize, 
-      0, 0
-    ]);
+    graphics.drawPolygon([-arrowSize / 2, arrowSize, arrowSize / 2, arrowSize, 0, 0]);
     return graphics;
   });
-  
+
   // edgeGfx -> edgeArrow
   const edgeArrow = edgeArrowGfx.getChildByName!(EDGE_ARROW) as Sprite;
   edgeArrow.texture = edgeArrowTexture;

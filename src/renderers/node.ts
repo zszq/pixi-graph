@@ -19,7 +19,7 @@ const NODE_ICON = 'NODE_ICON';
 export function createNode(nodeGfx: Container) {
   // nodeGfx
   nodeGfx.hitArea = new Circle(0, 0);
-  
+
   // nodeGfx -> nodeCircleBorder
   const nodeCircleBorder = new Sprite();
   nodeCircleBorder.name = NODE_CIRCLE_BORDER;
@@ -41,7 +41,7 @@ export function createNode(nodeGfx: Container) {
 
 export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache) {
   const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
-  
+
   const nodeCircleTextureKey = [NODE_CIRCLE, nodeStyle.size].join(DELIMITER);
   const nodeCircleTexture = textureCache.get(nodeCircleTextureKey, () => {
     const graphics = new Graphics();
@@ -70,14 +70,14 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
   });
 
   const nodeIconTextureKey = [
-    NODE_ICON, 
-    nodeStyle.icon.fontFamily, 
-    nodeStyle.icon.fontSize, 
+    NODE_ICON,
+    nodeStyle.icon.fontFamily,
+    nodeStyle.icon.fontSize,
     nodeStyle.icon.fontWeight,
     nodeStyle.icon.color,
     nodeStyle.icon.stroke,
     nodeStyle.icon.strokeThickness,
-    nodeStyle.icon.content,
+    nodeStyle.icon.content
   ].join(DELIMITER);
   if (nodeStyle.icon.type !== TextType.IMAGE) {
     const nodeIconTexture = textureCache.get(nodeIconTextureKey, () => {
@@ -120,10 +120,10 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
         nodeIcon.height = nodeStyle.size;
       }
     }
-    
+
     nodeGfx.addChild(nodeIcon);
   }
-  
+
   // nodeGfx
   (nodeGfx.hitArea as Circle).radius = nodeOuterSize;
 
@@ -131,9 +131,9 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
   // 如果nodeicon是图片直接遮盖nodeCircle，不再设置纹理，否则会出现底色锯齿边框
   // 但有图标的点的颜色深浅会失效？
   // if (nodeStyle.icon.type !== TextType.IMAGE) {
-    const nodeCircle = nodeGfx.getChildByName!(NODE_CIRCLE) as Sprite;
-    nodeCircle.texture = nodeCircleTexture;
-    [nodeCircle.tint, nodeCircle.alpha] = colorToPixi(nodeStyle.color);
+  const nodeCircle = nodeGfx.getChildByName!(NODE_CIRCLE) as Sprite;
+  nodeCircle.texture = nodeCircleTexture;
+  [nodeCircle.tint, nodeCircle.alpha] = colorToPixi(nodeStyle.color);
   // }
 
   // nodeGfx -> nodeCircleBorder

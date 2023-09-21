@@ -43,12 +43,12 @@ export interface GraphStyle {
     alpha: number;
     selefLoop: {
       radius: number;
-      cross: number
+      cross: number;
     };
     gap: number;
     arrow: {
       show: boolean;
-      size: number
+      size: number;
     };
     label: {
       type: TextType;
@@ -63,17 +63,14 @@ export interface GraphStyle {
       backgroundColor: string;
       padding: number;
       parallel: boolean;
-    }
+    };
   };
 }
 
 export type NodeStyle = GraphStyle['node'];
 export type EdgeStyle = GraphStyle['edge'];
 
-export type StyleDefinition<Style, Attributes> =
-  ((attributes: Attributes) => Style) |
-  { [Key in keyof Style]?: StyleDefinition<Style[Key], Attributes> } |
-  Style;
+export type StyleDefinition<Style, Attributes> = ((attributes: Attributes) => Style) | { [Key in keyof Style]?: StyleDefinition<Style[Key], Attributes> } | Style;
 
 export type NodeStyleDefinition<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes> = StyleDefinition<NodeStyle, NodeAttributes>;
 export type EdgeStyleDefinition<EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> = StyleDefinition<EdgeStyle, EdgeAttributes>;

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh">
+
 <head>
   <meta charset="utf-8">
   <title>pixi-graph</title>
@@ -19,11 +20,13 @@
     body {
       margin: 0;
     }
+
     #graph {
       width: calc(100vw - 17px);
       height: 100vh;
       background: #56606e;
     }
+
     #controls {
       position: absolute;
       top: 10px;
@@ -31,6 +34,7 @@
       display: flex;
       flex-direction: column;
     }
+
     #controls button {
       background-color: #fff;
       border: 1px solid #ccc;
@@ -43,6 +47,7 @@
       bottom: 10px;
       right: 10px;
     }
+
     #thumbnail img {
       width: 300px;
       height: 200px;
@@ -51,6 +56,7 @@
     }
   </style>
 </head>
+
 <body>
   <div id="graph"></div>
   <div id="controls">
@@ -85,667 +91,667 @@
   <div id="thumbnail"></div>
   <!-- <div id="context" style="width: 100px; height: 120px; background-color: antiquewhite; position: absolute; top: 0; z-index: 999;" oncontextmenu="return false"></div> -->
   <div style="width: 500px; height: 500px; background-color: antiquewhite;"></div>
-<script>
-const NODE_COLOR_NORMAL = '#C6CCF5';
-const EDGE_COLOR_NORMAL = '#cccccc';
-const COLOR_SELECTED = '#ff7f0e';
+  <script>
+    const NODE_COLOR_NORMAL = '#C6CCF5';
+    const EDGE_COLOR_NORMAL = '#cccccc';
+    const COLOR_SELECTED = '#ff7f0e';
 
-window.addEventListener('DOMContentLoaded', async () => {
-  // let statusSelected = false;
-  // let statusCorrelation = false;
+    window.addEventListener('DOMContentLoaded', async () => {
+      // let statusSelected = false;
+      // let statusCorrelation = false;
 
-  // document.getElementById('multiSelect').addEventListener('click', (e) => {
-  //   statusSelected = !statusSelected;
-  //   event.target.style.backgroundColor = statusSelected ? '#ccc' : '#fff';
-  //   selectedNodes = [];
-  //   resetGraph();
-  // });
-  // document.getElementById('correlation').addEventListener('click', (e) => {
-  //   statusCorrelation = !statusCorrelation;
-  //   event.target.style.backgroundColor = statusCorrelation ? '#ccc' : '#fff';
-  //   selectedNodes = [];
-  //   resetGraph();
-  // });
+      // document.getElementById('multiSelect').addEventListener('click', (e) => {
+      //   statusSelected = !statusSelected;
+      //   event.target.style.backgroundColor = statusSelected ? '#ccc' : '#fff';
+      //   selectedNodes = [];
+      //   resetGraph();
+      // });
+      // document.getElementById('correlation').addEventListener('click', (e) => {
+      //   statusCorrelation = !statusCorrelation;
+      //   event.target.style.backgroundColor = statusCorrelation ? '#ccc' : '#fff';
+      //   selectedNodes = [];
+      //   resetGraph();
+      // });
 
-  // let selectedNodes = [];
-  // let selectedLinks = [];
+      // let selectedNodes = [];
+      // let selectedLinks = [];
 
 
 
-  const graph = new graphology.Graph({
-    multi: true,
-    type: 'undirected'
-  });
-  // const { nodes, links } = await (await fetch('./data/miserables.json')).json();
-  const { nodes, links } = await (await fetch('./data/data6-5.json')).json();
-  // const { nodes, links } = await (await fetch('./data/data500-1000.json')).json();
-  // const { nodes, links } = await (await fetch('./data/data1000-5000.json')).json();
-  // const { nodes, links } = await (await fetch('./data/data-10000-10000.json')).json();
-  // const { nodes, links } = await (await fetch('./data/socfb-Caltech36.json')).json();
-  nodes.forEach(node => {
-    graph.addNode(node.id, {...node});
-  });
-  links.forEach(link => {
-    if (!graph.hasEdge(`${link.source}->${link.target}`)) {
-      // graph.addEdge(link.source, link.target, {...link});
-      graph.addEdgeWithKey(`${link.source}->${link.target}`, link.source, link.target, {...link});
-    }
-  });
+      const graph = new graphology.Graph({
+        multi: true,
+        type: 'undirected'
+      });
+      // const { nodes, links } = await (await fetch('./data/miserables.json')).json();
+      const { nodes, links } = await (await fetch('./data/data6-5.json')).json();
+      // const { nodes, links } = await (await fetch('./data/data500-1000.json')).json();
+      // const { nodes, links } = await (await fetch('./data/data1000-5000.json')).json();
+      // const { nodes, links } = await (await fetch('./data/data-10000-10000.json')).json();
+      // const { nodes, links } = await (await fetch('./data/socfb-Caltech36.json')).json();
+      nodes.forEach(node => {
+        graph.addNode(node.id, { ...node });
+      });
+      links.forEach(link => {
+        if (!graph.hasEdge(`${link.source}->${link.target}`)) {
+          // graph.addEdge(link.source, link.target, {...link});
+          graph.addEdgeWithKey(`${link.source}->${link.target}`, link.source, link.target, { ...link });
+        }
+      });
 
-  // layout
-  graph.forEachNode(node => {
-    graph.setNodeAttribute(node, 'x', Math.random());
-    graph.setNodeAttribute(node, 'y', Math.random());
-  });
-  console.time('compute');
-  forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 2000 }});
-  console.timeEnd('compute');
+      // layout
+      graph.forEachNode(node => {
+        graph.setNodeAttribute(node, 'x', Math.random());
+        graph.setNodeAttribute(node, 'y', Math.random());
+      });
+      console.time('compute');
+      forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 2000 } });
+      console.timeEnd('compute');
 
-  // function setCenter() {
-  //   const WORLD_PADDING = 100;
-  //   const nodesX = graph.nodes().map(nodeKey => graph.getNodeAttribute(nodeKey, 'x'));
-  //   const nodesY = graph.nodes().map(nodeKey => graph.getNodeAttribute(nodeKey, 'y'));
-  //   const minX = Math.min(...nodesX);
-  //   const maxX = Math.max(...nodesX);
-  //   const minY = Math.min(...nodesY);
-  //   const maxY = Math.max(...nodesY);
+      // function setCenter() {
+      //   const WORLD_PADDING = 100;
+      //   const nodesX = graph.nodes().map(nodeKey => graph.getNodeAttribute(nodeKey, 'x'));
+      //   const nodesY = graph.nodes().map(nodeKey => graph.getNodeAttribute(nodeKey, 'y'));
+      //   const minX = Math.min(...nodesX);
+      //   const maxX = Math.max(...nodesX);
+      //   const minY = Math.min(...nodesY);
+      //   const maxY = Math.max(...nodesY);
 
-  //   const graphWidth = Math.abs(maxX - minX);
-  //   const graphHeight = Math.abs(maxY - minY);
-  //   const graphCenter ={x: minX + graphWidth / 2, y: minY + graphHeight / 2};
+      //   const graphWidth = Math.abs(maxX - minX);
+      //   const graphHeight = Math.abs(maxY - minY);
+      //   const graphCenter ={x: minX + graphWidth / 2, y: minY + graphHeight / 2};
 
-  //   const worldWidth = graphWidth + WORLD_PADDING * 2;
-  //   const worldHeight = graphHeight + WORLD_PADDING * 2;
-    
-  //   // TODO: update worldWidth/worldHeight when graph is updated?
-  //   pixiGraph.viewport.resize(document.getElementById('graph').clientWidth, document.getElementById('graph').clientHeight, worldWidth, worldHeight);
+      //   const worldWidth = graphWidth + WORLD_PADDING * 2;
+      //   const worldHeight = graphHeight + WORLD_PADDING * 2;
 
-  //   pixiGraph.viewport.setZoom(1); // otherwise scale is 0 when initialized in React useEffect
-  //   pixiGraph.viewport.center = graphCenter;
-  //   pixiGraph.viewport.fit(true);
-  // }
-  
-  const style = {
-    node: {
-      shape: node => 'circle', // circle or rect
-      size: node => 15,
-      color: node => NODE_COLOR_NORMAL,
-      alpha: 1,
-      border: {
-        width: 3,
-        color: '#4A5FE2',
-      },
-      icon: {
-        // type: PixiGraph.TextType.IMAGE, // TEXT or IMAGE
-        type: PixiGraph.TextType.TEXT, // TEXT or IMAGE
-        content: (node) => {
-          return '';
-          // return node.icon ? node.icon : 'http://127.0.0.1:8080/docs/images/bz.jpeg'; // 使用图片方法(PixiGraph.TextType.IMAGE，返回相应图片路径)
-          
-          // 使用字体图标的方法(导入相关字体文件后使用);
-          // let unicode = '&#xe7f8;';
-          // if (unicode === "") return "";
-          // const num = unicode.replace("&#x", "").replace(";", "");
-          // const str = String.fromCharCode(parseInt(num, 16).toString(10));
-          // return str;
+      //   // TODO: update worldWidth/worldHeight when graph is updated?
+      //   pixiGraph.viewport.resize(document.getElementById('graph').clientWidth, document.getElementById('graph').clientHeight, worldWidth, worldHeight);
+
+      //   pixiGraph.viewport.setZoom(1); // otherwise scale is 0 when initialized in React useEffect
+      //   pixiGraph.viewport.center = graphCenter;
+      //   pixiGraph.viewport.fit(true);
+      // }
+
+      const style = {
+        node: {
+          shape: node => 'circle', // circle or rect
+          size: node => 15,
+          color: node => NODE_COLOR_NORMAL,
+          alpha: 1,
+          border: {
+            width: 3,
+            color: '#4A5FE2',
+          },
+          icon: {
+            // type: PixiGraph.TextType.IMAGE, // TEXT or IMAGE
+            type: PixiGraph.TextType.TEXT, // TEXT or IMAGE
+            content: (node) => {
+              return '';
+              // return node.icon ? node.icon : 'http://127.0.0.1:8080/docs/images/bz.jpeg'; // 使用图片方法(PixiGraph.TextType.IMAGE，返回相应图片路径)
+
+              // 使用字体图标的方法(导入相关字体文件后使用);
+              // let unicode = '&#xe7f8;';
+              // if (unicode === "") return "";
+              // const num = unicode.replace("&#x", "").replace(";", "");
+              // const str = String.fromCharCode(parseInt(num, 16).toString(10));
+              // return str;
+            },
+            fontFamily: 'iconfont',
+            fontSize: node => 50,
+            color: '#ffffff',
+          },
+          label: {
+            content: node => node.label ? node.label : node.id,
+            type: PixiGraph.TextType.TEXT,
+            fontFamily: 'HelveticaRegular',
+            align: 'center',
+            fontSize: 12,
+            fontWeight: '400',
+            color: '#000',
+            stroke: '#fff',
+            strokeThickness: 3,
+            backgroundColor: 'rgba(255, 255, 255, 0)',
+            padding: 2
+          }
         },
-        fontFamily: 'iconfont',
-        fontSize: node => 50,
-        color: '#ffffff',
-      },
-      label: {
-        content: node => node.label ? node.label : node.id,
-        type: PixiGraph.TextType.TEXT,
-        fontFamily: 'HelveticaRegular',
-        align: 'center',
-        fontSize: 12,
-        fontWeight: '400',
-        color: '#000',
-        stroke: '#fff',
-        strokeThickness: 3,
-        backgroundColor: 'rgba(255, 255, 255, 0)',
-        padding: 2
+        edge: {
+          width: edge => 1,
+          color: edge => '#999',
+          alpha: 1,
+          selefLoop: { // 自循环线的样式
+            radius: 30,  // 圆环半径
+            cross: 10 // 点线相交距离
+          },
+          gap: 20, // 两根平行线之间的间距
+          arrow: {
+            show: true,
+            size: edge => (Math.log((edge.value || 0) + 1) + 2) * 3, // 根据edge.width设置避免被覆盖,如果不能被2整除会自动加1像素，防止发生偏移
+          },
+          label: {
+            content: edge => edge.label ? edge.label : edge.target,
+            type: PixiGraph.TextType.TEXT,
+            fontFamily: 'HelveticaRegular',
+            fontSize: 12,
+            fontWeight: '500',
+            color: '#000',
+            stroke: '#fff',
+            strokeThickness: 3,
+            backgroundColor: 'rgba(255, 255, 255, 0)',
+            padding: 2,
+            parallel: true // 是否和线同向，文字排列自动变化
+          },
+        },
+      };
+      const hoverStyle = {
+        node: {
+          alpha: 1,
+          border: {
+            color: COLOR_SELECTED,
+          },
+          label: {
+            backgroundColor: 'rgba(255, 255, 255, 0.6)',
+            // color: '#ffffff',
+            fontWeight: 'bolder',
+          },
+        },
+        edge: {
+          color: COLOR_SELECTED,
+          alpha: 1,
+          label: {
+            backgroundColor: 'rgba(255, 255, 255, 0.6)',
+            // color: '#ffffff',
+            fontWeight: 'bolder',
+          },
+        },
+      };
+
+      // const resources = [
+      //   { name: 'HelveticaRegular', url: 'https://gist.githubusercontent.com/zakjan/b61c0a26d297edf0c09a066712680f37/raw/8cdda3c21ba3668c3dd022efac6d7f740c9f1e18/HelveticaRegular.fnt' },
+      // ];
+      // await new FontFaceObserver('iconfont').load().then(() => console.log('Icons'));
+
+      const pixiGraph = new PixiGraph.PixiGraph({
+        container: document.getElementById('graph'),
+        graph,
+        style,
+        hoverStyle,
+        // resources,
+        minScale: 0.1,
+        maxScale: 1.5,
+        highPerformance: {
+          // 达到点线设定值值，拖拽不显示线，性能会更好
+          nodeNumber: 7,
+          edgeNumber: 8
+        },
+        spaceDrag: true, // 使用按住空格拖拽
+        // dragOffset: true, // false 拖拽鼠标不偏移到点中心，拖拽过快会漂移
+      });
+      console.log('pixiGraph', pixiGraph);
+
+      // 启用框选 param1：完成回调 param2：是否自动框选
+      pixiGraph.choosesEnable((selected) => { console.log('choose-data', selected) }, true);
+      // 手动框选
+      document.getElementById('choose').addEventListener('click', () => {
+        // pixiGraph.choose.start();
+        pixiGraph.choose.start((selected) => { console.log('manual-choose-data', selected) });
+      })
+
+      pixiGraph.on('viewportClick', (event) => {
+        console.log('viewportClick', event);
+      })
+      pixiGraph.on('viewportRightClick', (event) => {
+        console.log('viewportRightClick', event);
+      })
+      // pixiGraph.on('nodeMoveStart', (event, nodeKey, point) => console.log('nodeMoveStart', event, nodeKey, point))
+      // pixiGraph.on('nodeMove', (event, nodeKey, point) => console.log('nodeMove', event, nodeKey, point))
+      // pixiGraph.on('nodeMoveEnd', (event, nodeKey, point) => console.log('nodeMoveEnd', event, nodeKey, point))
+      // pixiGraph.on('nodeMouseover', (event, nodeKey) => console.log('nodeMouseover', event, nodeKey))
+
+      // pixiGraph.on('nodeClick', (event, nodeKey) => {
+      //   console.log('nodeClick', event.type, nodeKey)
+
+      //   if (statusCorrelation) {
+      //     selectedNodes = [];
+      //     let neighbors = graph.neighbors(nodeKey);
+      //     selectedNodes = neighbors;
+      //     selectedNodes.push(nodeKey);
+      //     style.node.color = (node) => {
+      //       return selectedNodes.includes(node.id) ? COLOR_SELECTED : NODE_COLOR_NORMAL;
+      //     }
+      //     style.edge.color = (edge) => {
+      //       let {source, target} = edge;
+      //       return (source === nodeKey || target === nodeKey) ? COLOR_SELECTED : EDGE_COLOR_NORMAL;
+      //     }
+      //     // layer.msg(nodeKey + '相关信息');
+      //   } else if (statusSelected) {
+      //     selectedNodes.push(nodeKey);
+      //     style.node.color = (node) => {
+      //       selectedNodes.push(nodeKey);
+      //       return selectedNodes.includes(node.id) ? COLOR_SELECTED : NODE_COLOR_NORMAL;
+      //     }
+      //     style.edge.color = (edge) => {
+      //       return EDGE_COLOR_NORMAL;
+      //     }
+      //   } else {
+      //     selectedNodes = [];
+      //     // layer.msg(nodeKey + '相关信息');
+      //     style.node.color = (node) => {
+      //       selectedNodes.push(nodeKey);
+      //       return selectedNodes.includes(node.id) ? COLOR_SELECTED : NODE_COLOR_NORMAL;
+      //     }
+      //     style.edge.color = (edge) => {
+      //       return EDGE_COLOR_NORMAL;
+      //     }
+      //   }
+
+      //   updateNodes();
+      //   updateEdges();
+      // });
+
+      // pixiGraph.on('edgeClick', (event, linkKey) => {
+      //   console.log('edgeClick', event, linkKey)
+      //   let [source, target] = graph.extremities(linkKey);
+      //   style.node.color = node => (node.id === source || node.id === target) ? COLOR_SELECTED : NODE_COLOR_NORMAL;
+      //   style.edge.color = edge => (edge.source === source && edge.target === target) ? COLOR_SELECTED : EDGE_COLOR_NORMAL;
+
+      //   updateNodes();
+      //   updateEdges();
+      // });
+
+
+
+      // const updateNodes = () => {
+      //   graph.updateEachNodeAttributes((nodeKey, nodeAttributes) => {
+      //     return {
+      //       ...nodeAttributes
+      //     };
+      //   });
+      // };
+
+      // const updateEdges = () => {
+      //   graph.updateEachEdgeAttributes((edgeKey, edgeAttributes) => {
+      //     return {
+      //       ...edgeAttributes
+      //     };
+      //   });
+      // };
+
+      // const resetGraph = () => {
+      //   style.node.color = node => NODE_COLOR_NORMAL;
+      //   style.edge.color = edge => EDGE_COLOR_NORMAL;
+
+      //   updateNodes();
+      //   updateEdges();
+      // };
+
+
+
+      const addLeaf = (nodeKey) => {
+        const nodeAttr = graph.getNodeAttributes(nodeKey);
+        // 可通过graphology-layout-forceatlas2进行布局
+        let data = {
+          nodes: [
+            { id: "node100", label: "标签100", icon: '', x: nodeAttr.x + 50, y: nodeAttr.y + 50 },
+            { id: "node200", label: "标签200", icon: '', x: nodeAttr.x + 100, y: nodeAttr.y + 100 },
+            { id: "node300", label: "标签300", icon: '', x: nodeAttr.x + 150, y: nodeAttr.y + 150 }
+          ],
+          links: [
+            { source: "node100", target: "node200", label: "交易200元", value: 4, reverse: true },
+            { source: "node100", target: "node300", label: "交易600元", value: 7, reverse: true },
+            { source: "node200", target: "node100", label: "交易600元", value: 1, reverse: true },
+            { source: "node200", target: "node300", label: "交易600元", value: 2, reverse: false },
+            { source: "node300", target: "node300", label: "交易600元", value: 8, reverse: false },
+            { source: "node300", target: "node100", label: "交易600元", value: 6, reverse: true },
+          ]
+        }
+        const { nodes, links } = data;
+        // let graph2 = new graphology.Graph({ multi: true, type: 'undirected' });
+
+        // nodes.forEach(node => {
+        //   console.log('node', node);
+        //   graph2.addNode(node.id, node);
+        // })
+        // links.forEach(link => {
+        //   graph2.addEdge(link.source, link.target, link);
+        // })
+        // const positions = circular(graph2, {center: 80, scale: 100});
+        // console.log('positions', positions);
+
+        nodes.forEach((node) => {
+          // node.x = positions[node.id].x + nodeAttr.x;
+          // node.y = positions[node.id].y + nodeAttr.y;
+          !graph.hasNode(node.id) && graph.addNode(node.id, node);
+        })
+        links.forEach((link) => {
+          // !graph.edges(link.target, link.source).length > 1 && graph.mergeEdge(link.source, link.target);
+          // console.log('hasEdge', graph.hasEdge(`${link.source}->${link.target}`));
+          !graph.hasEdge(`${link.source}->${link.target}`) && graph.addEdgeWithKey(`${link.source}->${link.target}`, link.source, link.target, link);
+
+        })
+        // console.log('edges', graph.edges('node100', 'node200'));
       }
-    },
-    edge: {
-      width: edge => 1,
-      color: edge => '#999',
-      alpha: 1,
-      selefLoop: { // 自循环线的样式
-        radius: 30,  // 圆环半径
-        cross: 10 // 点线相交距离
-      },
-      gap: 20, // 两根平行线之间的间距
-      arrow: {
-        show: true,
-        size: edge => (Math.log((edge.value || 0) + 1) + 2) * 3, // 根据edge.width设置避免被覆盖,如果不能被2整除会自动加1像素，防止发生偏移
-      },
-      label: {
-        content: edge => edge.label ? edge.label : edge.target,
-        type: PixiGraph.TextType.TEXT,
-        fontFamily: 'HelveticaRegular',
-        fontSize: 12,
-        fontWeight: '500',
-        color: '#000',
-        stroke: '#fff',
-        strokeThickness: 3,
-        backgroundColor: 'rgba(255, 255, 255, 0)',
-        padding: 2,
-        parallel: true // 是否和线同向，文字排列自动变化
-      },
-    },
-  };
-  const hoverStyle = {
-    node: {
-      alpha: 1,
-      border: {
-        color: COLOR_SELECTED,
-      },
-      label: {
-        backgroundColor: 'rgba(255, 255, 255, 0.6)',
-        // color: '#ffffff',
-        fontWeight: 'bolder',
-      },
-    },
-    edge: {
-      color: COLOR_SELECTED,
-      alpha: 1,
-      label: {
-        backgroundColor: 'rgba(255, 255, 255, 0.6)',
-        // color: '#ffffff',
-        fontWeight: 'bolder',
-      },
-    },
-  };
 
-  // const resources = [
-  //   { name: 'HelveticaRegular', url: 'https://gist.githubusercontent.com/zakjan/b61c0a26d297edf0c09a066712680f37/raw/8cdda3c21ba3668c3dd022efac6d7f740c9f1e18/HelveticaRegular.fnt' },
-  // ];
-  // await new FontFaceObserver('iconfont').load().then(() => console.log('Icons'));
+      // pixiGraph.viewport.on('clicked', (event) => {
+      //   console.log('viewportClick', event, pixiGraph.viewport.center);
+      // });
+      // pixiGraph.on('nodeMove', (event, nodeKey) => {
+      //   console.log('nodeMove', event, nodeKey);
+      // });
+      // 加载下一级
+      pixiGraph.on('nodeClick', (event, nodeKey, nodeStyle) => {
+        console.log('nodeClick', event, nodeKey, nodeStyle);
+        // style.node.label.fontWeight = 'bolder';
+        // addLeaf(nodeKey);
+        // let nodeAttributes = graph.getNodeAttributes(nodeKey);
+        // let nodePosiotion = {x: nodeAttributes.x, y: nodeAttributes.y};
+        // console.log('nodeClick1', event);
+        // console.log('nodeClick2', nodePosiotion);
+        // console.log('nodeClick3', pixiGraph.viewport.toScreen(nodePosiotion));
 
-  const pixiGraph = new PixiGraph.PixiGraph({
-    container: document.getElementById('graph'),
-    graph,
-    style,
-    hoverStyle,
-    // resources,
-    minScale: 0.1,
-    maxScale: 1.5,
-    highPerformance: {
-      // 达到点线设定值值，拖拽不显示线，性能会更好
-      nodeNumber: 7,
-      edgeNumber: 8
-    },
-    spaceDrag: true, // 使用按住空格拖拽
-    // dragOffset: true, // false 拖拽鼠标不偏移到点中心，拖拽过快会漂移
-  });
-  console.log('pixiGraph', pixiGraph);
+        // const worldPosition = pixiGraph.viewport.toWorld({x:event.x, y:event.y});
+        // pixiGraph.viewport.snap(worldPosition.x, worldPosition.y, { removeOnComplete: true, removeOnInterrupt: true });
+      });
+      pixiGraph.on('nodeDbclick', (event, nodeKey, nodeStyle) => {
+        console.log('nodeDbclick', event, nodeKey, nodeStyle);
+      });
+      pixiGraph.on('nodeRightclick', (event, nodeKey, nodeStyle) => {
+        console.log('nodeRightclick', event, nodeKey, nodeStyle);
+        // contextmenuPosition(event);
+      });
+      // pixiGraph.on('nodeMousemove', (event, nodeKey) => console.log('nodeMousemove', event, nodeKey));
+      // pixiGraph.on('nodeMouseover', (event, nodeKey, nodeStyle) => {
+      //   console.log('nodeMouseover', event, nodeKey, nodeStyle)
+      // });
+      // pixiGraph.on('nodeMouseout', (event, nodeKey) => console.log('nodeMouseout', event, nodeKey));
+      // pixiGraph.on('nodeMousedown', (event, nodeKey) => console.log('nodeMousedown', event, nodeKey));
+      // pixiGraph.on('nodeMouseup', (event, nodeKey) => console.log('nodeMouseup', event, nodeKey));
+      pixiGraph.on('edgeClick', (event, edgeKey, edgeStyle) => {
+        console.log('edgeClick', event, edgeKey, edgeStyle, pixiGraph.checkEdgeVisibility(edgeKey));
+      });
+      pixiGraph.on('edgeRightclick', (event, edgeKey, edgeStyle) => {
+        console.log('edgeRightclick', event, edgeKey, edgeStyle);
+        // contextmenuPosition(event);
+      });
+      // pixiGraph.on('edgeMousemove', (event, edgeKey) => console.log('edgeMousemove', event, edgeKey));
+      // pixiGraph.on('edgeMouseover', (event, edgeKey) => console.log('edgeMouseover', event, edgeKey));
+      // pixiGraph.on('edgeMouseout', (event, edgeKey) => console.log('edgeMouseout', event, edgeKey));
+      // pixiGraph.on('edgeMousedown', (event, edgeKey) => console.log('edgeMousedown', event, edgeKey));
+      // pixiGraph.on('edgeMouseup', (event, edgeKey) => console.log('edgeMouseup', event, edgeKey));
 
-  // 启用框选 param1：完成回调 param2：是否自动框选
-  pixiGraph.choosesEnable((selected) => {console.log('choose-data', selected)}, true);
-  // 手动框选
-  document.getElementById('choose').addEventListener('click', () => {
-    // pixiGraph.choose.start();
-    pixiGraph.choose.start((selected) => {console.log('manual-choose-data', selected)});
-  })
+      // const minX = graph.nodes().reduce((acc, node) => Math.min(acc, graph.getNodeAttribute(node, 'x')), Infinity);
+      // const maxX = graph.nodes().reduce((acc, node) => Math.max(acc, graph.getNodeAttribute(node, 'x')), -Infinity);
+      // const minY = graph.nodes().reduce((acc, node) => Math.min(acc, graph.getNodeAttribute(node, 'y')), Infinity);
+      // const maxY = graph.nodes().reduce((acc, node) => Math.max(acc, graph.getNodeAttribute(node, 'y')), -Infinity);
 
-  pixiGraph.on('viewportClick', (event) => {
-    console.log('viewportClick', event);
-  })
-  pixiGraph.on('viewportRightClick', (event) => {
-    console.log('viewportRightClick', event);
-  })
-  // pixiGraph.on('nodeMoveStart', (event, nodeKey, point) => console.log('nodeMoveStart', event, nodeKey, point))
-  // pixiGraph.on('nodeMove', (event, nodeKey, point) => console.log('nodeMove', event, nodeKey, point))
-  // pixiGraph.on('nodeMoveEnd', (event, nodeKey, point) => console.log('nodeMoveEnd', event, nodeKey, point))
-  // pixiGraph.on('nodeMouseover', (event, nodeKey) => console.log('nodeMouseover', event, nodeKey))
+      const addNode = () => {
+        //   const id = Math.floor(Math.random() * 10e12).toString(36);
+        //   const x = minX + Math.random() * (maxX - minX);
+        //   const y = minY + Math.random() * (maxY - minY);
+        //   const node = { id, x, y };
 
-  // pixiGraph.on('nodeClick', (event, nodeKey) => {
-  //   console.log('nodeClick', event.type, nodeKey)
-    
-  //   if (statusCorrelation) {
-  //     selectedNodes = [];
-  //     let neighbors = graph.neighbors(nodeKey);
-  //     selectedNodes = neighbors;
-  //     selectedNodes.push(nodeKey);
-  //     style.node.color = (node) => {
-  //       return selectedNodes.includes(node.id) ? COLOR_SELECTED : NODE_COLOR_NORMAL;
-  //     }
-  //     style.edge.color = (edge) => {
-  //       let {source, target} = edge;
-  //       return (source === nodeKey || target === nodeKey) ? COLOR_SELECTED : EDGE_COLOR_NORMAL;
-  //     }
-  //     // layer.msg(nodeKey + '相关信息');
-  //   } else if (statusSelected) {
-  //     selectedNodes.push(nodeKey);
-  //     style.node.color = (node) => {
-  //       selectedNodes.push(nodeKey);
-  //       return selectedNodes.includes(node.id) ? COLOR_SELECTED : NODE_COLOR_NORMAL;
-  //     }
-  //     style.edge.color = (edge) => {
-  //       return EDGE_COLOR_NORMAL;
-  //     }
-  //   } else {
-  //     selectedNodes = [];
-  //     // layer.msg(nodeKey + '相关信息');
-  //     style.node.color = (node) => {
-  //       selectedNodes.push(nodeKey);
-  //       return selectedNodes.includes(node.id) ? COLOR_SELECTED : NODE_COLOR_NORMAL;
-  //     }
-  //     style.edge.color = (edge) => {
-  //       return EDGE_COLOR_NORMAL;
-  //     }
-  //   }
-    
-  //   updateNodes();
-  //   updateEdges();
-  // });
+        //   graph.addNode(node.id, node);
+        graph.addNode('node55', {
+          id: "node55",
+          label: "标签55",
+          icon: 'http://127.0.0.1:8080/docs/images/ba.png',
+          x: 200,
+          y: 200
+        });
+        graph.addNode('node66', {
+          id: "node66",
+          label: "标签66",
+          icon: 'http://127.0.0.1:8080/docs/images/ok.png',
+          x: 300,
+          y: 300
+        });
+        graph.addEdgeWithKey(`node55->node66`, 'node55', 'node66', {
+          source: "node55",
+          target: "node66",
+          label: "交易500元",
+          value: 4
+        });
+        pixiGraph.resetView(graph.nodes());
+      };
+      // 新增节点
+      document.getElementById('add-node').addEventListener('click', addNode);
+      // 新增边
+      document.getElementById('add-edge').addEventListener('click', () => {
+        graph.addEdgeWithKey('node2-node55', 'node2', 'node55', { "source": "node2", "target": "node55", "value": 5 });
+        graph.addEdgeWithKey(`node66->node55`, 'node66', 'node55', { source: "node66", target: "node55", label: "交易500元", value: 4 });
+      });
+      // 提取图片
+      document.getElementById('extract').addEventListener('click', () => {
+        pixiGraph.extract(true).then(src => {
+          extract(src);
+        })
 
-  // pixiGraph.on('edgeClick', (event, linkKey) => {
-  //   console.log('edgeClick', event, linkKey)
-  //   let [source, target] = graph.extremities(linkKey);
-  //   style.node.color = node => (node.id === source || node.id === target) ? COLOR_SELECTED : NODE_COLOR_NORMAL;
-  //   style.edge.color = edge => (edge.source === source && edge.target === target) ? COLOR_SELECTED : EDGE_COLOR_NORMAL;
-    
-  //   updateNodes();
-  //   updateEdges();
-  // });
+        // pixiGraph.extract()
+        //   .then(res => extract(res))
+        //   .catch(err => {
+        //     confirm(err);
+        //   })
+      });
+      function extract(src) {
+        let img = document.createElement('img');
+        img.src = src;
+        let thumbnail_box = document.querySelector('#thumbnail');
+        let thumbnail_img = document.querySelector('#thumbnail img');
+        if (thumbnail_img) thumbnail_box.removeChild(thumbnail_img);
+        thumbnail_box.appendChild(img);
+      }
+      function downloadImg(src) {
+        let a = document.createElement('a');
+        a.href = src;
+        a.download = 'extract_' + new Date().getTime();
+        a.click();
+      }
+      // 隐藏
+      document.getElementById('hide').addEventListener('click', () => {
+        pixiGraph.nodeVisibility('node0', false);
+        pixiGraph.edgeVisibility('node0->node4', false);
+      });
+      // 显示
+      document.getElementById('show').addEventListener('click', () => {
+        pixiGraph.nodeVisibility('node0', true);
+        pixiGraph.edgeVisibility('node0->node4', true);
+      });
+      // 创建水印
+      document.getElementById('createWatermark').addEventListener('click', () => {
+        watermarkName = pixiGraph.createWatermark({
+          type: 'TEXT', // TEXT or IMAGE
+          content: './images/ba.png',
+          cover: true, // cover为true时均匀铺满全屏，position无效
+          row: 5, // cover为true时生效
+          column: 6, // cover为true时生效
+          position: {
+            x: document.getElementById('graph').clientWidth / 2,
+            y: document.getElementById('graph').clientHeight / 2
+          },
+          rotation: -0.3,
+          style: {
+            fontSize: 18,
+            color: 0xff3300
+          }
+        });
+        console.log('WatermarkName: ', watermarkName);
+      });
+      document.getElementById('removeWatermark').addEventListener('click', () => {
+        pixiGraph.removeWatermark(watermarkName);
+      })
+      document.getElementById('clearWatermark').addEventListener('click', () => {
+        pixiGraph.clearWatermark();
+      })
+      // 定位视图
+      document.getElementById('snapViewport').addEventListener('click', () => {
+        console.log('===viewport===', pixiGraph.viewport);
+        pixiGraph.viewport.on('snap-end', () => {
+          console.log('snap-end');
+          // let src = pixiGraph.extract(false);
+          // extract(src);
+          // downloadImg(src);
+        })
 
+        pixiGraph.moveCenter();
 
-
-  // const updateNodes = () => {
-  //   graph.updateEachNodeAttributes((nodeKey, nodeAttributes) => {
-  //     return {
-  //       ...nodeAttributes
-  //     };
-  //   });
-  // };
-
-  // const updateEdges = () => {
-  //   graph.updateEachEdgeAttributes((edgeKey, edgeAttributes) => {
-  //     return {
-  //       ...edgeAttributes
-  //     };
-  //   });
-  // };
-  
-  // const resetGraph = () => {
-  //   style.node.color = node => NODE_COLOR_NORMAL;
-  //   style.edge.color = edge => EDGE_COLOR_NORMAL;
-
-  //   updateNodes();
-  //   updateEdges();
-  // };
-  
+      })
 
 
-  const addLeaf = (nodeKey) => {
-    const nodeAttr = graph.getNodeAttributes(nodeKey);
-    // 可通过graphology-layout-forceatlas2进行布局
-    let data = {
-      nodes: [
-        {id: "node100", label: "标签100", icon: '', x: nodeAttr.x+50, y: nodeAttr.y+50},
-        {id: "node200", label: "标签200", icon: '', x: nodeAttr.x+100, y: nodeAttr.y+100},
-        {id: "node300", label: "标签300", icon: '', x: nodeAttr.x+150, y: nodeAttr.y+150}
-      ],
-      links: [
-        {source: "node100", target: "node200", label: "交易200元", value: 4, reverse: true},
-        {source: "node100", target: "node300", label: "交易600元", value: 7, reverse: true},
-        {source: "node200", target: "node100", label: "交易600元", value: 1, reverse: true},
-        {source: "node200", target: "node300", label: "交易600元", value: 2, reverse: false},
-        {source: "node300", target: "node300", label: "交易600元", value: 8, reverse: false},
-        {source: "node300", target: "node100", label: "交易600元", value: 6, reverse: true},
-      ]
+      // const addEdge = () => {
+      //   const nodeKeys = graph.nodes();
+      //   let source, target;
+      //   do {
+      //     source = nodeKeys[Math.floor((nodeKeys.length - 1) * Math.random())];
+      //     target = nodeKeys[Math.floor((nodeKeys.length - 1) * Math.random())];
+      //   } while (graph.edge(source, target));
+      //   const link = { source, target };
+
+      //   graph.addEdge(link.source, link.target);
+      // };
+      // document.getElementById('add-edge').addEventListener('click', addEdge);
+
+      // const dropNode = () => {
+      //   const nodeKeys = graph.nodes();
+      //   const nodeKey = nodeKeys[Math.floor((nodeKeys.length - 1) * Math.random())];
+
+      //   graph.dropNode(nodeKey);
+      // };
+      // document.getElementById('drop-node').addEventListener('click', dropNode);
+
+      // const dropEdge = () => {
+      //   const edgeKeys = graph.edges();
+      //   const edgeKey = edgeKeys[Math.floor((edgeKeys.length - 1) * Math.random())];
+
+      //   graph.dropEdge(edgeKey);
+      // };
+      // document.getElementById('drop-edge').addEventListener('click', dropEdge);
+
+      // const clear = () => {
+      //   graph.clear();
+      // };
+      // document.getElementById('clear').addEventListener('click', clear);
+
+      // const clearEdges = () => {
+      //   graph.clearEdges();
+      // };
+      // document.getElementById('clear-edges').addEventListener('click', clearEdges);
+
+      // const zoomIn = () => {
+      //   pixiGraph.zoomIn();
+      // };
+      // document.getElementById('zoom-in').addEventListener('click', zoomIn);
+
+      // const zoomOut = () => {
+      //   pixiGraph.zoomOut();
+      // };
+      // document.getElementById('zoom-out').addEventListener('click', zoomOut);
+
+      // const updateNode = () => {
+      //   const nodeKeys = graph.nodes();
+      //   const nodeKey = nodeKeys[Math.floor((nodeKeys.length - 1) * Math.random())];
+
+      // };
+      // document.getElementById('update-node').addEventListener('click', updateNode);
+
+      // const updateEdge = () => {
+      //   const edgeKeys = graph.edges();
+      //   const edgeKey = edgeKeys[Math.floor((edgeKeys.length - 1) * Math.random())];
+      //   const value = graph.getEdgeAttribute(edgeKey, 'value');
+
+      //   graph.setEdgeAttribute(edgeKey, 'value', value * 50);
+      // };
+      // document.getElementById('update-edge').addEventListener('click', updateEdge);
+
+      const updateNodes = () => {
+        graph.updateEachNodeAttributes((nodeKey, nodeAttributes) => {
+          return {
+            ...nodeAttributes,
+          };
+        });
+      };
+      // document.getElementById('update-nodes').addEventListener('click', updateNodes);
+
+      const updateEdges = () => {
+        graph.updateEachEdgeAttributes((edgeKey, edgeAttributes) => {
+          return {
+            ...edgeAttributes,
+            // value: edgeAttributes.value * 50
+          };
+        });
+      };
+      // document.getElementById('update-edges').addEventListener('click', updateEdges);
+
+      // const resetView = () => {
+      //   pixiGraph.resetView();
+      // };
+      // document.getElementById('reset-view').addEventListener('click', resetView);
+
+      // let serializedGraph;
+      // const exportGraph = () => {
+      //   serializedGraph = graph.export();
+      //   console.log(serializedGraph);
+      // };
+      // document.getElementById('export').addEventListener('click', exportGraph);
+
+      // const importGraph = () => {
+      //   graph.import(serializedGraph);
+      // };
+      // document.getElementById('import').addEventListener('click', importGraph);
+    });
+
+    // 设置右键菜单位置
+    function contextmenuPosition(event) {
+      // console.log('contextmenuPosition', event);
+      let graphDom = document.querySelector('#graph');
+      let contextDom = document.querySelector('#context');
+      let mouseX = event.clientX;
+      let mouseY = event.clientY;
+      let graphBounding = graphDom.getBoundingClientRect();
+      let graphWidth = graphBounding.width;
+      let graphHeight = graphBounding.height;
+      let graphTop = graphBounding.top;
+      let graphBottom = graphBounding.bottom;
+      let graphLeft = graphBounding.left;
+      let graphRight = graphBounding.right;
+      let contextMenuWidth = contextDom.offsetWidth;
+      let contextMenuHeight = contextDom.offsetHeight;
+      let top = 0;
+      let left = 0;
+
+      if (graphRight - mouseX < contextMenuWidth) {
+        left = graphWidth - contextMenuWidth;
+      } else {
+        left = mouseX - graphLeft;
+      }
+      if (graphBottom - mouseY < contextMenuHeight) {
+        top = graphHeight - contextMenuHeight;
+      } else {
+        top = mouseY - graphTop;
+      }
+
+      contextDom.style.left = left + 'px';
+      contextDom.style.top = top + 'px';
     }
-    const {nodes, links} = data;
-    // let graph2 = new graphology.Graph({ multi: true, type: 'undirected' });
-    
-    // nodes.forEach(node => {
-    //   console.log('node', node);
-    //   graph2.addNode(node.id, node);
-    // })
-    // links.forEach(link => {
-    //   graph2.addEdge(link.source, link.target, link);
-    // })
-    // const positions = circular(graph2, {center: 80, scale: 100});
-    // console.log('positions', positions);
 
-    nodes.forEach((node) => {
-      // node.x = positions[node.id].x + nodeAttr.x;
-      // node.y = positions[node.id].y + nodeAttr.y;
-      !graph.hasNode(node.id) && graph.addNode(node.id, node);
-    })
-    links.forEach((link) => {
-      // !graph.edges(link.target, link.source).length > 1 && graph.mergeEdge(link.source, link.target);
-      // console.log('hasEdge', graph.hasEdge(`${link.source}->${link.target}`));
-      !graph.hasEdge(`${link.source}->${link.target}`) && graph.addEdgeWithKey(`${link.source}->${link.target}`, link.source, link.target, link);
-      
-    })
-    // console.log('edges', graph.edges('node100', 'node200'));
-  }
-  
-  // pixiGraph.viewport.on('clicked', (event) => {
-  //   console.log('viewportClick', event, pixiGraph.viewport.center);
-  // });
-  // pixiGraph.on('nodeMove', (event, nodeKey) => {
-  //   console.log('nodeMove', event, nodeKey);
-  // });
-  // 加载下一级
-  pixiGraph.on('nodeClick', (event, nodeKey, nodeStyle) => {
-    console.log('nodeClick', event, nodeKey, nodeStyle);
-    // style.node.label.fontWeight = 'bolder';
-    // addLeaf(nodeKey);
-    // let nodeAttributes = graph.getNodeAttributes(nodeKey);
-    // let nodePosiotion = {x: nodeAttributes.x, y: nodeAttributes.y};
-    // console.log('nodeClick1', event);
-    // console.log('nodeClick2', nodePosiotion);
-    // console.log('nodeClick3', pixiGraph.viewport.toScreen(nodePosiotion));
 
-    // const worldPosition = pixiGraph.viewport.toWorld({x:event.x, y:event.y});
-    // pixiGraph.viewport.snap(worldPosition.x, worldPosition.y, { removeOnComplete: true, removeOnInterrupt: true });
-  });
-  pixiGraph.on('nodeDbclick', (event, nodeKey, nodeStyle) => {
-    console.log('nodeDbclick', event, nodeKey, nodeStyle);
-  });
-  pixiGraph.on('nodeRightclick', (event, nodeKey, nodeStyle) => {
-    console.log('nodeRightclick', event, nodeKey, nodeStyle);
-    // contextmenuPosition(event);
-  });
-  // pixiGraph.on('nodeMousemove', (event, nodeKey) => console.log('nodeMousemove', event, nodeKey));
-  // pixiGraph.on('nodeMouseover', (event, nodeKey, nodeStyle) => {
-  //   console.log('nodeMouseover', event, nodeKey, nodeStyle)
-  // });
-  // pixiGraph.on('nodeMouseout', (event, nodeKey) => console.log('nodeMouseout', event, nodeKey));
-  // pixiGraph.on('nodeMousedown', (event, nodeKey) => console.log('nodeMousedown', event, nodeKey));
-  // pixiGraph.on('nodeMouseup', (event, nodeKey) => console.log('nodeMouseup', event, nodeKey));
-  pixiGraph.on('edgeClick', (event, edgeKey, edgeStyle) => {
-    console.log('edgeClick', event, edgeKey, edgeStyle, pixiGraph.checkEdgeVisibility(edgeKey));
-  });
-  pixiGraph.on('edgeRightclick', (event, edgeKey, edgeStyle) => {
-    console.log('edgeRightclick', event, edgeKey, edgeStyle);
-    // contextmenuPosition(event);
-  });
-  // pixiGraph.on('edgeMousemove', (event, edgeKey) => console.log('edgeMousemove', event, edgeKey));
-  // pixiGraph.on('edgeMouseover', (event, edgeKey) => console.log('edgeMouseover', event, edgeKey));
-  // pixiGraph.on('edgeMouseout', (event, edgeKey) => console.log('edgeMouseout', event, edgeKey));
-  // pixiGraph.on('edgeMousedown', (event, edgeKey) => console.log('edgeMousedown', event, edgeKey));
-  // pixiGraph.on('edgeMouseup', (event, edgeKey) => console.log('edgeMouseup', event, edgeKey));
-
-  // const minX = graph.nodes().reduce((acc, node) => Math.min(acc, graph.getNodeAttribute(node, 'x')), Infinity);
-  // const maxX = graph.nodes().reduce((acc, node) => Math.max(acc, graph.getNodeAttribute(node, 'x')), -Infinity);
-  // const minY = graph.nodes().reduce((acc, node) => Math.min(acc, graph.getNodeAttribute(node, 'y')), Infinity);
-  // const maxY = graph.nodes().reduce((acc, node) => Math.max(acc, graph.getNodeAttribute(node, 'y')), -Infinity);
-
-  const addNode = () => {
-  //   const id = Math.floor(Math.random() * 10e12).toString(36);
-  //   const x = minX + Math.random() * (maxX - minX);
-  //   const y = minY + Math.random() * (maxY - minY);
-  //   const node = { id, x, y };
-
-  //   graph.addNode(node.id, node);
-    graph.addNode('node55', {
-      id: "node55",
-      label: "标签55",
-      icon: 'http://127.0.0.1:8080/docs/images/ba.png',
-      x: 200,
-      y: 200
-    });
-    graph.addNode('node66', {
-      id: "node66",
-      label: "标签66",
-      icon: 'http://127.0.0.1:8080/docs/images/ok.png',
-      x: 300,
-      y: 300
-    });
-    graph.addEdgeWithKey(`node55->node66`, 'node55', 'node66', {
-      source: "node55",
-      target: "node66",
-      label: "交易500元",
-      value: 4
-    });
-    pixiGraph.resetView(graph.nodes());
-  };
-  // 新增节点
-  document.getElementById('add-node').addEventListener('click', addNode);
-  // 新增边
-  document.getElementById('add-edge').addEventListener('click', () => {
-    graph.addEdgeWithKey('node2-node55', 'node2', 'node55', {"source":"node2","target":"node55","value":5});
-    graph.addEdgeWithKey(`node66->node55`, 'node66', 'node55', { source: "node66", target: "node55", label: "交易500元", value: 4 });
-  });
-  // 提取图片
-  document.getElementById('extract').addEventListener('click', () => {
-    pixiGraph.extract(true).then(src => {
-      extract(src);
-    })
-    
-    // pixiGraph.extract()
-    //   .then(res => extract(res))
-    //   .catch(err => {
-    //     confirm(err);
-    //   })
-  });
-  function extract(src) {
-    let img = document.createElement('img');
-    img.src = src;
-    let thumbnail_box = document.querySelector('#thumbnail');
-    let thumbnail_img = document.querySelector('#thumbnail img');
-    if (thumbnail_img) thumbnail_box.removeChild(thumbnail_img);
-    thumbnail_box.appendChild(img);
-  }
-  function downloadImg(src) {
-    let a = document.createElement('a');
-    a.href = src;
-    a.download = 'extract_' + new Date().getTime();
-    a.click();
-  }
-  // 隐藏
-  document.getElementById('hide').addEventListener('click', () => {
-    pixiGraph.nodeVisibility('node0', false);
-    pixiGraph.edgeVisibility('node0->node4', false);
-  });
-  // 显示
-  document.getElementById('show').addEventListener('click', () => {
-    pixiGraph.nodeVisibility('node0', true);
-    pixiGraph.edgeVisibility('node0->node4', true);
-  });
-  // 创建水印
-  document.getElementById('createWatermark').addEventListener('click', () => {
-    watermarkName = pixiGraph.createWatermark({
-      type: 'TEXT', // TEXT or IMAGE
-      content: './images/ba.png',
-      cover: true, // cover为true时均匀铺满全屏，position无效
-      row: 5, // cover为true时生效
-      column: 6, // cover为true时生效
-      position: {
-        x: document.getElementById('graph').clientWidth / 2,
-        y: document.getElementById('graph').clientHeight / 2
-      },
-      rotation: -0.3,
-      style: {
-        fontSize: 18,
-        color: 0xff3300
-      }
-    });
-    console.log('WatermarkName: ', watermarkName);
-  });
-  document.getElementById('removeWatermark').addEventListener('click', () => {
-    pixiGraph.removeWatermark(watermarkName);
-  })
-  document.getElementById('clearWatermark').addEventListener('click', () => {
-    pixiGraph.clearWatermark();
-  })
-  // 定位视图
-  document.getElementById('snapViewport').addEventListener('click', () => {
-    console.log('===viewport===', pixiGraph.viewport);
-    pixiGraph.viewport.on('snap-end', () => {
-      console.log('snap-end');
-      // let src = pixiGraph.extract(false);
-      // extract(src);
-      // downloadImg(src);
-    })
-    
-    pixiGraph.moveCenter();
-    
-  })
-  
-
-  // const addEdge = () => {
-  //   const nodeKeys = graph.nodes();
-  //   let source, target;
-  //   do {
-  //     source = nodeKeys[Math.floor((nodeKeys.length - 1) * Math.random())];
-  //     target = nodeKeys[Math.floor((nodeKeys.length - 1) * Math.random())];
-  //   } while (graph.edge(source, target));
-  //   const link = { source, target };
-
-  //   graph.addEdge(link.source, link.target);
-  // };
-  // document.getElementById('add-edge').addEventListener('click', addEdge);
-
-  // const dropNode = () => {
-  //   const nodeKeys = graph.nodes();
-  //   const nodeKey = nodeKeys[Math.floor((nodeKeys.length - 1) * Math.random())];
-
-  //   graph.dropNode(nodeKey);
-  // };
-  // document.getElementById('drop-node').addEventListener('click', dropNode);
-
-  // const dropEdge = () => {
-  //   const edgeKeys = graph.edges();
-  //   const edgeKey = edgeKeys[Math.floor((edgeKeys.length - 1) * Math.random())];
-
-  //   graph.dropEdge(edgeKey);
-  // };
-  // document.getElementById('drop-edge').addEventListener('click', dropEdge);
-
-  // const clear = () => {
-  //   graph.clear();
-  // };
-  // document.getElementById('clear').addEventListener('click', clear);
-
-  // const clearEdges = () => {
-  //   graph.clearEdges();
-  // };
-  // document.getElementById('clear-edges').addEventListener('click', clearEdges);
-
-  // const zoomIn = () => {
-  //   pixiGraph.zoomIn();
-  // };
-  // document.getElementById('zoom-in').addEventListener('click', zoomIn);
-
-  // const zoomOut = () => {
-  //   pixiGraph.zoomOut();
-  // };
-  // document.getElementById('zoom-out').addEventListener('click', zoomOut);
-
-  // const updateNode = () => {
-  //   const nodeKeys = graph.nodes();
-  //   const nodeKey = nodeKeys[Math.floor((nodeKeys.length - 1) * Math.random())];
-
-  // };
-  // document.getElementById('update-node').addEventListener('click', updateNode);
-
-  // const updateEdge = () => {
-  //   const edgeKeys = graph.edges();
-  //   const edgeKey = edgeKeys[Math.floor((edgeKeys.length - 1) * Math.random())];
-  //   const value = graph.getEdgeAttribute(edgeKey, 'value');
-
-  //   graph.setEdgeAttribute(edgeKey, 'value', value * 50);
-  // };
-  // document.getElementById('update-edge').addEventListener('click', updateEdge);
-
-  const updateNodes = () => {
-    graph.updateEachNodeAttributes((nodeKey, nodeAttributes) => {
-      return {
-        ...nodeAttributes,
+    (function () {
+      var script = document.createElement('script');
+      script.onload = function () {
+        var stats = new Stats();
+        // stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+        stats.dom.style.top = '';
+        stats.dom.style.bottom = '0px';
+        document.body.appendChild(stats.dom);
+        requestAnimationFrame(function loop() {
+          stats.update();
+          requestAnimationFrame(loop);
+        });
       };
-    });
-  };
-  // document.getElementById('update-nodes').addEventListener('click', updateNodes);
+      script.src = './js/stats.js';
+      document.head.appendChild(script);
+    })()
+  </script>
 
-  const updateEdges = () => {
-    graph.updateEachEdgeAttributes((edgeKey, edgeAttributes) => {
-      return {
-        ...edgeAttributes,
-        // value: edgeAttributes.value * 50
-      };
-    });
-  };
-  // document.getElementById('update-edges').addEventListener('click', updateEdges);
-
-  // const resetView = () => {
-  //   pixiGraph.resetView();
-  // };
-  // document.getElementById('reset-view').addEventListener('click', resetView);
-
-  // let serializedGraph;
-  // const exportGraph = () => {
-  //   serializedGraph = graph.export();
-  //   console.log(serializedGraph);
-  // };
-  // document.getElementById('export').addEventListener('click', exportGraph);
-
-  // const importGraph = () => {
-  //   graph.import(serializedGraph);
-  // };
-  // document.getElementById('import').addEventListener('click', importGraph);
-});
-
-// 设置右键菜单位置
-function contextmenuPosition(event) {
-  // console.log('contextmenuPosition', event);
-  let graphDom = document.querySelector('#graph');
-  let contextDom = document.querySelector('#context');
-  let mouseX = event.clientX;
-  let mouseY = event.clientY;
-  let graphBounding = graphDom.getBoundingClientRect();
-  let graphWidth = graphBounding.width;
-  let graphHeight = graphBounding.height;
-  let graphTop = graphBounding.top;
-  let graphBottom = graphBounding.bottom;
-  let graphLeft = graphBounding.left;
-  let graphRight = graphBounding.right;
-  let contextMenuWidth = contextDom.offsetWidth;
-  let contextMenuHeight = contextDom.offsetHeight;
-  let top = 0;
-  let left = 0;
-
-  if (graphRight - mouseX < contextMenuWidth) {
-    left = graphWidth - contextMenuWidth;
-  } else {
-    left = mouseX - graphLeft;
-  }
-  if (graphBottom - mouseY < contextMenuHeight) {
-    top = graphHeight - contextMenuHeight;
-  } else {
-    top = mouseY - graphTop;
-  }
-
-  contextDom.style.left = left + 'px';
-  contextDom.style.top = top + 'px';
-}
-
-
-(function(){
-  var script = document.createElement('script');
-  script.onload = function(){
-    var stats = new Stats();
-    // stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-    stats.dom.style.top = '';
-    stats.dom.style.bottom = '0px';
-    document.body.appendChild(stats.dom);
-    requestAnimationFrame(function loop(){
-      stats.update();
-      requestAnimationFrame(loop);
-    });
-  };
-  script.src='./js/stats.js';
-  document.head.appendChild(script);
-})()
-</script>
-
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<!-- <script async src="https://www.googletagmanager.com/gtag/js?id=UA-113550861-4"></script>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=UA-113550861-4"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -755,4 +761,5 @@ function contextmenuPosition(event) {
 </script> -->
 
 </body>
+
 </html>

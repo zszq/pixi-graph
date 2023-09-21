@@ -1,4 +1,4 @@
-import { Color  } from '@pixi/core';
+import { Color } from '@pixi/core';
 import rgba from 'color-rgba';
 
 export function colorToPixi(color: string) {
