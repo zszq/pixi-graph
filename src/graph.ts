@@ -22,7 +22,6 @@ import '@pixi/extract';
 
 const DEFAULT_STYLE: GraphStyleDefinition = {
   node: {
-    shape: 'circle', //circle or rect
     size: 20,
     color: '#000',
     alpha: 1,

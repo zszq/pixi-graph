@@ -20,17 +20,17 @@ export function createNode(nodeGfx: Container) {
   // nodeGfx
   nodeGfx.hitArea = new Circle(0, 0);
 
-  // nodeGfx -> nodeCircleBorder
-  const nodeCircleBorder = new Sprite();
-  nodeCircleBorder.name = NODE_CIRCLE_BORDER;
-  nodeCircleBorder.anchor.set(0.5);
-  nodeGfx.addChild(nodeCircleBorder);
-
   // nodeGfx -> nodeCircle
   const nodeCircle = new Sprite();
   nodeCircle.name = NODE_CIRCLE;
   nodeCircle.anchor.set(0.5);
   nodeGfx.addChild(nodeCircle);
+
+  // nodeGfx -> nodeCircleBorder
+  const nodeCircleBorder = new Sprite();
+  nodeCircleBorder.name = NODE_CIRCLE_BORDER;
+  nodeCircleBorder.anchor.set(0.5);
+  nodeGfx.addChild(nodeCircleBorder);
 
   // nodeGfx -> nodeIcon
   const nodeIcon = new Sprite();
@@ -46,50 +46,24 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
   const nodeCircleTexture = textureCache.get(nodeCircleTextureKey, () => {
     const graphics = new Graphics();
     graphics.beginFill(WHITE);
-    if (nodeStyle.shape === 'circle') {
-      graphics.drawCircle(0, 0, nodeStyle.size);
-    }
-    if (nodeStyle.shape === 'rect') {
-      graphics.drawRect(0, 0, nodeStyle.size, nodeStyle.size);
-    }
+    graphics.drawCircle(0, 0, nodeStyle.size);
     return graphics;
   });
 
   const nodeCircleBorderTextureKey = [NODE_CIRCLE_BORDER, nodeStyle.size, nodeStyle.border.width].join(DELIMITER);
   const nodeCircleBorderTexture = textureCache.get(nodeCircleBorderTextureKey, () => {
     const graphics = new Graphics();
-    // graphics.lineStyle(nodeStyle.border.width, WHITE);
-    graphics.beginFill(WHITE);
-    if (nodeStyle.shape === 'circle') {
-      graphics.drawCircle(0, 0, nodeOuterSize);
-    }
-    if (nodeStyle.shape === 'rect') {
-      graphics.drawRect(0, 0, nodeOuterSize, nodeOuterSize);
-    }
+    graphics.lineStyle(nodeStyle.border.width, WHITE);
+    graphics.drawCircle(0, 0, nodeStyle.size);
     return graphics;
   });
 
-  const nodeIconTextureKey = [
-    NODE_ICON,
-    nodeStyle.icon.fontFamily,
-    nodeStyle.icon.fontSize,
-    nodeStyle.icon.fontWeight,
-    nodeStyle.icon.color,
-    nodeStyle.icon.stroke,
-    nodeStyle.icon.strokeThickness,
-    nodeStyle.icon.content
-  ].join(DELIMITER);
-  if (nodeStyle.icon.type !== TextType.IMAGE) {
+  const { type, content, fontFamily, fontSize, fontWeight, color, stroke, strokeThickness, align } = nodeStyle.icon;
+
+  const nodeIconTextureKey = [NODE_ICON, content, fontFamily, fontSize, fontWeight, color, stroke, strokeThickness].join(DELIMITER);
+  if (type !== TextType.IMAGE) {
     const nodeIconTexture = textureCache.get(nodeIconTextureKey, () => {
-      const text = textToPixi(nodeStyle.icon.type, nodeStyle.icon.content, {
-        fontFamily: nodeStyle.icon.fontFamily,
-        fontSize: nodeStyle.icon.fontSize,
-        fontWeight: nodeStyle.icon.fontWeight,
-        align: nodeStyle.icon.align,
-        color: nodeStyle.icon.color,
-        stroke: nodeStyle.icon.stroke,
-        strokeThickness: nodeStyle.icon.strokeThickness
-      });
+      const text = textToPixi(type, content, { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness });
       return text;
     });
     updataNodeIcon(nodeIconTexture);
@@ -98,7 +72,7 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
       const nodeIconTexture = textureCache.getOnly(nodeIconTextureKey);
       updataNodeIcon(nodeIconTexture);
     } else {
-      const nodeIconTexture = Texture.from(nodeStyle.icon.content);
+      const nodeIconTexture = Texture.from(content);
       textureCache.set(nodeIconTextureKey, nodeIconTexture);
       updataNodeIcon(nodeIconTexture);
     }
@@ -106,19 +80,13 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
 
   // nodeGfx -> nodeIcon
   function updataNodeIcon(nodeIconTexture: any) {
-    const nodeIcon = nodeGfx.getChildByName!(NODE_ICON) as Sprite;
+    const nodeIcon = nodeGfx.getChildByName(NODE_ICON) as Sprite;
     nodeIcon.texture = nodeIconTexture;
-    [nodeIcon.tint, nodeIcon.alpha] = colorToPixi(nodeStyle.icon.color);
+    [nodeIcon.tint, nodeIcon.alpha] = colorToPixi(color);
 
-    if (nodeStyle.icon.type === TextType.IMAGE) {
-      if (nodeStyle.shape === 'circle') {
-        nodeIcon.width = nodeStyle.size * 2;
-        nodeIcon.height = nodeStyle.size * 2;
-      }
-      if (nodeStyle.shape === 'rect') {
-        nodeIcon.width = nodeStyle.size;
-        nodeIcon.height = nodeStyle.size;
-      }
+    if (type === TextType.IMAGE) {
+      nodeIcon.width = nodeStyle.size * 2;
+      nodeIcon.height = nodeStyle.size * 2;
     }
 
     nodeGfx.addChild(nodeIcon);
@@ -129,25 +97,24 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
 
   // nodeGfx -> nodeCircle
   // 如果nodeicon是图片直接遮盖nodeCircle，不再设置纹理，否则会出现底色锯齿边框
-  // 但有图标的点的颜色深浅会失效？
-  // if (nodeStyle.icon.type !== TextType.IMAGE) {
-  const nodeCircle = nodeGfx.getChildByName!(NODE_CIRCLE) as Sprite;
+  // if (type !== TextType.IMAGE) {
+  const nodeCircle = nodeGfx.getChildByName(NODE_CIRCLE) as Sprite;
   nodeCircle.texture = nodeCircleTexture;
   [nodeCircle.tint, nodeCircle.alpha] = colorToPixi(nodeStyle.color);
   // }
 
   // nodeGfx -> nodeCircleBorder
-  const nodeCircleBorder = nodeGfx.getChildByName!(NODE_CIRCLE_BORDER) as Sprite;
+  const nodeCircleBorder = nodeGfx.getChildByName(NODE_CIRCLE_BORDER) as Sprite;
   nodeCircleBorder.texture = nodeCircleBorderTexture;
   [nodeCircleBorder.tint, nodeCircleBorder.alpha] = colorToPixi(nodeStyle.border.color);
 }
 
 export function updateNodeVisibility(nodeGfx: Container, zoomStep: number) {
   // nodeGfx -> nodeCircleBorder
-  const nodeCircleBorder = nodeGfx.getChildByName!(NODE_CIRCLE_BORDER) as Sprite;
+  const nodeCircleBorder = nodeGfx.getChildByName(NODE_CIRCLE_BORDER) as Sprite;
   nodeCircleBorder.renderable = nodeCircleBorder.renderable && zoomStep >= 1;
 
   // nodeGfx -> nodeIcon
-  const nodeIcon = nodeGfx.getChildByName!(NODE_ICON) as Sprite;
+  const nodeIcon = nodeGfx.getChildByName(NODE_ICON) as Sprite;
   nodeIcon.renderable = nodeIcon.renderable && zoomStep >= 2;
 }

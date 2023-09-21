@@ -4,7 +4,6 @@ import { TextType, TextStyle } from './text';
 
 export interface GraphStyle {
   node: {
-    shape: string;
     size: number;
     color: string;
     alpha: number;
