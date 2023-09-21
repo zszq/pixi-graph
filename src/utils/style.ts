@@ -1,5 +1,5 @@
 import deepmerge from 'deepmerge';
-import { BaseNodeAttributes, BaseEdgeAttributes } from '../attributes';
+import type { BaseNodeAttributes, BaseEdgeAttributes } from '../types/attributes';
 import { TextType, TextStyle } from './text';
 
 export interface GraphStyle {

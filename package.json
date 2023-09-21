@@ -29,6 +29,7 @@
     "@pixi/extract": "^7.3.0",
     "@pixi/filter-fxaa": "^7.3.0",
     "@pixi/graphics": "^7.3.0",
+    "@pixi/graphics-extras": "^7.3.0",
     "@pixi/graphics-smooth": "^1.1.0",
     "@pixi/math": "^7.3.0",
     "@pixi/mesh": "^7.3.0",

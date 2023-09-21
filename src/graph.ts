@@ -1,15 +1,14 @@
-import { Point, IPointData, TickerPlugin, settings } from '@pixi/core';
+import { Point, IPointData } from '@pixi/core';
 import { Application } from '@pixi/app';
 import { Container } from '@pixi/display';
 import { Viewport } from 'pixi-viewport';
 import { Cull } from '@pixi-essentials/cull';
 import { AbstractGraph } from 'graphology-types';
-import { IAddOptions } from 'resource-loader';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import { GraphStyleDefinition, resolveStyleDefinitions } from './utils/style';
 import { TextType } from './utils/text';
 import { isInteger } from './utils/tools';
-import { BaseNodeAttributes, BaseEdgeAttributes } from './attributes';
+import type { BaseNodeAttributes, BaseEdgeAttributes } from './types/attributes';
 import { TextureCache } from './texture-cache';
 import { PixiNode } from './node';
 import { PixiEdge } from './edge';
