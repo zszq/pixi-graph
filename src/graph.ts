@@ -93,7 +93,6 @@ export interface GraphOptions<NodeAttributes extends BaseNodeAttributes = BaseNo
   graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
   style: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   hoverStyle: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
-  resources?: IAddOptions[]; // bitmap font
   spaceDrag?: boolean; // 按住空格拖拽
   dragOffset?: boolean; // 拖拽保持偏移
   highPerformance?: { nodeNumber: number; edgeNumber: number }; // 高性能模式
@@ -134,7 +133,6 @@ export class PixiGraph<
   graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
   style: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   hoverStyle: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
-  resources?: IAddOptions[];
   highPerformance?: { nodeNumber: number; edgeNumber: number };
   spaceDrag?: boolean; // 启用按住空格拖拽
   choose: any;
@@ -209,7 +207,6 @@ export class PixiGraph<
     this.graph = options.graph;
     this.style = options.style;
     this.hoverStyle = options.hoverStyle;
-    this.resources = options.resources;
     this.highPerformance = options.highPerformance;
     this.spaceDrag = options.spaceDrag;
     this.dragOffset = options.dragOffset;
@@ -294,11 +291,6 @@ export class PixiGraph<
       this.updateGraphVisibility();
     });
 
-    // preload resources
-    // if (this.resources) {
-    //   this.app.loader.add(this.resources);
-    // }
-    // this.app.loader.load(() => {
     this.viewport.on('frame-end', () => {
       if (this.viewport.dirty) {
         this.updateGraphVisibility();
@@ -333,7 +325,6 @@ export class PixiGraph<
     // initial draw
     this.createGraph();
     this.resetView(this.graph.nodes());
-    // });
 
     // 创建水印
     this.watermark = new Container();
