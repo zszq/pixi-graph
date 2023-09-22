@@ -62,12 +62,14 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
 
   const nodeIconTextureKey = [NODE_ICON, content, fontFamily, fontSize, fontWeight, color, stroke, strokeThickness].join(DELIMITER);
   if (type !== TextType.IMAGE) {
+    // text
     const nodeIconTexture = textureCache.get(nodeIconTextureKey, () => {
       const text = textToPixi(type, content, { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness });
       return text;
     });
     updataNodeIcon(nodeIconTexture);
   } else {
+    // image
     if (textureCache.has(nodeIconTextureKey)) {
       const nodeIconTexture = textureCache.getOnly(nodeIconTextureKey);
       updataNodeIcon(nodeIconTexture);
