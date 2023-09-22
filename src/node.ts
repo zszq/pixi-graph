@@ -48,20 +48,22 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     });
 
     const doubleClickDelay = 180;
-    let clickTimeout: number | null;
+    let clickTimeout: number;
+    let count = 0;
     gfx.on('mouseup', event => {
       gfx.cursor = 'pointer';
       let originalEvent = event.originalEvent;
       this.emit('mouseup', originalEvent as FederatedPointerEvent);
 
-      if (clickTimeout) {
+      count++;
+      if (count >= 2) {
         clearTimeout(clickTimeout);
-        clickTimeout = null;
         this.emit('dbclick', originalEvent as FederatedPointerEvent);
+        count = 0;
       } else {
         clickTimeout = window.setTimeout(() => {
-          clickTimeout = null;
           this.emit('click', originalEvent as FederatedPointerEvent);
+          count = 0;
         }, doubleClickDelay);
       }
     });
