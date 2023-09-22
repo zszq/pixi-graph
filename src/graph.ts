@@ -165,8 +165,10 @@ export class PixiGraph<
   // private isNodeMove?: boolean; // 点是否正在移动
   private high?: boolean; // 超过设置的点线数量时操作隐藏edge和label
   private highDebounce?: boolean; // 防止频繁执行隐藏edge和label
-  private nodeMouseX: number = 0;
-  private nodeMouseY: number = 0;
+  private nodeMouseStartX: number = 0;
+  private nodeMouseStartY: number = 0;
+  private nodeMouseEndX: number = 0;
+  private nodeMouseEndY: number = 0;
   private edgeMouseX: number = 0;
   private edgeMouseY: number = 0;
   private nodeMouseOffsetX: number = 0;
@@ -694,24 +696,27 @@ export class PixiGraph<
       this.nodeMouseOffsetX = Math.abs(node.nodeGfx.x - worldPosition.x);
       this.nodeMouseOffsetY = Math.abs(node.nodeGfx.y - worldPosition.y);
 
-      this.nodeMouseX = event.offsetX;
-      this.nodeMouseY = event.offsetY;
+      this.nodeMouseStartX = event.offsetX;
+      this.nodeMouseStartY = event.offsetY;
 
       this.mousedownNodeKey = nodeKey;
       this.enableNodeDragging(event, nodeKey, worldPosition);
       this.emit('nodeMousedown', event, nodeKey, nodeStyle);
     });
     node.on('mouseup', (event: MouseEvent) => {
+      this.nodeMouseEndX = event.offsetX;
+      this.nodeMouseEndY = event.offsetY;
+
       this.emit('nodeMouseup', event, nodeKey, nodeStyle);
     });
     node.on('click', (event: MouseEvent) => {
-      if (this.nodeMouseX === event.offsetX && this.nodeMouseY === event.offsetY) {
-        // 防止拖拽触发点击事件
+      if (this.nodeMouseStartX === this.nodeMouseEndX && this.nodeMouseStartY === this.nodeMouseEndY) {
+        // 防止拖拽触发点击事件，因为双击事件原因，单击延迟执行后防止点击移动鼠标后不执行。
         this.emit('nodeClick', event, nodeKey, nodeStyle);
       }
     });
     node.on('dbclick', (event: MouseEvent) => {
-      if (this.nodeMouseX === event.offsetX && this.nodeMouseY === event.offsetY) {
+      if (this.nodeMouseStartX === this.nodeMouseEndX && this.nodeMouseStartY === this.nodeMouseEndY) {
         // 防止拖拽触发点击事件
         this.emit('nodeDbclick', event, nodeKey, nodeStyle);
       }
