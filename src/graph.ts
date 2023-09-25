@@ -1163,13 +1163,21 @@ export class PixiGraph<
     });
   }
 
-  // 启用框选
-  choosesEnable(cb?: () => {}, auto?: boolean | undefined) {
-    // 自动框选（空格拖拽才会生效）
-    if (auto && this.spaceDrag) {
-      chooseAuto(this.graph, this.viewport, this, cb);
+  // 自动框选
+  choosesAutoEnable(cb: () => {}, realTime?: boolean) {
+    if (this.spaceDrag) {
+      //空格拖拽才可生效
+      chooseAuto(this.graph, this.app.stage, this.viewport, this, cb, realTime);
     }
-    // 手动框选（启用框选默认生效）
-    this.choose = new ChooseManual(this.container, this.graph, this.viewport, cb);
+  }
+  // 手动框选
+  choosesEnable(cb: () => {}, realTime?: boolean) {
+    this.choose = new ChooseManual({
+      container: this.container,
+      graph: this.graph,
+      viewport: this.viewport,
+      complete: cb,
+      realTime: realTime
+    });
   }
 }

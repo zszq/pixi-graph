@@ -286,12 +286,12 @@
       });
       console.log('pixiGraph', pixiGraph);
 
-      // 启用框选 param1：完成回调 param2：是否自动框选
+      // 自动框选 param1：完成回调；param2：自动框选是否实时选中，否则仅结束时执行一次；
+      pixiGraph.choosesAutoEnable((selected) => { console.log('choose-data', selected) }, true);
+      // 手动框选 param1：完成回调；param2：自动框选是否实时选中，否则仅结束时执行一次；
       pixiGraph.choosesEnable((selected) => { console.log('choose-data', selected) }, true);
-      // 手动框选
       document.getElementById('choose').addEventListener('click', () => {
-        // pixiGraph.choose.start();
-        pixiGraph.choose.start((selected) => { console.log('manual-choose-data', selected) });
+        pixiGraph.choose.show();
       })
 
       pixiGraph.on('viewportClick', (event) => {

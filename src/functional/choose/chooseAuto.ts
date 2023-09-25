@@ -1,5 +1,6 @@
 import { Point } from '@pixi/core';
 import { Graphics } from '@pixi/graphics';
+import { Container } from '@pixi/display';
 import { FederatedPointerEvent } from '@pixi/events';
 import { Viewport } from 'pixi-viewport';
 import { AbstractGraph } from 'graphology-types';
@@ -12,35 +13,40 @@ let graph: AbstractGraph;
 let viewport: Viewport;
 let pixiGraph: any;
 let graphics = new Graphics();
+let stage: Container;
 let startPoint = new Point(0, 0);
 let endPointer = new Point(0, 0);
 let callback: CB | undefined;
+let realTime: boolean | undefined = false;
 
-export default function chooseAuto(graphParam: AbstractGraph, viewportParam: Viewport, pixiGraphParam: any, complete?: CB) {
+export default function chooseAuto(graphParam: AbstractGraph, stageParam: Container, viewportParam: Viewport, pixiGraphParam: any, complete: CB, realTimeParam?: boolean) {
   graph = graphParam;
+  stage = stageParam;
   viewport = viewportParam;
   pixiGraph = pixiGraphParam;
   callback = complete;
+  realTime = realTimeParam;
 
-  viewport.addChild(graphics);
-  viewport.on('mousedown', mousedown);
+  stage.eventMode = 'static';
+  stage.addChild(graphics);
+  stage.on('mousedown', mousedown);
 }
 
 function mousedown(e: FederatedPointerEvent) {
   if (e.target !== viewport || pixiGraph.isDragging) return;
 
   isChoose = true;
-  startPoint = e.getLocalPosition(viewport);
+  startPoint = e.getLocalPosition(stage);
   endPointer = startPoint;
 
-  viewport.on('mousemove', mousemove);
+  stage.on('mousemove', mousemove);
   document.addEventListener('mouseup', mouseup, {
     once: true
   });
 }
 
 function mousemove(e: FederatedPointerEvent) {
-  const currentPoint = e.getLocalPosition(viewport);
+  const currentPoint = e.getLocalPosition(stage);
 
   const width = Math.abs(currentPoint.x - startPoint.x);
   const height = Math.abs(currentPoint.y - startPoint.y);
@@ -51,22 +57,24 @@ function mousemove(e: FederatedPointerEvent) {
   graphics.lineStyle(1, 0x0379f3).drawRect(left, top, width, height);
 
   endPointer = currentPoint;
+
+  if (realTime) {
+    handleSelected();
+  }
 }
 
 function mouseup() {
   graphics.clear();
   isChoose = false;
-  viewport.off('mousemove', mousemove);
+  stage.off('mousemove', mousemove);
 
-  if (startPoint.x === endPointer.x && startPoint.y === endPointer.y) {
-    return;
-  }
+  handleSelected();
+}
 
-  const startPointToScreen = viewport.toScreen(startPoint);
-  const endPointerToScreen = viewport.toScreen(endPointer);
-  const data = judge(graph, viewport, startPointToScreen, endPointerToScreen);
+function handleSelected() {
+  if (startPoint.x === endPointer.x && startPoint.y === endPointer.y) return;
 
-  if (callback) {
-    callback(data);
-  }
+  const data = judge(graph, viewport, startPoint, endPointer);
+
+  callback && callback(data);
 }

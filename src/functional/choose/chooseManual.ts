@@ -1,35 +1,44 @@
 import { AbstractGraph } from 'graphology-types';
 import { Viewport } from 'pixi-viewport';
+import { IPointData } from '@pixi/core';
 import judge from './judgeSelected';
 
 type CB = ((p: { nodes: string[]; edges: string[] }) => void) | null;
+interface Option {
+  container: HTMLElement;
+  graph: AbstractGraph;
+  viewport: Viewport;
+  complete: CB;
+  realTime?: boolean;
+}
 
 export default class ChooseManual {
   container: HTMLElement;
   graph: AbstractGraph;
   viewport: Viewport;
-  startX: number;
-  startY: number;
-  overlay: HTMLElement | null;
-  selectedArea: HTMLElement | null;
-
+  private startX: number;
+  private startY: number;
+  private overlay: HTMLElement | null;
+  private selectedArea: HTMLElement | null;
   private isChoose = false;
   private callback: CB | undefined;
-
+  private realTime?: boolean;
   private mousedownBound = this.mousedown.bind(this);
   private mousemoveBound = this.mousemove.bind(this);
   private mouseupBound = this.mouseup.bind(this);
   private cancelBound = this.cancel.bind(this);
 
-  constructor(container: HTMLElement, graph: AbstractGraph, viewport: Viewport, complete?: CB) {
-    this.container = container;
-    this.graph = graph;
-    this.viewport = viewport;
+  constructor(option: Option) {
+    this.container = option.container;
+    this.graph = option.graph;
+    this.viewport = option.viewport;
+    this.callback = option.complete;
+    this.realTime = option.realTime;
+
     this.startX = 0;
     this.startY = 0;
     this.overlay = null;
     this.selectedArea = null;
-    this.callback = complete;
 
     this.init();
   }
@@ -98,18 +107,27 @@ export default class ChooseManual {
     selectedArea.style.height = height + 'px';
     selectedArea.style.left = left + 'px';
     selectedArea.style.top = top + 'px';
+
+    if (this.realTime) {
+      const endPoint = { x: e.offsetX, y: e.offsetY };
+      this.handleSelected(endPoint);
+    }
   }
 
   mouseup(e: MouseEvent) {
-    const startPoint = { x: this.startX, y: this.startY };
     const endPoint = { x: e.offsetX, y: e.offsetY };
+    this.handleSelected(endPoint);
+
+    this.cancel();
+  }
+
+  private handleSelected(endPoint: IPointData) {
+    const startPoint = { x: this.startX, y: this.startY };
     const data = judge(this.graph, this.viewport, startPoint, endPoint);
 
     if (this.callback) {
       this.callback(data);
     }
-
-    this.cancel();
   }
 
   cancel() {
@@ -121,13 +139,9 @@ export default class ChooseManual {
     document.removeEventListener('keydown', this.cancelBound);
   }
 
-  start(complete?: CB) {
+  show() {
     this.isChoose = true;
     this.overlay!.style.display = 'block';
-
-    if (complete) {
-      this.callback = complete;
-    }
 
     document.addEventListener('keydown', this.cancelBound);
   }
