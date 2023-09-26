@@ -143,7 +143,7 @@ export default class ChooseManual {
     document.removeEventListener('keydown', this.cancelBound);
   }
 
-  show() {
+  open() {
     this.isChoose = true;
     this.overlay!.style.display = 'block';
 
