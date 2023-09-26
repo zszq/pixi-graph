@@ -477,13 +477,19 @@ export class PixiGraph<
 
   private onGraphCleared() {
     this.high = this.checkHighPerformance();
-    Array.from(this.edgeKeyToEdgeObject.keys()).forEach(this.dropEdge.bind(this));
-    Array.from(this.nodeKeyToNodeObject.keys()).forEach(this.dropNode.bind(this));
+    for (const [key] of this.edgeKeyToEdgeObject) {
+      this.dropEdge(key);
+    }
+    for (const [key] of this.nodeKeyToNodeObject) {
+      this.dropNode(key);
+    }
   }
 
   private onGraphEdgesCleared() {
     this.high = this.checkHighPerformance();
-    Array.from(this.edgeKeyToEdgeObject.keys()).forEach(this.dropEdge.bind(this));
+    for (const [key] of this.edgeKeyToEdgeObject) {
+      this.dropEdge(key);
+    }
   }
 
   private onGraphNodeAttributesUpdated(data: { key: string }) {
