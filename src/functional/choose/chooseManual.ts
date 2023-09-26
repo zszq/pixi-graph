@@ -2,6 +2,7 @@ import { AbstractGraph } from 'graphology-types';
 import { Viewport } from 'pixi-viewport';
 import { IPointData } from '@pixi/core';
 import judge from './judgeSelected';
+import { throttle } from "../../utils/tools";
 
 type CB = ((p: { nodes: string[]; edges: string[] }) => void) | null;
 interface Option {
@@ -27,6 +28,7 @@ export default class ChooseManual {
   private mousemoveBound = this.mousemove.bind(this);
   private mouseupBound = this.mouseup.bind(this);
   private cancelBound = this.cancel.bind(this);
+  private throttledJudge: Function;
 
   constructor(option: Option) {
     this.container = option.container;
@@ -39,6 +41,8 @@ export default class ChooseManual {
     this.startY = 0;
     this.overlay = null;
     this.selectedArea = null;
+
+    this.throttledJudge = throttle(this.judgeSelected, 30);
 
     this.init();
   }
@@ -110,18 +114,18 @@ export default class ChooseManual {
 
     if (this.realTime) {
       const endPoint = { x: e.offsetX, y: e.offsetY };
-      this.handleSelected(endPoint);
+      this.throttledJudge(endPoint);
     }
   }
 
   mouseup(e: MouseEvent) {
     const endPoint = { x: e.offsetX, y: e.offsetY };
-    this.handleSelected(endPoint);
+    this.judgeSelected(endPoint);
 
     this.cancel();
   }
 
-  private handleSelected(endPoint: IPointData) {
+  private judgeSelected(endPoint: IPointData) {
     const startPoint = { x: this.startX, y: this.startY };
     const data = judge(this.graph, this.viewport, startPoint, endPoint);
 

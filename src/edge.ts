@@ -44,18 +44,19 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
   }
 
   private addCommonEventListener(gfx: Container) {
-    gfx.on('mousemove', event => this.emit('mousemove', event.data.originalEvent as FederatedPointerEvent));
-    gfx.on('mouseover', event => this.emit('mouseover', event.data.originalEvent as FederatedPointerEvent));
-    gfx.on('mouseout', event => this.emit('mouseout', event.data.originalEvent as FederatedPointerEvent));
-    gfx.on('mousedown', event => this.emit('mousedown', event.data.originalEvent as FederatedPointerEvent));
-    gfx.on('mouseup', event => this.emit('mouseup', event.data.originalEvent as FederatedPointerEvent));
-    gfx.on('click', event => this.emit('click', event.data.originalEvent as FederatedPointerEvent));
-    gfx.on('rightclick', event => this.emit('rightclick', event.data.originalEvent as FederatedPointerEvent));
+    gfx.on('mousemove', event => this.emit('mousemove', event.originalEvent as FederatedPointerEvent));
+    gfx.on('mouseover', event => this.emit('mouseover', event.originalEvent as FederatedPointerEvent));
+    gfx.on('mouseout', event => this.emit('mouseout', event.originalEvent as FederatedPointerEvent));
+    gfx.on('mousedown', event => this.emit('mousedown', event.originalEvent as FederatedPointerEvent));
+    gfx.on('mouseup', event => this.emit('mouseup', event.originalEvent as FederatedPointerEvent));
+    gfx.on('click', event => this.emit('click', event.originalEvent as FederatedPointerEvent));
+    gfx.on('rightclick', event => this.emit('rightclick', event.originalEvent as FederatedPointerEvent));
   }
 
   createEdge() {
     const edgeGfx = new Container();
     edgeGfx.eventMode = 'static';
+    edgeGfx.cursor = 'pointer';
     this.addCommonEventListener(edgeGfx);
     createEdge(edgeGfx, this.isSelfLoop);
     return edgeGfx;
@@ -64,6 +65,7 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
   createEdgeLabel() {
     const edgeLabelGfx = new Container();
     edgeLabelGfx.eventMode = 'static';
+    edgeLabelGfx.cursor = 'pointer';
     this.addCommonEventListener(edgeLabelGfx);
     createEdgeLabel(edgeLabelGfx);
     return edgeLabelGfx;
@@ -72,6 +74,7 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
   createEdgeArrow() {
     const edgeArrowGfx = new Container();
     edgeArrowGfx.eventMode = 'static';
+    edgeArrowGfx.cursor = 'pointer';
     this.addCommonEventListener(edgeArrowGfx);
     createEdgeArrow(edgeArrowGfx, this.isSelfLoop);
     return edgeArrowGfx;

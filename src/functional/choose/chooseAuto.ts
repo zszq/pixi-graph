@@ -5,6 +5,7 @@ import { FederatedPointerEvent } from '@pixi/events';
 import { Viewport } from 'pixi-viewport';
 import { AbstractGraph } from 'graphology-types';
 import judge from './judgeSelected';
+import { throttle } from "../../utils/tools";
 
 type CB = ((p: { nodes: string[]; edges: string[] }) => void) | null;
 
@@ -59,7 +60,7 @@ function mousemove(e: FederatedPointerEvent) {
   endPointer = currentPoint;
 
   if (realTime) {
-    handleSelected();
+    throttledJudge();
   }
 }
 
@@ -68,13 +69,15 @@ function mouseup() {
   isChoose = false;
   stage.off('mousemove', mousemove);
 
-  handleSelected();
+  judgeSelected();
 }
 
-function handleSelected() {
+function judgeSelected() {
   if (startPoint.x === endPointer.x && startPoint.y === endPointer.y) return;
 
   const data = judge(graph, viewport, startPoint, endPointer);
 
   callback && callback(data);
 }
+
+const throttledJudge = throttle(judgeSelected, 30);

@@ -132,11 +132,11 @@ export class PixiGraph<
   style: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   hoverStyle: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   highPerformance?: { nodeNumber: number; edgeNumber: number };
-  spaceDrag?: boolean; // 启用按住空格拖拽
+  spaceDrag: boolean; // 启用按住空格拖拽
   choose: any;
-  dragOffset?: boolean;
-  minScale: number = 0.1;
-  maxScale: number = 1.5;
+  dragOffset: boolean;
+  minScale: number;
+  maxScale: number;
 
   private app: Application;
   private textureCache: TextureCache;
@@ -208,10 +208,10 @@ export class PixiGraph<
     this.style = options.style;
     this.hoverStyle = options.hoverStyle;
     this.highPerformance = options.highPerformance;
-    this.spaceDrag = options.spaceDrag;
-    this.dragOffset = options.dragOffset;
-    if (options.minScale) this.minScale = options.minScale;
-    if (options.maxScale) this.maxScale = options.maxScale;
+    this.spaceDrag = options.spaceDrag || false;
+    this.dragOffset = options.dragOffset || false;
+    this.minScale = options.minScale || 0.1;
+    this.maxScale = options.maxScale || 1.5;
 
     if (!(this.container instanceof HTMLElement)) {
       throw new Error('container should be a HTMLElement');
@@ -405,10 +405,12 @@ export class PixiGraph<
 
   private onViewportDragStart() {
     this.isDragging = true;
+    this.container.style.cursor = 'grab';
     this.highEdgeRenderableAllHide();
   }
   private onViewportDragEnd() {
     this.isDragging = false;
+    this.container.style.cursor = 'default';
     this.highEdgeRenderableAllShow();
   }
 
