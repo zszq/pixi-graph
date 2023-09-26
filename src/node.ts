@@ -42,33 +42,9 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
     gfx.on('mousemove', event => this.emit('mousemove', event.originalEvent as FederatedPointerEvent));
     gfx.on('mouseover', event => this.emit('mouseover', event.originalEvent as FederatedPointerEvent));
     gfx.on('mouseout', event => this.emit('mouseout', event.originalEvent as FederatedPointerEvent));
-    gfx.on('mousedown', event => {
-      gfx.cursor = 'grabbing';
-      this.emit('mousedown', event.originalEvent as FederatedPointerEvent);
-    });
-
-    // const doubleClickDelay = 180;
-    // let clickTimeout: number;
-    // let count = 0;
-    gfx.on('mouseup', event => {
-      gfx.cursor = 'pointer';
-      let originalEvent = event.originalEvent;
-      this.emit('mouseup', originalEvent as FederatedPointerEvent);
-
-      // count++;
-      // if (count >= 2) {
-      //   clearTimeout(clickTimeout);
-      //   this.emit('dbclick', originalEvent as FederatedPointerEvent);
-      //   count = 0;
-      // } else {
-      //   clickTimeout = window.setTimeout(() => {
-      //     this.emit('click', originalEvent as FederatedPointerEvent);
-      //     count = 0;
-      //   }, doubleClickDelay);
-      // }
-    });
+    gfx.on('mousedown', event => this.emit('mousedown', event.originalEvent as FederatedPointerEvent));
+    gfx.on('mouseup', event => this.emit('mouseup', event.originalEvent as FederatedPointerEvent));
     gfx.on('rightclick', event => this.emit('rightclick', event.originalEvent as FederatedPointerEvent));
-
     // gfx.on('click', event => this.emit('click', event.originalEvent as FederatedPointerEvent));
     gfx.addEventListener('click', event => {
       switch (event.detail) {
