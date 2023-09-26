@@ -47,29 +47,41 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
       this.emit('mousedown', event.originalEvent as FederatedPointerEvent);
     });
 
-    const doubleClickDelay = 180;
-    let clickTimeout: number;
-    let count = 0;
+    // const doubleClickDelay = 180;
+    // let clickTimeout: number;
+    // let count = 0;
     gfx.on('mouseup', event => {
       gfx.cursor = 'pointer';
       let originalEvent = event.originalEvent;
       this.emit('mouseup', originalEvent as FederatedPointerEvent);
 
-      count++;
-      if (count >= 2) {
-        clearTimeout(clickTimeout);
-        this.emit('dbclick', originalEvent as FederatedPointerEvent);
-        count = 0;
-      } else {
-        clickTimeout = window.setTimeout(() => {
-          this.emit('click', originalEvent as FederatedPointerEvent);
-          count = 0;
-        }, doubleClickDelay);
-      }
+      // count++;
+      // if (count >= 2) {
+      //   clearTimeout(clickTimeout);
+      //   this.emit('dbclick', originalEvent as FederatedPointerEvent);
+      //   count = 0;
+      // } else {
+      //   clickTimeout = window.setTimeout(() => {
+      //     this.emit('click', originalEvent as FederatedPointerEvent);
+      //     count = 0;
+      //   }, doubleClickDelay);
+      // }
     });
     gfx.on('rightclick', event => this.emit('rightclick', event.originalEvent as FederatedPointerEvent));
 
-    // gfx.on('click', (event) => {}); // 通过mouseup上面实现单双击事件，防止单击后移动鼠标由于延迟原因造成的坐标数据为移动后的。
+    // gfx.on('click', event => this.emit('click', event.originalEvent as FederatedPointerEvent));
+    gfx.addEventListener('click', event => {
+      switch (event.detail) {
+        case 1:
+          this.emit('click', event.originalEvent as FederatedPointerEvent);
+          break;
+        case 2:
+          this.emit('dbclick', event.originalEvent as FederatedPointerEvent);
+          break;
+        default:
+          break;
+      }
+    });
   }
 
   private createNode() {
