@@ -13,6 +13,7 @@ import { TextureCache } from './texture-cache';
 import { PixiNode } from './node';
 import { PixiEdge } from './edge';
 import { NodeStyle, EdgeStyle } from './utils/style';
+import { FederatedPointerEvent } from '@pixi/events';
 // import { Graphics } from '@pixi/graphics';
 import { makeWatermark, WatermarkOption } from './functional/watermark/watermark';
 import { ChooseManual, chooseAuto } from './functional/choose/index';
@@ -85,6 +86,7 @@ const DEFAULT_STYLE: GraphStyleDefinition = {
 };
 
 const WORLD_PADDING = 100;
+const VIEWPORT_CLICK_VALID_TIME = 200;
 
 export interface GraphOptions<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> {
   container: HTMLElement;
@@ -165,14 +167,17 @@ export class PixiGraph<
   // private isNodeMove?: boolean; // 点是否正在移动
   private high?: boolean; // 超过设置的点线数量时操作隐藏edge和label
   private highDebounce?: boolean; // 防止频繁执行隐藏edge和label
-  private nodeMouseStartX: number = 0;
-  private nodeMouseStartY: number = 0;
-  private nodeMouseEndX: number = 0;
-  private nodeMouseEndY: number = 0;
-  private edgeMouseX: number = 0;
-  private edgeMouseY: number = 0;
-  private nodeMouseOffsetX: number = 0;
-  private nodeMouseOffsetY: number = 0;
+  private nodeMouseStartX: number = 0; // 记录点击点后鼠标是否移动
+  private nodeMouseStartY: number = 0; // 记录点击点后鼠标是否移动
+  private nodeMouseEndX: number = 0; // 记录点击点后鼠标是否移动
+  private nodeMouseEndY: number = 0; // 记录点击点后鼠标是否移动
+  private edgeMouseX: number = 0; // 记录点击线后鼠标是否移动
+  private edgeMouseY: number = 0; // 记录点击线后鼠标是否移动
+  private nodeMouseOffsetX: number = 0; // 拖拽点时偏移的x坐标
+  private nodeMouseOffsetY: number = 0; // 拖拽点时偏移的y坐标
+  private viewportClickStartTime: number = 0; // 记录鼠标空白区域按下时的时间，判断是否点击
+  private viewportClickTimer: number | undefined = undefined; // 鼠标空白区域按下时的定时器，超过时间指针显示抓手
+  private isViewportDragged: boolean = false; // 在点击viewport后是否进行过拖拽, 因为drag-end事件比mouseup事件早，不能用isDragging判断
 
   private watermark: Container;
   private watermarkCount: number = 0;
@@ -199,6 +204,8 @@ export class PixiGraph<
   private onViewportSnapZoomStartBound = this.highEdgeRenderableAllHide.bind(this);
   private onViewportSnapZoomEndBound = this.highEdgeRenderableAllShow.bind(this);
   private onViewportClickedBound = this.onViewportClicked.bind(this);
+  private onViewportMousedownBound = this.onViewportMousedown.bind(this);
+  private onViewportMouseupBound = this.onViewportMouseup.bind(this);
 
   constructor(options: GraphOptions<NodeAttributes, EdgeAttributes>) {
     super();
@@ -321,6 +328,8 @@ export class PixiGraph<
     this.viewport.on('snap-zoom-start', this.onViewportSnapZoomStartBound);
     this.viewport.on('snap-zoom-end', this.onViewportSnapZoomEndBound);
     this.viewport.on('clicked', this.onViewportClickedBound);
+    this.viewport.on('mousedown', this.onViewportMousedownBound);
+    this.viewport.on('mouseup', this.onViewportMouseupBound);
 
     // initial draw
     this.createGraph();
@@ -405,12 +414,16 @@ export class PixiGraph<
 
   private onViewportDragStart() {
     this.isDragging = true;
-    this.container.style.cursor = 'grab';
+
+    this.isViewportDragged = true;
+    clearTimeout(this.viewportClickTimer); // 拖拽时取消定时器设置
+    this.container.style.cursor = 'grab'; // 拖拽时立即设置指针样式
+
     this.highEdgeRenderableAllHide();
   }
   private onViewportDragEnd() {
     this.isDragging = false;
-    this.container.style.cursor = 'default';
+    this.container.style.cursor = 'default'; // 拖拽结束指针恢复指针样式，因为mouseup可能在容器外触发
     this.highEdgeRenderableAllShow();
   }
 
@@ -437,11 +450,33 @@ export class PixiGraph<
   private onViewportClicked(event: any) {
     if (event.event.target === this.viewport) {
       const mouseEvent = event.event.data.originalEvent;
-      if (mouseEvent.button === 0) {
-        this.emit('viewportClick', mouseEvent as MouseEvent);
-      } else if (mouseEvent.button === 2) {
+      // if (mouseEvent.button === 0) {
+      // this.emit('viewportClick', mouseEvent as MouseEvent); // 改为鼠标按下弹起模拟单击
+      // } else
+      if (mouseEvent.button === 2) {
         this.emit('viewportRightClick', mouseEvent as MouseEvent);
       }
+    }
+  }
+  private onViewportMousedown(event: FederatedPointerEvent) {
+    if (event.target === this.viewport) {
+      this.isViewportDragged = false; // 有可能弹起时是在容器外面，所以按下时恢复false
+      this.viewportClickStartTime = new Date().getTime();
+      this.viewportClickTimer = window.setTimeout(() => {
+        this.container.style.cursor = 'grab'; // 按下鼠标超过指定时间指针显示拖拽
+      }, VIEWPORT_CLICK_VALID_TIME);
+    }
+  }
+  private onViewportMouseup(event: FederatedPointerEvent) {
+    // 注意mouseup可能在容器外触发
+    clearTimeout(this.viewportClickTimer);
+    if (event.target === this.viewport) {
+      const viewportClickEndTime = new Date().getTime();
+      if (viewportClickEndTime - this.viewportClickStartTime < VIEWPORT_CLICK_VALID_TIME && !this.isViewportDragged) {
+        // 小于指定时间 并且 不是在拖拽 确认为点击事件
+        this.emit('viewportClick', event.originalEvent as FederatedPointerEvent);
+      }
+      this.container.style.cursor = 'default'; // 恢复指针样式
     }
   }
 
@@ -1172,19 +1207,29 @@ export class PixiGraph<
   }
 
   // 自动框选
-  choosesAutoEnable(cb: () => {}, realTime?: boolean) {
+  choosesAutoEnable(cb: () => {}, lazy?: boolean, realTime?: boolean) {
     if (this.spaceDrag) {
       //空格拖拽才可生效
-      chooseAuto(this.graph, this.app.stage, this.viewport, this, cb, realTime);
+      // chooseAuto(this.graph, this.app.stage, this.viewport, this, cb, lazy, realTime);
+      chooseAuto({
+        graph: this.graph,
+        stage: this.app.stage,
+        viewport: this.viewport,
+        pixiGraph: this,
+        complete: cb,
+        lazy: lazy,
+        realTime: realTime
+      });
     }
   }
   // 手动框选
-  choosesEnable(cb: () => {}, realTime?: boolean) {
+  choosesEnable(cb: () => {}, lazy?: boolean, realTime?: boolean) {
     this.choose = new ChooseManual({
       container: this.container,
       graph: this.graph,
       viewport: this.viewport,
       complete: cb,
+      lazy: lazy,
       realTime: realTime
     });
   }

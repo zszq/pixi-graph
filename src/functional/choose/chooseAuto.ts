@@ -5,9 +5,18 @@ import { FederatedPointerEvent } from '@pixi/events';
 import { Viewport } from 'pixi-viewport';
 import { AbstractGraph } from 'graphology-types';
 import judge from './judgeSelected';
-import { throttle } from "../../utils/tools";
+import { throttle } from '../../utils/tools';
 
 type CB = ((p: { nodes: string[]; edges: string[] }) => void) | null;
+interface Option {
+  graph: AbstractGraph;
+  stage: Container;
+  viewport: Viewport;
+  pixiGraph: any;
+  complete: CB;
+  lazy?: boolean;
+  realTime?: boolean;
+}
 
 let isChoose = false;
 let graph: AbstractGraph;
@@ -18,15 +27,17 @@ let stage: Container;
 let startPoint = new Point(0, 0);
 let endPointer = new Point(0, 0);
 let callback: CB | undefined;
+let lazy: boolean | undefined = false;
 let realTime: boolean | undefined = false;
 
-export default function chooseAuto(graphParam: AbstractGraph, stageParam: Container, viewportParam: Viewport, pixiGraphParam: any, complete: CB, realTimeParam?: boolean) {
-  graph = graphParam;
-  stage = stageParam;
-  viewport = viewportParam;
-  pixiGraph = pixiGraphParam;
-  callback = complete;
-  realTime = realTimeParam;
+export default function chooseAuto(option: Option) {
+  graph = option.graph;
+  stage = option.stage;
+  viewport = option.viewport;
+  pixiGraph = option.pixiGraph;
+  callback = option.complete;
+  lazy = option.lazy;
+  realTime = option.realTime;
 
   stage.eventMode = 'static';
   stage.addChild(graphics);
@@ -55,7 +66,7 @@ function mousemove(e: FederatedPointerEvent) {
   const top = Math.min(startPoint.y, currentPoint.y);
 
   graphics.clear();
-  graphics.lineStyle(1, 0x0379f3).drawRect(left, top, width, height);
+  graphics.lineStyle(2, 0x0379f3).drawRect(left, top, width, height);
 
   endPointer = currentPoint;
 
@@ -75,7 +86,7 @@ function mouseup() {
 function judgeSelected() {
   if (startPoint.x === endPointer.x && startPoint.y === endPointer.y) return;
 
-  const data = judge(graph, viewport, startPoint, endPointer);
+  const data = judge(graph, viewport, startPoint, endPointer, lazy);
 
   callback && callback(data);
 }
