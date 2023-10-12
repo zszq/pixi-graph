@@ -166,7 +166,6 @@ export class PixiGraph<
   private isDragging: boolean = false; // 是否正在拖拽画布
   // private isNodeMove?: boolean; // 点是否正在移动
   private high?: boolean; // 超过设置的点线数量时操作隐藏edge和label
-  private highDebounce?: boolean; // 防止频繁执行隐藏edge和label
   private nodeMouseStartX: number = 0; // 记录点击点后鼠标是否移动
   private nodeMouseStartY: number = 0; // 记录点击点后鼠标是否移动
   private nodeMouseEndX: number = 0; // 记录点击点后鼠标是否移动
@@ -236,6 +235,7 @@ export class PixiGraph<
       powerPreference: 'high-performance'
     });
     this.container.appendChild(this.app.view as HTMLCanvasElement);
+    console.log('pixi-app', this.app);
 
     (globalThis as any).__PIXI_APP__ = this.app; // PixiJS Devtools
 
@@ -962,18 +962,13 @@ export class PixiGraph<
   // 高性能模式下隐藏所有线
   private highEdgeRenderableAllHide() {
     if (this.high) {
-      if (!this.highDebounce) {
-        // 防止重复执行
-        this.highDebounce = true;
-        this.edgeRenderableAll(false);
-        this.nodeLabelRenderableAll(false);
-      }
+      this.edgeLayer.renderable && this.edgeRenderableAll(false);
+      this.nodeLabelLayer.renderable && this.nodeLabelRenderableAll(false);
     }
   }
   // 高性能模式下显示所有线
   private highEdgeRenderableAllShow() {
     if (this.high) {
-      this.highDebounce = false;
       this.edgeRenderableAll(true);
       this.nodeLabelRenderableAll(true);
     }
@@ -1154,12 +1149,12 @@ export class PixiGraph<
     this.watermark.removeChildren();
   }
 
-  // 显示隐藏所有的线(可渲染)
+  // 显示或者隐藏所有的线和线label(可渲染)
   edgeRenderableAll(renderable: boolean) {
     this.edgeLayer.renderable = renderable;
     this.edgeLabelLayer.renderable = renderable;
   }
-  // 显示隐藏所有的线label(可渲染)
+  // 显示或者隐藏所有的线label(可渲染)
   edgeLabelRenderableAll(renderable: boolean) {
     this.edgeLabelLayer.renderable = renderable;
   }
@@ -1171,8 +1166,7 @@ export class PixiGraph<
       if (renderable) this.updateEdgeStyleByKey(edgeKey);
     });
   }
-
-  // 显示隐藏所有的点label(可渲染)
+  // 显示隐藏所有点的label(可渲染)
   nodeLabelRenderableAll(renderable: boolean) {
     this.nodeLabelLayer.renderable = renderable;
   }
@@ -1228,6 +1222,7 @@ export class PixiGraph<
       container: this.container,
       graph: this.graph,
       viewport: this.viewport,
+      pixiGraph: this,
       complete: cb,
       lazy: lazy,
       realTime: realTime

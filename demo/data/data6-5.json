@@ -7,7 +7,7 @@
                 2,
                 3
             ],
-            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+            "icon": ""
         },
         {
             "id": "node1",
@@ -16,7 +16,7 @@
                 2,
                 3
             ],
-            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+            "icon": "./images/bunny.png"
         },
         {
             "id": "node2",
@@ -25,7 +25,7 @@
                 2,
                 3
             ],
-            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+            "icon": "./images/ba.png"
         },
         {
             "id": "node3",
@@ -34,7 +34,7 @@
                 2,
                 3
             ],
-            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+            "icon": "./images/ba.png"
         },
         {
             "id": "node4",
@@ -43,7 +43,7 @@
                 2,
                 3
             ],
-            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+            "icon": "./images/ba.png"
         },
         {
             "id": "node5",
@@ -52,7 +52,7 @@
                 2,
                 3
             ],
-            "icon": "http://127.0.0.1:8080/docs/images/ba.png"
+            "icon": "./images/ba.png"
         }
     ],
     "links": [
