@@ -95,8 +95,6 @@ export default class ChooseManual {
   mousedown(e: MouseEvent) {
     if (!this.isChoose) return;
 
-    this.pixiGraph.highEdgeRenderableAllHide();
-
     this.startPoint = { x: e.offsetX, y: e.offsetY };
 
     const selectedArea = this.selectedArea!;
@@ -141,7 +139,8 @@ export default class ChooseManual {
       this.isChoose = false;
 
       this.judgeSelected(this.endPoint);
-      this.pixiGraph.highEdgeRenderableAllShow();
+
+      // this.pixiGraph.highEdgeRenderableAllShow();
 
       this.overlay!.style.display = 'none';
       this.selectedArea!.style.display = 'none';
@@ -151,6 +150,9 @@ export default class ChooseManual {
 
   open() {
     this.isChoose = true;
+
+    // this.pixiGraph.highEdgeRenderableAllHide();
+
     const overlay = this.overlay!;
     const { width, height, top, left } = this.container.getBoundingClientRect();
     overlay.style.width = width + 'px';
