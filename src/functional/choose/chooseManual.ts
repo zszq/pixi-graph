@@ -97,12 +97,7 @@ export default class ChooseManual {
 
     this.startPoint = { x: e.offsetX, y: e.offsetY };
 
-    const selectedArea = this.selectedArea!;
-    selectedArea.style.width = 0 + 'px';
-    selectedArea.style.height = 0 + 'px';
-    selectedArea.style.left = e.offsetX + 'px';
-    selectedArea.style.top = e.offsetY + 'px';
-    selectedArea.style.display = 'block';
+    this.selectedArea!.style.display = 'block';
 
     this.overlay!.addEventListener('mousemove', this.mousemoveBound);
     document.addEventListener('mouseup', this.mouseupBound, { once: true });
@@ -111,11 +106,11 @@ export default class ChooseManual {
   mousemove(e: MouseEvent) {
     const moveX = e.offsetX;
     const moveY = e.offsetY;
-    const selectedArea = this.selectedArea!;
     const width = Math.abs(moveX - this.startPoint.x);
     const height = Math.abs(moveY - this.startPoint.y);
     const left = Math.min(this.startPoint.x, moveX);
     const top = Math.min(this.startPoint.y, moveY);
+    const selectedArea = this.selectedArea!;
 
     selectedArea.style.width = width + 'px';
     selectedArea.style.height = height + 'px';
@@ -130,7 +125,6 @@ export default class ChooseManual {
   }
 
   mouseup(e: MouseEvent) {
-    this.endPoint = { x: e.offsetX, y: e.offsetY };
     this.cancel();
   }
 
@@ -139,13 +133,20 @@ export default class ChooseManual {
       this.isChoose = false;
 
       this.judgeSelected(this.endPoint);
+
       this.startPoint = { x: 0, y: 0 };
       this.endPoint = { x: 0, y: 0 };
 
       // this.pixiGraph.highEdgeRenderableAllShow();
 
+      const selectedArea = this.selectedArea!;
+      selectedArea.style.width = 0 + 'px';
+      selectedArea.style.height = 0 + 'px';
+      selectedArea.style.left = 0 + 'px';
+      selectedArea.style.top = 0 + 'px';
+      selectedArea.style.display = 'none';
+
       this.overlay!.style.display = 'none';
-      this.selectedArea!.style.display = 'none';
       this.overlay!.removeEventListener('mousemove', this.mousemoveBound);
     }
   }
