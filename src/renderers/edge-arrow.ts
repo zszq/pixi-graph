@@ -35,6 +35,8 @@ export function updateEdgeArrowStyle(edgeArrowGfx: Container, edgeStyle: EdgeSty
     const graphics = new Graphics();
     graphics.beginFill(WHITE);
     graphics.drawPolygon([-arrowSize / 2, arrowSize, arrowSize / 2, arrowSize, 0, 0]);
+    graphics.endFill();
+    
     return graphics;
   });
 

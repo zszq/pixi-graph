@@ -220,7 +220,7 @@
           gap: 20, // 两根平行线之间的间距
           arrow: {
             show: true,
-            size: edge => (Math.log((edge.value || 0) + 1) + 2) * 3, // 根据edge.width设置避免被覆盖,如果不能被2整除会自动加1像素，防止发生偏移
+            size: edge => (Math.log((edge.value || 0) + 1) + 2) * 2, // 根据edge.width设置避免被覆盖,如果不能被2整除会自动加1像素，防止发生偏移
           },
           label: {
             content: edge => edge.label ? edge.label : edge.target,

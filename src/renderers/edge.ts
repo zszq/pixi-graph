@@ -48,6 +48,8 @@ export function updateEdgeStyle(edgeGfx: Container, edgeStyle: EdgeStyle, textur
       const graphics = new Graphics();
       graphics.beginFill(WHITE);
       graphics.drawCircle(edgeStyle.selefLoop.radius, edgeStyle.selefLoop.radius, edgeStyle.selefLoop.radius);
+      graphics.endFill();
+
       return graphics;
     });
 
@@ -56,6 +58,7 @@ export function updateEdgeStyle(edgeGfx: Container, edgeStyle: EdgeStyle, textur
       const graphics = new Graphics();
       graphics.lineStyle(edgeStyle.width, WHITE);
       graphics.drawCircle(edgeOuterSize, edgeOuterSize, edgeStyle.selefLoop.radius);
+      
       return graphics;
     });
 

@@ -47,6 +47,8 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
     const graphics = new Graphics();
     graphics.beginFill(WHITE);
     graphics.drawCircle(0, 0, nodeStyle.size);
+    graphics.endFill();
+    
     return graphics;
   });
 
@@ -55,6 +57,7 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
     const graphics = new Graphics();
     graphics.lineStyle(nodeStyle.border.width, WHITE);
     graphics.drawCircle(0, 0, nodeStyle.size);
+
     return graphics;
   });
 
