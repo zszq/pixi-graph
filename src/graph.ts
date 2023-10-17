@@ -341,10 +341,10 @@ export class PixiGraph<
   }
 
   private createGraph() {
-    console.time('create-render');
+    console.time('render-time');
     this.graph.forEachNode(this.createNode.bind(this));
     this.graph.forEachEdge(this.createEdge.bind(this));
-    console.timeEnd('create-render');
+    console.timeEnd('render-time');
     this.high = this.checkHighPerformance();
   }
 
@@ -1211,8 +1211,8 @@ export class PixiGraph<
         viewport: this.viewport,
         pixiGraph: this,
         complete: cb,
-        lazy: lazy,
-        realTime: realTime
+        lazy,
+        realTime
       });
     }
   }
@@ -1224,8 +1224,8 @@ export class PixiGraph<
       viewport: this.viewport,
       pixiGraph: this,
       complete: cb,
-      lazy: lazy,
-      realTime: realTime
+      lazy,
+      realTime
     });
   }
 }

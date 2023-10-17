@@ -125,7 +125,7 @@
       // const { nodes, links } = await (await fetch('./data/miserables.json')).json();
       const { nodes, links } = await (await fetch('./data/data6-5.json')).json();
       // const { nodes, links } = await (await fetch('./data/data500-1000.json')).json();
-      // const { nodes, links } = await (await fetch('./data/data1000-5000.json')).json();
+      // const { nodes, links } = await (await fetch('./data/data1000-3000.json')).json();
       // const { nodes, links } = await (await fetch('./data/data-10000-10000.json')).json();
       // const { nodes, links } = await (await fetch('./data/socfb-Caltech36.json')).json();
       nodes.forEach(node => {
@@ -143,9 +143,9 @@
         graph.setNodeAttribute(node, 'x', Math.random());
         graph.setNodeAttribute(node, 'y', Math.random());
       });
-      console.time('compute');
-      forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 2000 } });
-      console.timeEnd('compute');
+      console.time('compute-time');
+      forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 500 } });
+      console.timeEnd('compute-time');
 
       // function setCenter() {
       //   const WORLD_PADDING = 100;
@@ -275,18 +275,18 @@
         maxScale: 1.5,
         highPerformance: {
           // 达到点线设定值值，拖拽不显示线，性能会更好
-          nodeNumber: 0,
-          edgeNumber: 0
+          nodeNumber: 5000,
+          edgeNumber: 5000
         },
         // spaceDrag: true, // 使用按住空格拖拽
         // dragOffset: true, // false 拖拽鼠标不偏移到点中心，拖拽过快会漂移
       });
       console.log('pixiGraph', pixiGraph);
 
-      // 自动框选(空格拖拽生效) param1：完成回调；param2：仅框选点 param3：自动框选是否实时选中，否则仅结束时执行一次
+      // 自动框选(空格拖拽生效) param1：完成回调；param2：仅框选点 param3：是否实时选中，否则仅结束时执行一次
       // pixiGraph.choosesAutoEnable((selected) => { console.log('choose-data', selected) }, true, false);
       // 手动框选 param1：完成回调；param2：仅框选点 param3：是否实时选中，否则仅结束时执行一次；
-      pixiGraph.choosesEnable((selected) => { console.log('choose-data', selected) }, true, true);
+      pixiGraph.choosesEnable((selected) => { console.log('choose-data', selected) }, true, false);
       document.getElementById('choose').addEventListener('click', () => {
         pixiGraph.choose.open();
       })
