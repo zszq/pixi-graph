@@ -139,6 +139,8 @@ export default class ChooseManual {
       this.isChoose = false;
 
       this.judgeSelected(this.endPoint);
+      this.startPoint = { x: 0, y: 0 };
+      this.endPoint = { x: 0, y: 0 };
 
       // this.pixiGraph.highEdgeRenderableAllShow();
 
