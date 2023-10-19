@@ -64,6 +64,7 @@ export default class ChooseManual {
     selectedArea.style.opacity = '0.2';
     selectedArea.style.width = '10px';
     selectedArea.style.height = '10px';
+    selectedArea.style.border = '1.5px solid #000';
     selectedArea.style.display = 'none';
     selectedArea.style.pointerEvents = 'none';
 
