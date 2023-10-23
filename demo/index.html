@@ -123,9 +123,9 @@
         type: 'undirected'
       });
       // const { nodes, links } = await (await fetch('./data/miserables.json')).json();
-      const { nodes, links } = await (await fetch('./data/data6-5.json')).json();
+      // const { nodes, links } = await (await fetch('./data/data6-5.json')).json();
       // const { nodes, links } = await (await fetch('./data/data500-1000.json')).json();
-      // const { nodes, links } = await (await fetch('./data/data1000-3000.json')).json();
+      const { nodes, links } = await (await fetch('./data/data1000-3000.json')).json();
       // const { nodes, links } = await (await fetch('./data/data-10000-10000.json')).json();
       // const { nodes, links } = await (await fetch('./data/socfb-Caltech36.json')).json();
       nodes.forEach(node => {
@@ -275,8 +275,8 @@
         maxScale: 1.5,
         highPerformance: {
           // 达到点线设定值值，拖拽不显示线，性能会更好
-          nodeNumber: 5000,
-          edgeNumber: 5000
+          nodeNumber: 0,
+          edgeNumber: 0
         },
         // spaceDrag: true, // 使用按住空格拖拽
         // dragOffset: true, // false 拖拽鼠标不偏移到点中心，拖拽过快会漂移

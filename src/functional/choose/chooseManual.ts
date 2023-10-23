@@ -97,6 +97,7 @@ export default class ChooseManual {
     if (!this.isChoose) return;
 
     this.startPoint = { x: e.offsetX, y: e.offsetY };
+    this.endPoint = { x: e.offsetX, y: e.offsetY };
 
     this.selectedArea!.style.display = 'block';
 
