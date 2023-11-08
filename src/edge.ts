@@ -14,8 +14,9 @@ interface PixiEdgeEvents {
   mouseout: (event: MouseEvent) => void;
   mousedown: (event: MouseEvent) => void;
   mouseup: (event: MouseEvent) => void;
-  click: (event: MouseEvent) => void;
   rightclick: (event: MouseEvent) => void;
+  click: (event: MouseEvent) => void;
+  dbclick: (event: MouseEvent) => void;
 }
 
 export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
@@ -49,8 +50,20 @@ export class PixiEdge extends TypedEmitter<PixiEdgeEvents> {
     gfx.on('mouseout', event => this.emit('mouseout', event.originalEvent as FederatedPointerEvent));
     gfx.on('mousedown', event => this.emit('mousedown', event.originalEvent as FederatedPointerEvent));
     gfx.on('mouseup', event => this.emit('mouseup', event.originalEvent as FederatedPointerEvent));
-    gfx.on('click', event => this.emit('click', event.originalEvent as FederatedPointerEvent));
     gfx.on('rightclick', event => this.emit('rightclick', event.originalEvent as FederatedPointerEvent));
+    // gfx.on('click', event => this.emit('click', event.originalEvent as FederatedPointerEvent));
+    gfx.addEventListener('click', event => {
+      switch (event.detail) {
+        case 1:
+          this.emit('click', event.originalEvent as FederatedPointerEvent);
+          break;
+        case 2:
+          this.emit('dbclick', event.originalEvent as FederatedPointerEvent);
+          break;
+        default:
+          break;
+      }
+    });
   }
 
   createEdge() {

@@ -116,6 +116,7 @@ interface PixiGraphEvents {
   nodeMoveEnd: (event: MouseEvent, nodeKey: string, point: IPointData) => void;
 
   edgeClick: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
+  edgeDbclick: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   edgeMousemove: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   edgeMouseover: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
   edgeMouseout: (event: MouseEvent, edgeKey: string, edgeStyle: EdgeStyle) => void;
@@ -822,6 +823,12 @@ export class PixiGraph<
       if (this.edgeMouseX === event.offsetX && this.edgeMouseY === event.offsetY) {
         // 防止拖拽出发点击事件
         this.emit('edgeClick', event, edgeKey, edgeStyle);
+      }
+    });
+    edge.on('dbclick', (event: MouseEvent) => {
+      if (this.edgeMouseX === event.offsetX && this.edgeMouseY === event.offsetY) {
+        // 防止拖拽出发点击事件
+        this.emit('edgeDbclick', event, edgeKey, edgeStyle);
       }
     });
     edge.on('rightclick', (event: MouseEvent) => {
