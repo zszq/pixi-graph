@@ -24,7 +24,7 @@
     #graph {
       width: calc(100vw - 17px);
       height: 100vh;
-      background: #56606e;
+      /* background: #56606e; */
     }
 
     #controls {
@@ -182,8 +182,11 @@
           },
           icon: {
             type: node => node.icon ? PixiGraph.TextType.IMAGE : PixiGraph.TextType.TEXT, // TEXT or IMAGE
+            // type: node => PixiGraph.TextType.TEXT, // TEXT or IMAGE
             content: (node) => {
               return node.icon ? node.icon : ''; // 使用图片方法(PixiGraph.TextType.IMAGE，返回相应图片路径)
+              // return ''; // 使用图片方法(PixiGraph.TextType.IMAGE，返回相应图片路径)
+
               // 使用字体图标的方法(导入相关字体文件后使用);
               // let unicode = '&#xe7f8;';
               // if (unicode === "") return "";
@@ -198,7 +201,7 @@
           label: {
             content: node => node.label ? node.label : node.id,
             type: PixiGraph.TextType.TEXT,
-            fontFamily: 'HelveticaRegular',
+            // fontFamily: 'HelveticaRegular',
             align: 'center',
             fontSize: 12,
             fontWeight: '400',
@@ -225,7 +228,7 @@
           label: {
             content: edge => edge.label ? edge.label : edge.target,
             type: PixiGraph.TextType.TEXT,
-            fontFamily: 'HelveticaRegular',
+            // fontFamily: 'HelveticaRegular',
             fontSize: 12,
             fontWeight: '500',
             color: '#000',
@@ -246,7 +249,7 @@
           label: {
             backgroundColor: 'rgba(255, 255, 255, 0.6)',
             // color: '#ffffff',
-            fontWeight: 'bolder',
+            // fontWeight: 'bolder',
           },
         },
         edge: {
@@ -255,7 +258,7 @@
           label: {
             backgroundColor: 'rgba(255, 255, 255, 0.6)',
             // color: '#ffffff',
-            fontWeight: 'bolder',
+            // fontWeight: 'bolder',
           },
         },
       };
@@ -271,12 +274,12 @@
         style,
         hoverStyle,
         // resources,
-        minScale: 0.1,
-        maxScale: 1.5,
+        // minScale: 0.1,
+        maxScale: 2,
         highPerformance: {
           // 达到点线设定值值，拖拽不显示线，性能会更好
-          nodeNumber: 0,
-          edgeNumber: 0
+          nodeNumber: 5000,
+          edgeNumber: 5000
         },
         // spaceDrag: true, // 使用按住空格拖拽
         // dragOffset: true, // false 拖拽鼠标不偏移到点中心，拖拽过快会漂移

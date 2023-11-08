@@ -15,6 +15,8 @@ import { PixiEdge } from './edge';
 import { NodeStyle, EdgeStyle } from './utils/style';
 import { FederatedPointerEvent } from '@pixi/events';
 // import { Graphics } from '@pixi/graphics';
+import { LINE_SCALE_MODE, settings } from '@pixi/graphics-smooth';
+
 import { makeWatermark, WatermarkOption } from './functional/watermark/watermark';
 import { ChooseManual, chooseAuto } from './functional/choose/index';
 
@@ -217,17 +219,18 @@ export class PixiGraph<
     this.spaceDrag = options.spaceDrag || false;
     this.dragOffset = options.dragOffset || false;
     this.minScale = options.minScale || 0.1;
-    this.maxScale = options.maxScale || 1.5;
+    this.maxScale = options.maxScale || 2;
 
     if (!(this.container instanceof HTMLElement)) {
       throw new Error('container should be a HTMLElement');
     }
 
+    settings.LINE_SCALE_MODE = LINE_SCALE_MODE.NORMAL;
+
     // create PIXI application
     this.app = new Application({
       resizeTo: this.container,
-      // resolution: window.devicePixelRatio,
-      resolution: 2,
+      resolution: window.devicePixelRatio,
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
@@ -1045,6 +1048,20 @@ export class PixiGraph<
   extract(full: boolean = true, format: string = 'image/png', quality: number = 0.92) {
     full && this.uncull();
     return this.app.renderer.extract.base64(this.viewport, format, quality);
+
+    // const imageThis = this.app.renderer.generateTexture(this.viewport, {
+    //   region: this.app.screen,
+    //   resolution: 2
+    // });
+    // this.app.renderer.extract.image(imageThis, 'image/png', 1.0).then((img) => {
+    //   const image: HTMLImageElement = img;
+    //   const createEl = document.createElement('a');
+    //   createEl.href = image.src;
+    //   createEl.download = 'my-canvas';
+    //   createEl.click();
+    //   createEl.remove();
+    //   imageThis.destroy();
+    // })
   }
   // 提取图片，多次截图合并（无锯齿，图大截图不完全）
   extractWithScreenShot() {

@@ -35,6 +35,7 @@ export function textToPixi(type: TextType, content: string, style: TextStyle) {
       // wordWrap: true,
       // wordWrapWidth: 200
     });
+    text.resolution = 2;
   } else if (type === TextType.BITMAP_TEXT) {
     text = new BitmapText(content, {
       fontName: style.fontFamily,

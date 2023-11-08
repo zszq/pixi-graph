@@ -21,7 +21,8 @@ export class TextureCache {
       const roundedRegion = new Rectangle(Math.floor(region.x), Math.floor(region.y), Math.ceil(region.width), Math.ceil(region.height));
       texture = this.renderer.generateTexture(container, {
         region: roundedRegion,
-        resolution: this.renderer.resolution,
+        // resolution: this.renderer.resolution,
+        resolution: this.renderer.resolution * 2,
         multisample: MSAA_QUALITY.LOW
       });
       this.textures.set(key, texture);

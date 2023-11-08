@@ -1,7 +1,8 @@
 import { Container } from '@pixi/display';
 import { Circle } from '@pixi/core';
 import { Sprite } from '@pixi/sprite';
-import { Graphics } from '@pixi/graphics';
+// import { Graphics } from '@pixi/graphics';
+import { SmoothGraphics as Graphics } from '@pixi/graphics-smooth';
 import { Texture } from '@pixi/core';
 import '@pixi/mixin-get-child-by-name';
 import { colorToPixi } from '../utils/color';
@@ -46,7 +47,8 @@ export function updateEdgeStyle(edgeGfx: Container, edgeStyle: EdgeStyle, textur
     const edgeCircleTextureKey = [EDGE_LINE, edgeStyle.selefLoop.radius].join(DELIMITER);
     const edgeCircleTexture = textureCache.get(edgeCircleTextureKey, () => {
       const graphics = new Graphics();
-      graphics.beginFill(WHITE);
+      // graphics.beginFill(WHITE);
+      graphics.beginFill(WHITE, 1.0, true);
       graphics.drawCircle(edgeStyle.selefLoop.radius, edgeStyle.selefLoop.radius, edgeStyle.selefLoop.radius);
       graphics.endFill();
 

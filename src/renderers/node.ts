@@ -1,7 +1,8 @@
 import { Container } from '@pixi/display';
 import { Circle } from '@pixi/core';
 import { Sprite } from '@pixi/sprite';
-import { Graphics } from '@pixi/graphics';
+// import { Graphics } from '@pixi/graphics';
+import { SmoothGraphics as Graphics } from '@pixi/graphics-smooth';
 import { Texture } from '@pixi/core';
 import '@pixi/mixin-get-child-by-name';
 import { colorToPixi } from '../utils/color';
@@ -45,7 +46,8 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
   const nodeCircleTextureKey = [NODE_CIRCLE, nodeStyle.size].join(DELIMITER);
   const nodeCircleTexture = textureCache.get(nodeCircleTextureKey, () => {
     const graphics = new Graphics();
-    graphics.beginFill(WHITE);
+    // graphics.beginFill(WHITE);
+    graphics.beginFill(WHITE, 1.0, true);
     graphics.drawCircle(0, 0, nodeStyle.size);
     graphics.endFill();
     
