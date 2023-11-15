@@ -1,7 +1,7 @@
 import { Container } from '@pixi/display';
 import { IPointData } from '@pixi/core';
 import { FederatedPointerEvent } from '@pixi/events';
-import { TypedEmitter } from 'tiny-typed-emitter';
+import TypedEmitter from 'eventemitter3';
 import { createNode, updateNodeStyle, updateNodeVisibility } from './renderers/node';
 import { createNodeLabel, updateNodeLabelStyle, updateNodeLabelVisibility } from './renderers/node-label';
 import { NodeStyle } from './utils/style';
@@ -71,9 +71,9 @@ export class PixiNode extends TypedEmitter<PixiNodeEvents> {
 
   private createNodeLabel() {
     const nodeLabelGfx = new Container();
-    nodeLabelGfx.eventMode = 'static';
-    nodeLabelGfx.cursor = 'pointer';
-    this.addCommonEventListener(nodeLabelGfx);
+    // nodeLabelGfx.eventMode = 'static';
+    // nodeLabelGfx.cursor = 'pointer';
+    // this.addCommonEventListener(nodeLabelGfx);
     createNodeLabel(nodeLabelGfx);
     return nodeLabelGfx;
   }

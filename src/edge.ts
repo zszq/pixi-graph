@@ -1,7 +1,7 @@
 import { Container } from '@pixi/display';
 import { IPointData } from '@pixi/core';
 import { FederatedPointerEvent } from '@pixi/events';
-import { TypedEmitter } from 'tiny-typed-emitter';
+import TypedEmitter from 'eventemitter3';
 import { createEdge, updateEdgeStyle } from './renderers/edge';
 import { createEdgeArrow, updateEdgeArrowStyle, updateEdgeArrowVisibility } from './renderers/edge-arrow';
 import { createEdgeLabel, updateEdgeLabelStyle, updateEdgeLabelVisibility } from './renderers/edge-label';

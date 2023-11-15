@@ -40,6 +40,7 @@
     "@pixi/ticker": "^7.3.0",
     "color-rgba": "^2.2.3",
     "deepmerge": "^4.3.1",
+    "eventemitter3": "^5.0.1",
     "events": "^3.3.0",
     "pixi-viewport": "^5.0.2",
     "pixi.js": "^7.3.0",

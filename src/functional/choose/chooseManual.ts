@@ -81,6 +81,7 @@ export default class ChooseManual {
       if (!keyDownFlag) {
         keyDownFlag = true;
         if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+          e.preventDefault();
           this.open();
         }
       }
