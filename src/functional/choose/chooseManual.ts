@@ -81,7 +81,6 @@ export default class ChooseManual {
       if (!keyDownFlag) {
         keyDownFlag = true;
         if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-          e.preventDefault();
           this.open();
         }
       }
@@ -90,6 +89,12 @@ export default class ChooseManual {
       keyDownFlag = false;
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
         this.cancel();
+      }
+    });
+    // 处理按下shift和点击鼠标选中文字问题
+    document.addEventListener('mousedown', e => {
+      if (e.shiftKey) {
+        e.preventDefault();
       }
     });
   }
