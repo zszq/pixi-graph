@@ -181,7 +181,7 @@ export class PixiGraph<
   private viewportClickTimer: number | undefined = undefined; // 鼠标空白区域按下时的定时器，超过时间指针显示抓手
   private isViewportDragged: boolean = false; // 在点击viewport后是否进行过拖拽, 因为drag-end事件比mouseup事件早，不能用isDragging判断
 
-  private watermark: Container;
+  private watermarkLayer: Container;
   private watermarkCount: number = 0;
   private isCanvasTarget: boolean = false; // 临时处理hover穿透问题
 
@@ -341,8 +341,8 @@ export class PixiGraph<
     this.resetView(this.graph.nodes());
 
     // 创建水印
-    this.watermark = new Container();
-    this.app.stage.addChildAt(this.watermark, 0);
+    this.watermarkLayer = new Container();
+    this.app.stage.addChildAt(this.watermarkLayer, 0);
 
     // 临时处理hover穿透问题（关注pixijs最新版本是否解决）
     globalThis.document.addEventListener('pointermove', e => {
@@ -1156,17 +1156,17 @@ export class PixiGraph<
     let watermark = makeWatermark(containerWidth, containerHeight, option);
     let name = `watermark_${this.watermarkCount++}`;
     watermark.name = name;
-    this.watermark.addChild(watermark);
+    this.watermarkLayer.addChild(watermark);
     return name;
   }
   // 删除指定水印
   removeWatermark(name: string) {
-    let children = this.watermark.getChildByName(name);
-    if (children) this.watermark.removeChild(children);
+    let children = this.watermarkLayer.getChildByName(name);
+    if (children) this.watermarkLayer.removeChild(children);
   }
   // 清除所有水印
   clearWatermark() {
-    this.watermark.removeChildren();
+    this.watermarkLayer.removeChildren();
   }
 
   // 显示或者隐藏所有的线和线label(可渲染)
