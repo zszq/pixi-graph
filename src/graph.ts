@@ -346,7 +346,7 @@ export class PixiGraph<
 
     // 临时处理hover穿透问题（关注pixijs最新版本是否解决）
     globalThis.document.addEventListener('pointermove', e => {
-      this.isCanvasTarget = e.target === this.app.view;
+      this.isCanvasTarget = e.target === this.app?.view;
     });
   }
 
@@ -450,7 +450,7 @@ export class PixiGraph<
   private onViewportZoomedEnd() {
     this.highEdgeRenderableAllShow();
 
-    // // test
+    // test
     // const screenLine = new Graphics().lineStyle(3, 0x0379f3).drawRect(0, 0, this.viewport.screenWidth, this.viewport.screenHeight);
     // const worldLine = new Graphics().lineStyle(1, 0xff0000).drawRect(0, 0, this.viewport.worldWidth, this.viewport.worldHeight);
     // this.app.stage.addChild(screenLine);
@@ -1148,20 +1148,6 @@ export class PixiGraph<
   //   };
   //   return execute();
   // }
-
-  // 移动到视图中心并取消缩放
-  moveCenter() {
-    this.viewport.snapZoom({
-      width: this.viewport.worldWidth,
-      height: this.viewport.worldHeight,
-      removeOnComplete: true,
-      removeOnInterrupt: true
-    });
-    this.viewport.snap(0, 0, {
-      removeOnComplete: true,
-      removeOnInterrupt: true
-    });
-  }
 
   // 添加水印
   createWatermark(option: WatermarkOption) {

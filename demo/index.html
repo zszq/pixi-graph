@@ -589,8 +589,11 @@
           // downloadImg(src);
         })
 
-        pixiGraph.moveCenter();
-
+        pixiGraph.viewport.animate({
+          position: { x: 0, y: 0 }, // 目标位置
+          scale: 2, // 缩放目标
+          time: 600 // 动画持续时间，以毫秒为单位
+        });
       })
 
 
