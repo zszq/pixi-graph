@@ -592,7 +592,8 @@
         pixiGraph.viewport.animate({
           position: { x: 0, y: 0 }, // 目标位置
           scale: 2, // 缩放目标
-          time: 600 // 动画持续时间，以毫秒为单位
+          time: 600, // 动画持续时间，以毫秒为单位
+          removeOnInterrupt: true // 如果被任何用户输入打断，将删除此插件
         });
       })
 
