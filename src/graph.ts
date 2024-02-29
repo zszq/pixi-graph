@@ -255,7 +255,8 @@ export class PixiGraph<
       events: this.app.renderer.events,
       disableOnContextMenu: true,
       passiveWheel: false
-      // stopPropagation: true
+      // stopPropagation: true,
+      // allowPreserveDragOutside: true,
     })
       .drag({
         mouseButtons: 'left',
