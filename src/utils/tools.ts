@@ -14,7 +14,7 @@ export function isUrl(str: string) {
 
 export function throttle(func: Function, delay: number): Function {
   let lastCalledTime = 0;
-  let timeoutId: NodeJS.Timeout | null = null;
+  let timeoutId: number | undefined = undefined;
 
   return function (...args: any[]) {
     const now = Date.now();
@@ -25,7 +25,7 @@ export function throttle(func: Function, delay: number): Function {
       lastCalledTime = now;
     } else {
       if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         // @ts-ignore
         func.apply(this, args);
         lastCalledTime = now;

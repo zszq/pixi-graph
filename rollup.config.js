@@ -1,14 +1,14 @@
-import pkg from "./package.json";
 import commonjs from "@rollup/plugin-commonjs";
-import resolve from "@rollup/plugin-node-resolve";
-import typescript from "rollup-plugin-typescript2";
-import visualizer from "rollup-plugin-visualizer";
-import { terser } from "rollup-plugin-terser";
+import nodeResolve from "@rollup/plugin-node-resolve";
+import nodePolyfills from 'rollup-plugin-polyfill-node';
+import typescript from "@rollup/plugin-typescript";
+import terser from '@rollup/plugin-terser';
 import dts from "rollup-plugin-dts";
+import { visualizer } from "rollup-plugin-visualizer";
 import serve from "rollup-plugin-serve";
 import livereload from "rollup-plugin-livereload";
 
-const isDevelopment = process.env.ENV === "development" ? true : false;
+const isDev = process.env.ENV === "development" ? true : false;
 
 const bundle = (format, filename, options = {}) => ({
   input: "src/index.ts",
@@ -18,19 +18,16 @@ const bundle = (format, filename, options = {}) => ({
     name: "PixiGraph",
     sourcemap: true,
   },
-  external: [
-    ...Object.keys(pkg.peerDependencies),
-    ...(!options.resolve ? Object.keys(pkg.dependencies) : []),
-  ],
   plugins: [
-    ...(options.resolve ? [resolve({ preferBuiltins: false })] : []),
+    nodeResolve(),
+    nodePolyfills(),
     commonjs(),
-    typescript({ typescript: require("typescript"), clean: options.stats }),
+    typescript(),
     ...(options.minimize ? [terser()] : []),
     ...(options.stats
       ? [visualizer({ filename: filename + ".stats.html" })]
       : []),
-    ...(isDevelopment
+    ...(isDev
       ? [
           serve({
             // open: true,
@@ -41,30 +38,30 @@ const bundle = (format, filename, options = {}) => ({
           }),
         ]
       : []),
-    ...(isDevelopment ? [livereload({ watch: "dist" })] : []),
+    ...(isDev ? [livereload({ watch: "dist" })] : []),
   ],
 });
 
-const name = isDevelopment ? pkg.browser.replace(".min", "") : pkg.browser;
 const generate_dts = () => {
-  return isDevelopment
+  return isDev
     ? []
     : [
         {
           input: "src/index.ts",
-          output: { file: pkg.types, format: "es" },
+          output: { file: "dist/pixi-graph.d.ts", format: "es" },
           plugins: [dts()],
         },
       ];
 };
 
+const name = isDev ? "dist/pixi-graph.umd.js" : "dist/pixi-graph.umd.min.js";
+
 export default [
-  // bundle('cjs', pkg.main),
-  // bundle('es', pkg.module),
+  // bundle('cjs', 'dist/pixi-graph.cjs.js'),
+  // bundle('es', 'dist/pixi-graph.esm.js'),
   bundle("umd", name, {
-    resolve: true,
-    stats: isDevelopment,
-    minimize: !isDevelopment,
+    stats: !isDev,
+    minimize: !isDev,
   }),
   ...generate_dts(),
 ];

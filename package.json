@@ -2,6 +2,7 @@
   "name": "pixi-graph",
   "version": "1.3.0",
   "description": "Graph visualization library using PIXI.js and Graphology",
+  "type": "module",
   "keywords": [
     "pixi",
     "graph"
@@ -9,10 +10,6 @@
   "license": "MIT",
   "author": "Jan Zak <zj@zakjan.cz>",
   "repository": "github:zakjan/pixi-graph",
-  "main": "dist/pixi-graph.cjs.js",
-  "module": "dist/pixi-graph.esm.js",
-  "browser": "dist/pixi-graph.umd.min.js",
-  "types": "dist/pixi-graph.d.ts",
   "scripts": {
     "dev": "rimraf dist && cross-env ENV=development rollup -c -w",
     "build": "rimraf dist && cross-env ENV=production rollup -c",
@@ -39,7 +36,7 @@
     "@pixi/text": "^7.4.0",
     "@pixi/text-bitmap": "^7.4.0",
     "@pixi/ticker": "^7.4.0",
-    "color-rgba": "^2.4.0",
+    "color-rgba": "^3.0.0",
     "deepmerge": "^4.3.1",
     "eventemitter3": "^5.0.1",
     "events": "^3.3.0",
@@ -47,25 +44,23 @@
     "pixi.js": "^7.4.0",
     "tiny-typed-emitter": "^2.1.0"
   },
-  "peerDependencies": {
-    "graphology-types": "^0.21.1"
-  },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^18.1.0",
-    "@rollup/plugin-node-resolve": "^11.2.1",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.6",
     "@types/color-rgba": "^2.1.2",
     "@types/deepmerge": "^2.2.0",
     "@types/resize-observer-browser": "^0.1.11",
     "cross-env": "^7.0.3",
-    "graphology-types": "^0.21.2",
-    "resource-loader": "^3.0.1",
-    "rimraf": "^3.0.2",
-    "rollup": "^2.79.1",
-    "rollup-plugin-dts": "^3.0.2",
+    "graphology-types": "^0.24.7",
+    "resource-loader": "^4.0.0-rc4",
+    "rimraf": "^5.0.5",
+    "rollup": "^4.12.0",
+    "rollup-plugin-dts": "^6.1.0",
     "rollup-plugin-livereload": "^2.0.5",
+    "rollup-plugin-polyfill-node": "^0.13.0",
     "rollup-plugin-serve": "^1.1.1",
-    "rollup-plugin-terser": "^7.0.2",
-    "rollup-plugin-typescript2": "^0.30.0",
     "rollup-plugin-visualizer": "^5.12.0",
     "typescript": "^5.3.3"
   }
