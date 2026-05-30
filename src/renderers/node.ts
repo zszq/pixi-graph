@@ -10,6 +10,7 @@ const WHITE = 0xffffff;
 const NODE_CIRCLE = 'NODE_CIRCLE';
 const NODE_CIRCLE_BORDER = 'NODE_CIRCLE_BORDER';
 const NODE_ICON = 'NODE_ICON';
+const NODE_ICON_MASK = 'NODE_ICON_MASK';
 
 export function createNode(nodeGfx: Container): void {
   nodeGfx.hitArea = new Circle(0, 0);
@@ -28,6 +29,12 @@ export function createNode(nodeGfx: Container): void {
   nodeIcon.label = NODE_ICON;
   nodeIcon.anchor.set(0.5);
   nodeGfx.addChild(nodeIcon);
+
+  // 图片图标的圆形遮罩：默认空（不绘制任何内容，故不可见），仅在图片类型时绘制并启用，
+  // 用于把超出圆形的四角裁掉。空 Graphics 作为普通子节点不渲染，作为遮罩时也不会重复绘制。
+  const nodeIconMask = new Graphics();
+  nodeIconMask.label = NODE_ICON_MASK;
+  nodeGfx.addChild(nodeIconMask);
 }
 
 export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache): void {
@@ -70,9 +77,25 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
     if (!nodeIcon) return;
     nodeIcon.texture = nodeIconTexture;
     [nodeIcon.tint, nodeIcon.alpha] = colorToPixi(color);
+
+    const nodeIconMask = nodeGfx.getChildByLabel(NODE_ICON_MASK) as Graphics | null;
     if (type === TextType.IMAGE) {
-      nodeIcon.width = nodeStyle.size * 2;
-      nodeIcon.height = nodeStyle.size * 2;
+      // 按原图宽高比做 "cover" 缩放：取较短边铺满圆的直径，长边方向溢出由遮罩裁掉，避免拉伸变形。
+      const diameter = nodeStyle.size * 2;
+      const minSide = Math.min(nodeIconTexture.width, nodeIconTexture.height) || diameter;
+      nodeIcon.scale.set(diameter / minSide);
+
+      // 圆形遮罩，半径取节点圆半径，裁掉超出圆形的四角。
+      if (nodeIconMask) {
+        nodeIconMask.clear();
+        nodeIconMask.circle(0, 0, nodeStyle.size).fill(WHITE);
+        nodeIcon.mask = nodeIconMask;
+      }
+    } else {
+      // 非图片（文字/位图字体）图标：恢复默认缩放并移除遮罩，清空遮罩使其不可见。
+      nodeIcon.scale.set(1);
+      nodeIcon.mask = null;
+      if (nodeIconMask) nodeIconMask.clear();
     }
   }
 
