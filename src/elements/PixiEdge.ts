@@ -66,6 +66,9 @@ export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
   /**
    * 按两端节点的世界坐标摆放线段、标签、箭头。线段两端要从节点圆外缘起算（扣掉两端
    * 半径+描边），目标端再为箭头留出空间；平行边整体沿法线方向偏移半个 gap 避免重叠。
+   *
+   * 这里所有角度/距离都按 world-space 计算，最后直接写回 display object 的 position/rotation/height。
+   * 这样边的几何不会受 viewport 缩放干扰，缩放只影响可视尺寸和 culling/LOD。
    */
   updatePosition(sourceNodePosition: PointData, targetNodePosition: PointData, edgeStyle: EdgeStyle, sourceNodeStyle: NodeStyle, targetNodeStyle: NodeStyle): void {
     if (this.isSelfLoop) {

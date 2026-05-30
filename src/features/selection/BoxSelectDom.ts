@@ -18,6 +18,10 @@ export interface BoxSelectDomOptions {
 /**
  * Rubber-band selection implemented with a DOM overlay. Hold Shift to arm the
  * overlay, then drag to select. Works independently of viewport panning.
+ *
+ * The overlay is deliberately DOM-based: it avoids adding a PIXI selection layer
+ * to the scene graph and keeps mouse offsets in screen-space, which matches
+ * `selectInRectangle` after node positions are converted with viewport.toScreen().
  */
 export class BoxSelectDom {
   private readonly container: HTMLElement;
@@ -123,6 +127,8 @@ export class BoxSelectDom {
   open(): void {
     this.isChoosing = true;
     this.onStateChange?.(true);
+    // The overlay is fixed to the host container's current viewport rect.
+    // Re-read bounds on every open so resize/scroll before activation is reflected.
     const { width, height, top, left } = this.container.getBoundingClientRect();
     Object.assign(this.overlay.style, {
       width: `${width}px`,
@@ -136,6 +142,8 @@ export class BoxSelectDom {
   cancel(): void {
     if (!this.isChoosing) return;
     this.isChoosing = false;
+    // `cancel` is also the normal mouseup path. Only emit a completed selection if
+    // a drag actually happened; clicking the toggle twice should only close the mode.
     if (this.hasSelectionDrag) this.complete(this.endPoint);
     this.onStateChange?.(false);
 

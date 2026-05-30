@@ -106,6 +106,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
 
   handleGraphNodeAttributesUpdated(data: { key: string }): void {
     if (this.shouldIgnoreNodeAttributeUpdate(data.key)) return;
+    // syncNodeByKey 返回“几何是否变化”。只有位置/尺寸/描边宽度变化才需要刷新相邻边。
+    // 纯颜色/透明度/标签变化不影响边端点，避免在属性热路径里做多余边更新。
     if (this.syncNodeByKey(data.key)) {
       this.updateConnectedEdgesByNodeKey(data.key);
     }
@@ -184,6 +186,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.mousedownNodeKey = null;
     const node = this.nodeKeyToNodeObject.get(nodeKey);
     if (node && node.hovered) {
+      // 拖拽期间会屏蔽 hover 进入/离开事件；结束时主动清掉旧 hover，避免拖拽节点一直高亮。
       this.unhoverNode(nodeKey);
     }
   }
@@ -336,6 +339,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     const node = this.nodeKeyToNodeObject.get(nodeKey)!;
     const attributes = nodeAttributes ?? this.graph.getNodeAttributes(nodeKey);
     const nodeStyle = this.resolveNodeStyle(node, attributes);
+    // 边几何只依赖节点中心、半径和描边宽度。把这个判断集中在这里，
+    // 上层可用返回值决定是否更新相邻边，避免全量保守刷新。
     const geometryChanged =
       node.nodeGfx.x !== attributes.x || node.nodeGfx.y !== attributes.y || node.nodeStyle.size !== nodeStyle.size || node.nodeStyle.border.width !== nodeStyle.border.width;
 

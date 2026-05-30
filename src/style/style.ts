@@ -108,6 +108,7 @@ function mergeStyleValues<Style>(base: Style, next: Style): Style {
     const merged: Record<string, unknown> = { ...base };
     for (const key in next) {
       const nextValue = next[key];
+      // 只对普通对象做递归合并；数组/原始值直接覆盖，避免 deepmerge 的额外分配和数组拼接语义。
       merged[key] = key in merged ? mergeStyleValues(merged[key] as never, nextValue as never) : nextValue;
     }
     return merged as Style;
@@ -115,7 +116,11 @@ function mergeStyleValues<Style>(base: Style, next: Style): Style {
   return next;
 }
 
-/** Resolve a chain of style definitions (defaults → base → state) and deep-merge them into a full style. */
+/**
+ * Resolve defaults → base → state into a final style object.
+ * The style definition can be partial or functional at any nesting level, so we resolve first,
+ * then merge only the concrete values we care about.
+ */
 export function resolveStyleDefinitions<Style, Attributes>(styleDefinitions: (StyleDefinition<Style, Attributes> | undefined)[], attributes: Attributes): Style {
   const styles = styleDefinitions.filter((x): x is StyleDefinition<Style, Attributes> => !!x).map(styleDefinition => resolveStyleDefinition(styleDefinition, attributes));
   if (styles.length === 0) return {} as Style;

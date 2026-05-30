@@ -40,6 +40,7 @@ export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeA
   private readonly isHighMode: () => boolean;
 
   private mousedownNodeKey: string | null = null;
+  // 拖拽时缓存一次容器边界，mousemove 不再重复读布局；mouseup 再重新读取一次，保证结束点准确。
   private nodeMouseOffsetX = 0;
   private nodeMouseOffsetY = 0;
   private documentMouseUpHandler: ((event: MouseEvent) => void) | undefined;
@@ -85,6 +86,7 @@ export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeA
 
   private handleDocumentMouseMove(event: MouseEvent): void {
     if (!this.mousedownNodeKey) return;
+    // 这里是拖拽热路径：用缓存边界把 DOM 坐标转回 screen，再交给 viewport 转 world。
     const bounds = this.dragBounds ?? getElementBounds(this.container);
     const worldPosition = this.viewport.toWorld(getElementPointFromBounds(event, bounds));
     const nodeKey = this.mousedownNodeKey;
@@ -115,6 +117,7 @@ export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeA
     document.removeEventListener('mousemove', this.onDocumentMouseMoveBound);
     this.mousedownNodeKey = null;
     this.dragBounds = null;
+    // 释放 hover gate，让被拖拽节点重新参与悬停；否则会残留“拖拽中禁止 hover”的状态。
     this.mutationController.endNodeDrag(nodeKey);
 
     const point = this.viewport.toWorld(getElementPointFromBounds(event, getElementBounds(this.container)));

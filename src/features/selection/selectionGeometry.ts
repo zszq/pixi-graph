@@ -67,6 +67,8 @@ function segmentIntersectsRect(a: PointData, b: PointData, rect: RectBounds): bo
 export function selectInRectangle(graph: AbstractGraph, viewport: Viewport, startPoint: PointData, endPoint: PointData, lazy?: boolean): SelectionResult {
   const nodes = new Set<string>();
   const edges = new Set<string>();
+  // 选择框和节点坐标不在同一坐标系：框选用 screen-space，图数据是 world-space。
+  // 先统一把 world 坐标转成 screen 坐标，再做矩形命中。
   const rect = {
     left: Math.min(startPoint.x, endPoint.x),
     top: Math.min(startPoint.y, endPoint.y),
@@ -75,6 +77,7 @@ export function selectInRectangle(graph: AbstractGraph, viewport: Viewport, star
   };
 
   if (lazy) {
+    // lazy 模式只做“节点命中 -> 收集关联边”，避免逐条边做相交检测，适合大图和实时拖拽。
     graph.forEachNode((nodeKey, attributes) => {
       const screenPosition = viewport.toScreen(attributes.x, attributes.y);
       if (!pointInRect(screenPosition, rect)) return;
