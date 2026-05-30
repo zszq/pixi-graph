@@ -14,10 +14,16 @@ type NodeAttrs = { x: number; y: number; id: string; label?: string; icon?: stri
 type EdgeAttrs = { source: string; target: string; label?: string; value?: number };
 
 async function main() {
-  const { nodes, links } = (await (await fetch('/demo/data/data6-5.json')).json()) as RawData;
+  const dataPath = '/demo/data/data6-5.json';
+  const { nodes, links } = (await (await fetch(dataPath)).json()) as RawData;
 
   const graph = new Graph<NodeAttrs, EdgeAttrs>({ multi: true, type: 'undirected' });
-  nodes.forEach(node => graph.addNode(node.id, { x: 0, y: 0, ...node }));
+  // 数据里的图标用相对路径 ./images/...，但页面根是 /，图片实际由 /demo/ 提供，
+  // 这里归一化到实际可访问的地址，避免 Assets.load 命中 SPA 回退的 index.html。
+  nodes.forEach(node => {
+    const icon = node.icon ? node.icon.replace(/^\.\//, '/demo/') : node.icon;
+    graph.addNode(node.id, { x: 0, y: 0, ...node, icon });
+  });
   links.forEach(link => {
     const key = `${link.source}->${link.target}`;
     if (!graph.hasEdge(key)) graph.addEdgeWithKey(key, link.source, link.target, { ...link });

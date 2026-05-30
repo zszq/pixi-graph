@@ -1,4 +1,4 @@
-import { Container, Circle, Sprite, Graphics, Texture } from 'pixi.js';
+import { Container, Circle, Sprite, Graphics, Texture, Assets } from 'pixi.js';
 import { colorToPixi } from '../utils/color';
 import type { NodeStyle } from '../style/style';
 import { textToPixi, TextType } from '../utils/text';
@@ -56,13 +56,18 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
   } else if (textureCache.has(nodeIconTextureKey)) {
     applyNodeIcon(textureCache.getOnly(nodeIconTextureKey)!);
   } else {
-    const nodeIconTexture = Texture.from(content);
-    textureCache.set(nodeIconTextureKey, nodeIconTexture);
-    applyNodeIcon(nodeIconTexture);
+    // PIXI v8：Texture.from(url) 不再惰性加载远程图片，仅按 id 查缓存；
+    // 字符串图片须先经 Assets 异步加载，加载完成后再写入缓存并应用到精灵。
+    Assets.load<Texture>(content).then(nodeIconTexture => {
+      textureCache.set(nodeIconTextureKey, nodeIconTexture);
+      applyNodeIcon(nodeIconTexture);
+    });
   }
 
   function applyNodeIcon(nodeIconTexture: Texture): void {
-    const nodeIcon = nodeGfx.getChildByLabel(NODE_ICON) as Sprite;
+    // 图片为异步加载，回调到达时节点可能已被移除/销毁，需防御性判空。
+    const nodeIcon = nodeGfx.getChildByLabel(NODE_ICON) as Sprite | null;
+    if (!nodeIcon) return;
     nodeIcon.texture = nodeIconTexture;
     [nodeIcon.tint, nodeIcon.alpha] = colorToPixi(color);
     if (type === TextType.IMAGE) {
