@@ -10,6 +10,7 @@ export interface BoxSelectDomOptions {
   viewport: Viewport;
   onChange: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
   onComplete: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
+  onStateChange?: (active: boolean) => void;
   lazy?: boolean;
   realTime?: boolean;
 }
@@ -24,6 +25,7 @@ export class BoxSelectDom {
   private readonly viewport: Viewport;
   private readonly onChange: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
   private readonly onComplete: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
+  private readonly onStateChange?: (active: boolean) => void;
   private readonly lazy?: boolean;
   private readonly realTime?: boolean;
 
@@ -51,6 +53,7 @@ export class BoxSelectDom {
     this.viewport = options.viewport;
     this.onChange = options.onChange;
     this.onComplete = options.onComplete;
+    this.onStateChange = options.onStateChange;
     this.lazy = options.lazy;
     this.realTime = options.realTime;
 
@@ -119,6 +122,7 @@ export class BoxSelectDom {
 
   open(): void {
     this.isChoosing = true;
+    this.onStateChange?.(true);
     const { width, height, top, left } = this.container.getBoundingClientRect();
     Object.assign(this.overlay.style, {
       width: `${width}px`,
@@ -133,6 +137,7 @@ export class BoxSelectDom {
     if (!this.isChoosing) return;
     this.isChoosing = false;
     if (this.hasSelectionDrag) this.complete(this.endPoint);
+    this.onStateChange?.(false);
 
     this.startPoint = { x: 0, y: 0 };
     this.endPoint = { x: 0, y: 0 };

@@ -24,6 +24,7 @@ import { GraphEventController } from './controllers/GraphEventController';
 import { NodeDragController } from './controllers/NodeDragController';
 
 type SelectionCallback = (selection: SelectionResult) => void;
+type SelectionStateCallback = (active: boolean) => void;
 
 /**
  * 库的核心类：把一张 Graphology 图渲染到 PIXI 画布上，并维护两者的同步。
@@ -404,13 +405,14 @@ export class PixiGraph<
   }
 
   /** DOM-overlay box select; hold Shift then drag, or call `choose.open()`. */
-  enableSelect(complete: SelectionCallback, lazy?: boolean, realTime?: boolean): void {
+  enableSelect(complete: SelectionCallback, lazy?: boolean, realTime?: boolean, onStateChange?: SelectionStateCallback): void {
     this.choose = new BoxSelectDom({
       container: this.container,
       graph: this.graph,
       viewport: this.viewport,
       onChange: realTime ? complete : null,
       onComplete: complete,
+      onStateChange,
       lazy,
       realTime
     });

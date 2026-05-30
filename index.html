@@ -56,6 +56,11 @@
       #tools button:hover {
         background: #f3f4f6;
       }
+      #tools button.active {
+        background: #4a5fe2;
+        border-color: #4a5fe2;
+        color: #fff;
+      }
       #datasets {
         position: absolute;
         top: 12px;
@@ -159,8 +164,7 @@
       <button id="remove-node">Remove Node</button>
       <button id="add-edge">Add Edge</button>
       <button id="remove-edge">Remove Edge</button>
-      <button id="open-select">Open Box Select</button>
-      <button id="toggle-select">Toggle Select</button>
+      <button id="toggle-select">Box Select: Off</button>
       <button id="recenter">Reset View</button>
     </div>
     <div id="datasets"></div>

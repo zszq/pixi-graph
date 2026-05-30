@@ -4,7 +4,7 @@ import type { EdgeAttrs, NodeAttrs } from './types';
 
 let demoNodeSeq = 0;
 let demoEdgeSeq = 0;
-let selectEnabled = true;
+let selectActive = false;
 
 function pickNodePair(nodes: string[]): [string, string] | null {
   if (nodes.length < 2) return null;
@@ -43,10 +43,23 @@ function removeDemoOrLastEdge(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>): void 
   if (edge) pixiGraph.graph.dropEdge(edge);
 }
 
-function enableSelection(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>): void {
-  pixiGraph.enableSelect(selection => {
-    console.log('selection', selection);
-  }, true);
+function setSelectButtonState(button: HTMLButtonElement, active: boolean): void {
+  button.classList.toggle('active', active);
+  button.textContent = active ? 'Box Select: On' : 'Box Select: Off';
+}
+
+function enableSelection(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>, button: HTMLButtonElement): void {
+  pixiGraph.enableSelect(
+    selection => {
+      console.log('selection', selection);
+    },
+    true,
+    false,
+    active => {
+      selectActive = active;
+      setSelectButtonState(button, active);
+    }
+  );
 }
 
 export function bindControls(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>) {
@@ -56,21 +69,20 @@ export function bindControls(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>) {
   document.getElementById('remove-node')!.addEventListener('click', () => removeDemoOrLastNode(pixiGraph));
   document.getElementById('add-edge')!.addEventListener('click', () => addEdge(pixiGraph));
   document.getElementById('remove-edge')!.addEventListener('click', () => removeDemoOrLastEdge(pixiGraph));
-  document.getElementById('open-select')!.addEventListener('click', () => pixiGraph.choose?.open());
   document.getElementById('recenter')!.addEventListener('click', () => pixiGraph.resetView(pixiGraph.graph.nodes()));
-  document.getElementById('toggle-select')!.addEventListener('click', event => {
-    selectEnabled = !selectEnabled;
-    const button = event.currentTarget as HTMLButtonElement;
-    if (selectEnabled) {
-      enableSelection(pixiGraph);
-      button.textContent = 'Toggle Select: On';
-    } else {
-      pixiGraph.choose?.destroy();
-      pixiGraph.choose = undefined;
-      button.textContent = 'Toggle Select: Off';
+  const selectButton = document.getElementById('toggle-select') as HTMLButtonElement;
+  pixiGraph.choose?.destroy();
+  pixiGraph.choose = undefined;
+  enableSelection(pixiGraph, selectButton);
+  setSelectButtonState(selectButton, false);
+  selectButton.addEventListener('click', () => {
+    if (selectActive) {
+      pixiGraph.choose?.cancel();
+      return;
     }
+
+    pixiGraph.choose?.open();
   });
-  (document.getElementById('toggle-select') as HTMLButtonElement).textContent = 'Toggle Select: On';
 
   let watermarkName: string | undefined;
   document.getElementById('watermark')!.addEventListener('click', () => {
