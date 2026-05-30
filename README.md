@@ -321,6 +321,8 @@ npm run format     # prettier 写回
 
 演示页（`demo/main.ts`）通过 `pixi-graph` 别名直接引用 `src/` 源码，因此改动源码会经 HMR 立即生效，无需先构建。
 
+演示页还提供了测试按钮，可直接验证动态增删节点/边、打开框选、缩放、重置视图，并在左下角显示实时 FPS。
+
 ### 大图 benchmark
 
 启动开发服务器后访问：

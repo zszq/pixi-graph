@@ -1,10 +1,76 @@
-// 右下角控件：缩放、水印开关、导出 PNG。
+// 页面测试控件：缩放、水印、导出、动态增删、框选开关。
 import type { PixiGraph } from 'pixi-graph';
 import type { EdgeAttrs, NodeAttrs } from './types';
+
+let demoNodeSeq = 0;
+let demoEdgeSeq = 0;
+let selectEnabled = true;
+
+function pickNodePair(nodes: string[]): [string, string] | null {
+  if (nodes.length < 2) return null;
+  const source = nodes[Math.floor(Math.random() * nodes.length)];
+  let target = nodes[Math.floor(Math.random() * nodes.length)];
+  if (target === source) target = nodes[(nodes.indexOf(source) + 1) % nodes.length];
+  return [source, target];
+}
+
+function addNode(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>): void {
+  const center = pixiGraph.viewport.center;
+  const id = `demo-node-${++demoNodeSeq}`;
+  pixiGraph.graph.addNode(id, {
+    id,
+    label: id,
+    x: center.x + (Math.random() - 0.5) * 300,
+    y: center.y + (Math.random() - 0.5) * 300
+  });
+}
+
+function removeDemoOrLastNode(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>): void {
+  const node = pixiGraph.graph.nodes().reverse().find(key => key.startsWith('demo-node-')) ?? pixiGraph.graph.nodes().at(-1);
+  if (node) pixiGraph.graph.dropNode(node);
+}
+
+function addEdge(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>): void {
+  const pair = pickNodePair(pixiGraph.graph.nodes());
+  if (!pair) return;
+  const [source, target] = pair;
+  const key = `demo-edge-${++demoEdgeSeq}`;
+  pixiGraph.graph.addEdgeWithKey(key, source, target, { source, target, label: key, value: 1 });
+}
+
+function removeDemoOrLastEdge(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>): void {
+  const edge = pixiGraph.graph.edges().reverse().find(key => key.startsWith('demo-edge-')) ?? pixiGraph.graph.edges().at(-1);
+  if (edge) pixiGraph.graph.dropEdge(edge);
+}
+
+function enableSelection(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>): void {
+  pixiGraph.enableSelect(selection => {
+    console.log('selection', selection);
+  }, true);
+}
 
 export function bindControls(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>) {
   document.getElementById('zoom-in')!.addEventListener('click', () => pixiGraph.zoomIn());
   document.getElementById('zoom-out')!.addEventListener('click', () => pixiGraph.zoomOut());
+  document.getElementById('add-node')!.addEventListener('click', () => addNode(pixiGraph));
+  document.getElementById('remove-node')!.addEventListener('click', () => removeDemoOrLastNode(pixiGraph));
+  document.getElementById('add-edge')!.addEventListener('click', () => addEdge(pixiGraph));
+  document.getElementById('remove-edge')!.addEventListener('click', () => removeDemoOrLastEdge(pixiGraph));
+  document.getElementById('open-select')!.addEventListener('click', () => pixiGraph.choose?.open());
+  document.getElementById('recenter')!.addEventListener('click', () => pixiGraph.resetView(pixiGraph.graph.nodes()));
+  document.getElementById('toggle-select')!.addEventListener('click', event => {
+    selectEnabled = !selectEnabled;
+    const button = event.currentTarget as HTMLButtonElement;
+    if (selectEnabled) {
+      enableSelection(pixiGraph);
+      button.textContent = 'Toggle Select: On';
+    } else {
+      pixiGraph.choose?.destroy();
+      pixiGraph.choose = undefined;
+      button.textContent = 'Toggle Select: Off';
+    }
+  });
+  (document.getElementById('toggle-select') as HTMLButtonElement).textContent = 'Toggle Select: On';
 
   let watermarkName: string | undefined;
   document.getElementById('watermark')!.addEventListener('click', () => {

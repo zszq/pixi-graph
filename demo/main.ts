@@ -3,6 +3,7 @@ import { bindControls } from './controls';
 import { runBenchmark } from './benchmark';
 import { buildGraph, fetchJsonWithProgress, runLayout } from './data';
 import { renderDatasetButtons, resolveActiveKey } from './datasets';
+import { startFpsMeter } from './fps';
 import { hideLoading, nextFrame, setProgress, showError, stage } from './loading';
 import { hoverStyle, style } from './style';
 
@@ -17,6 +18,7 @@ async function main() {
   const bench = isBenchmarkMode();
   const activeKey = resolveActiveKey(bench ? BENCHMARK_DEFAULT_DATASET : undefined);
   renderDatasetButtons(activeKey);
+  startFpsMeter(document.getElementById('fps')!);
 
   const timings: Record<string, number> = {};
   const mark = (name: string) => {

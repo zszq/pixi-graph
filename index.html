@@ -34,6 +34,28 @@
       #controls button:hover {
         background: #f3f4f6;
       }
+      #tools {
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 180px;
+        z-index: 3;
+      }
+      #tools button {
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 6px 10px;
+        cursor: pointer;
+        font-size: 13px;
+        text-align: left;
+      }
+      #tools button:hover {
+        background: #f3f4f6;
+      }
       #datasets {
         position: absolute;
         top: 12px;
@@ -109,14 +131,37 @@
         font-size: 12px;
         color: #9ca3af;
       }
+      #fps {
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        z-index: 3;
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: rgba(17, 24, 39, 0.78);
+        color: #fff;
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
     <div id="graph"></div>
+    <div id="fps">FPS --</div>
     <div id="loading">
       <div class="text" id="loading-text">准备中…</div>
       <div class="track"><div class="bar" id="loading-bar"></div></div>
       <div class="pct" id="loading-pct">0%</div>
+    </div>
+    <div id="tools">
+      <button id="add-node">Add Node</button>
+      <button id="remove-node">Remove Node</button>
+      <button id="add-edge">Add Edge</button>
+      <button id="remove-edge">Remove Edge</button>
+      <button id="open-select">Open Box Select</button>
+      <button id="toggle-select">Toggle Select</button>
+      <button id="recenter">Reset View</button>
     </div>
     <div id="datasets"></div>
     <div id="controls">
