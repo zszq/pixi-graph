@@ -2,9 +2,10 @@ import { type PointData } from 'pixi.js';
 import type { AbstractGraph } from 'graphology-types';
 import type { EdgeStyle, GraphStyleDefinition, NodeStyle } from '../style/style';
 import { DEFAULT_STYLE } from '../core/constants';
-import { resolveStyleDefinitions } from '../style/style';
+import { resolveStyleDefinitions, sameEdgeStyle, sameNodeStyle } from '../style/style';
 import { isSamePoint } from '../utils/pointer';
 import { ParallelEdgeIndex } from '../core/ParallelEdgeIndex';
+import { EdgeUpdateScheduler } from '../core/EdgeUpdateScheduler';
 import { PixiNode } from '../elements/PixiNode';
 import { PixiEdge } from '../elements/PixiEdge';
 import type { TextureCache } from '../textures/TextureCache';
@@ -29,7 +30,9 @@ export interface GraphMutationControllerOptions<NodeAttributes extends BaseNodeA
   isViewportDragging: () => boolean;
   shouldIgnoreNodeAttributeUpdate: (nodeKey: string) => boolean;
   startNodeDrag: (event: MouseEvent, nodeKey: string, node: PixiNode) => void;
+  shouldDeferConnectedEdgeUpdates?: (nodeKey: string, degree: number) => boolean;
 }
+
 
 /**
  * Owns graph mutation, hover, and element lifecycle concerns.
@@ -47,7 +50,9 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   private readonly isViewportDragging: () => boolean;
   private readonly shouldIgnoreNodeAttributeUpdate: (nodeKey: string) => boolean;
   private readonly startNodeDrag: (event: MouseEvent, nodeKey: string, node: PixiNode) => void;
+  private readonly shouldDeferConnectedEdgeUpdates: (nodeKey: string, degree: number) => boolean;
   private readonly parallelEdgeIndex = new ParallelEdgeIndex();
+  private readonly edgeUpdateScheduler = new EdgeUpdateScheduler(edgeKey => this.updateEdgePositionByKey(edgeKey));
 
   private mousedownNodeKey: string | null = null;
   private nodeMouseStartX = 0;
@@ -70,9 +75,11 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.isViewportDragging = options.isViewportDragging;
     this.shouldIgnoreNodeAttributeUpdate = options.shouldIgnoreNodeAttributeUpdate;
     this.startNodeDrag = options.startNodeDrag;
+    this.shouldDeferConnectedEdgeUpdates = options.shouldDeferConnectedEdgeUpdates ?? (() => false);
   }
 
   destroy(): void {
+    this.edgeUpdateScheduler.clear();
     this.parallelEdgeIndex.clear();
   }
 
@@ -170,11 +177,17 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.updateEdgeStyle(edgeKey, edgeAttributes, sourceNodeKey, targetNodeKey, this.graph.getNodeAttributes(sourceNodeKey), this.graph.getNodeAttributes(targetNodeKey));
   }
 
-  updateConnectedEdgesByNodeKey(nodeKey: string): void {
-    this.graph.forEachEdge(nodeKey, edgeKey => {
-      if (!this.edgeKeyToEdgeObject.has(edgeKey)) return;
-      this.updateEdgePositionByKey(edgeKey);
-    });
+  updateConnectedEdgesByNodeKey(nodeKey: string, immediate = false): void {
+    const edgeKeys = this.graph.edges(nodeKey).filter(edgeKey => this.edgeKeyToEdgeObject.has(edgeKey));
+    if (!immediate && this.shouldDeferConnectedEdgeUpdates(nodeKey, edgeKeys.length)) {
+      this.edgeUpdateScheduler.markMany(edgeKeys, false);
+      return;
+    }
+    for (const edgeKey of edgeKeys) this.updateEdgePositionByKey(edgeKey);
+  }
+
+  flushScheduledEdgeUpdates(): void {
+    this.edgeUpdateScheduler.flushAll();
   }
 
   updateNodePositionByKey(nodeKey: string, position: PointData): void {
@@ -255,7 +268,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.layers.nodeLabelLayer.addChild(node.nodeLabelGfx);
     this.nodeKeyToNodeObject.set(nodeKey, node);
 
-    this.syncNodeByKey(nodeKey, nodeAttributes);
+    this.syncNodeByKey(nodeKey, nodeAttributes, true);
   }
 
   private createEdge(edgeKey: string, edgeAttributes: EdgeAttributes, sourceNodeKey: string, targetNodeKey: string): void {
@@ -335,7 +348,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.updateEdgeStyleByKey(edgeKey);
   }
 
-  private syncNodeByKey(nodeKey: string, nodeAttributes?: NodeAttributes): boolean {
+  private syncNodeByKey(nodeKey: string, nodeAttributes?: NodeAttributes, forceStyle = false): boolean {
     const node = this.nodeKeyToNodeObject.get(nodeKey)!;
     const attributes = nodeAttributes ?? this.graph.getNodeAttributes(nodeKey);
     const nodeStyle = this.resolveNodeStyle(node, attributes);
@@ -345,8 +358,10 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
       node.nodeGfx.x !== attributes.x || node.nodeGfx.y !== attributes.y || node.nodeStyle.size !== nodeStyle.size || node.nodeStyle.border.width !== nodeStyle.border.width;
 
     node.updatePosition({ x: attributes.x, y: attributes.y });
-    node.updateStyle(nodeStyle, this.textureCache);
-    node.updateAlpha(nodeStyle);
+    if (forceStyle || !sameNodeStyle(node.nodeStyle, nodeStyle)) {
+      node.updateStyle(nodeStyle, this.textureCache);
+      node.updateAlpha(nodeStyle);
+    }
     return geometryChanged;
   }
 
@@ -363,7 +378,10 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     const targetNode = this.nodeKeyToNodeObject.get(targetNodeKey)!;
 
     const edgeStyle = this.resolveEdgeStyle(edge, edgeAttributes);
-    edge.updateStyle(edgeStyle, this.textureCache);
+    if (!sameEdgeStyle(edge.edgeStyle, edgeStyle)) {
+      edge.updateStyle(edgeStyle, this.textureCache);
+      edge.updateAlpha(edgeStyle);
+    }
 
     edge.updatePosition(
       { x: sourceNodeAttributes.x, y: sourceNodeAttributes.y },
@@ -372,7 +390,6 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
       sourceNode.nodeStyle,
       targetNode.nodeStyle
     );
-    edge.updateAlpha(edgeStyle);
   }
 
   private resolveNodeStyle(node: PixiNode, nodeAttributes: NodeAttributes): NodeStyle {
@@ -413,6 +430,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.nodeKeyToNodeObject.delete(nodeKey);
     node.destroy();
   }
+
 
   private dropRenderedNodeEdges(nodeKey: string): void {
     for (const edgeKey of Array.from(this.edgeKeyToEdgeObject.keys())) {

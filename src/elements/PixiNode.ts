@@ -70,6 +70,11 @@ export class PixiNode extends EventEmitter<PixiNodeEvents> {
     updateNodeLabelVisibility(this.nodeLabelGfx, zoomStep);
   }
 
+  setDetailsRenderable(renderable: boolean): void {
+    if (this.nodeGfx.children[1]) this.nodeGfx.children[1].renderable = renderable;
+    if (this.nodeGfx.children[2]) this.nodeGfx.children[2].renderable = renderable;
+  }
+
   setVisible(visible: boolean): void {
     this.nodeGfx.visible = visible;
     this.nodeLabelGfx.visible = visible;

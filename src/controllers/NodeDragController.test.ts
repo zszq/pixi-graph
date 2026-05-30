@@ -51,7 +51,7 @@ describe('NodeDragController', () => {
 
     expect(controller.isDragging()).toBe(false);
     expect(mutationController.endNodeDrag).toHaveBeenCalledWith('A');
-    expect(mutationController.updateConnectedEdgesByNodeKey).toHaveBeenCalledWith('A');
+    expect(mutationController.updateConnectedEdgesByNodeKey).toHaveBeenCalledWith('A', true);
   });
 
   it('caches container bounds during a drag gesture', async () => {

@@ -10,7 +10,7 @@ type GraphEmit = import('eventemitter3').EventEmitter<PixiGraphEvents>['emit'];
 
 interface NodeDragMutations {
   updateNodePositionByKey(nodeKey: string, position: PointData): void;
-  updateConnectedEdgesByNodeKey(nodeKey: string): void;
+  updateConnectedEdgesByNodeKey(nodeKey: string, immediate?: boolean): void;
   endNodeDrag(nodeKey: string): void;
 }
 
@@ -112,7 +112,7 @@ export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeA
   private handleDocumentMouseUp(event: MouseEvent, nodeKey: string): void {
     this.viewport.pause = false;
     this.showPerformanceLayers();
-    this.mutationController.updateConnectedEdgesByNodeKey(nodeKey);
+    this.mutationController.updateConnectedEdgesByNodeKey(nodeKey, true);
 
     document.removeEventListener('mousemove', this.onDocumentMouseMoveBound);
     this.mousedownNodeKey = null;

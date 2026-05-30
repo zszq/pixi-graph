@@ -71,6 +71,8 @@ export class PixiGraph<
   private readonly edgeKeyToEdgeObject = new Map<string, PixiEdge>();
 
   private highMode = false; // 图规模超过 highPerformance 阈值，交互时隐藏边/标签
+  private performanceLayersHidden = false;
+  private performanceRestoreTimer: number | undefined;
   private isCanvasTarget = false; // 指针当前是否落在画布上（用于 hover 穿透判断）
 
   private boxSelectViewport?: BoxSelectViewport;
@@ -167,7 +169,8 @@ export class PixiGraph<
       isCanvasTarget: () => this.isCanvasTarget,
       isViewportDragging: () => this.isViewportDragging(),
       shouldIgnoreNodeAttributeUpdate: nodeKey => this.suppressedNodeAttributeUpdates.has(nodeKey),
-      startNodeDrag: (event, nodeKey, node) => this.nodeDragController.start(event, nodeKey, node)
+      startNodeDrag: (event, nodeKey, node) => this.nodeDragController.start(event, nodeKey, node),
+      shouldDeferConnectedEdgeUpdates: (_nodeKey, degree) => this.highMode && degree > 64
     });
     this.nodeDragController = new NodeDragController({
       graph: this.graph,
@@ -236,6 +239,7 @@ export class PixiGraph<
   destroy(): void {
     document.removeEventListener('pointermove', this.onDocumentPointerMoveBound);
     this.subscriptions.clear();
+    clearTimeout(this.performanceRestoreTimer);
 
     this.spaceDragController?.destroy();
     this.viewportInteraction?.destroy();
@@ -271,6 +275,7 @@ export class PixiGraph<
 
   private onViewportFrameEnd(): void {
     if (!this.viewport.dirty) return;
+    if (this.highMode) this.deferPerformanceLayerRestore();
     this.updateGraphVisibility();
     this.viewport.dirty = false;
   }
@@ -280,26 +285,50 @@ export class PixiGraph<
   // viewport 标记 dirty（平移/缩放/resize）时运行：先剔除屏外元素，再把当前缩放映射到
   // 离散的 zoomStep 桶，逐个让节点/边按档位切换各部分可见性（LOD）。
   private updateGraphVisibility(): void {
-    this.renderController.updateVisibility();
+    this.renderController.updateVisibility({ fastNodeCull: this.highMode && this.performanceLayersHidden });
   }
 
   /** Mark every element on-screen again (used before a full-graph extract). */
   uncull(): void {
+    this.restorePerformanceLayersNow();
+    this.mutationController.flushScheduledEdgeUpdates();
     this.renderController.uncull();
   }
 
   // --- high performance mode ----------------------------------------------
 
   private hidePerformanceLayers(): void {
-    if (!this.highMode) return;
+    if (!this.highMode || this.performanceLayersHidden) return;
+    this.performanceLayersHidden = true;
     if (this.renderController.edgesRenderable()) this.setEdgesRenderable(false);
     if (this.renderController.nodeLabelsRenderable()) this.setNodeLabelsRenderable(false);
+    this.renderController.setNodeDetailsRenderable(false);
   }
 
   private showPerformanceLayers(): void {
     if (!this.highMode) return;
+    this.deferPerformanceLayerRestore();
+  }
+
+  private restorePerformanceLayersNow(): void {
+    if (!this.highMode || !this.performanceLayersHidden) return;
+    clearTimeout(this.performanceRestoreTimer);
+    this.performanceRestoreTimer = undefined;
+    this.mutationController.flushScheduledEdgeUpdates();
+    this.performanceLayersHidden = false;
+    // Re-run full culling/LOD for the final camera position before making
+    // details renderable again; otherwise edges/labels can stay culled from an
+    // older viewport while high-mode fast node culling was active.
+    this.renderController.updateVisibility({ forceLod: true });
     this.setEdgesRenderable(true);
     this.setNodeLabelsRenderable(true);
+    this.renderController.setNodeDetailsRenderable(true);
+  }
+
+  private deferPerformanceLayerRestore(): void {
+    this.hidePerformanceLayers();
+    clearTimeout(this.performanceRestoreTimer);
+    this.performanceRestoreTimer = window.setTimeout(() => this.restorePerformanceLayersNow(), 140);
   }
 
   private exceedsHighPerformance(): boolean {
@@ -352,6 +381,8 @@ export class PixiGraph<
 
   /** Export the current view as a base64 image. */
   extract(full = true, format: 'png' | 'jpg' | 'webp' = 'png', quality = 0.92): Promise<string> {
+    this.restorePerformanceLayersNow();
+    this.mutationController.flushScheduledEdgeUpdates();
     return this.renderController.extract(full, format, quality);
   }
 

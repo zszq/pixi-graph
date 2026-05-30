@@ -5,6 +5,7 @@ import { makeWatermark, type WatermarkOption } from '../features/watermark/water
 import type { PixiEdge } from '../elements/PixiEdge';
 import type { PixiNode } from '../elements/PixiNode';
 import type { GraphLayers } from '../renderers/GraphLayers';
+import { SpatialNodeIndex } from '../core/SpatialNodeIndex';
 
 export interface GraphRenderControllerOptions {
   app: Application;
@@ -28,6 +29,13 @@ export class GraphRenderController {
   private readonly edges: Map<string, PixiEdge>;
   private lastZoomStep = -1;
   private watermarkCount = 0;
+  private nodeDetailsRenderable = true;
+  private nodeDetailsRestorePending = false;
+  private nodeDetailsRestoreCursor = 0;
+  private nodeDetailsRestoreList: PixiNode[] = [];
+  private readonly spatialNodeIndex = new SpatialNodeIndex();
+  private readonly fastVisibleNodes = new Set<string>();
+  private fastVisibleInitialized = false;
 
   constructor(options: GraphRenderControllerOptions) {
     this.app = options.app;
@@ -38,14 +46,18 @@ export class GraphRenderController {
     this.edges = options.edges;
   }
 
-  updateVisibility(): void {
-    this.cull();
+  updateVisibility(options: { fastNodeCull?: boolean; forceLod?: boolean } = {}): void {
+    if (options.fastNodeCull) this.fastCullNodes();
+    else this.cull();
 
     const zoomStep = this.currentZoomStep();
-    if (zoomStep === this.lastZoomStep) return;
+    if (!options.forceLod && zoomStep === this.lastZoomStep) return;
     this.lastZoomStep = zoomStep;
 
-    for (const node of this.nodes.values()) node.updateVisibility(zoomStep);
+    for (const node of this.nodes.values()) {
+      node.updateVisibility(zoomStep);
+      if (!this.nodeDetailsRenderable) node.setDetailsRenderable(false);
+    }
     for (const edge of this.edges.values()) edge.updateVisibility(zoomStep);
   }
 
@@ -91,6 +103,12 @@ export class GraphRenderController {
     this.layers.destroyWatermarks();
   }
 
+  markSpatialIndexDirty(): void {
+    this.spatialNodeIndex.clear();
+    this.fastVisibleNodes.clear();
+    this.fastVisibleInitialized = false;
+  }
+
   setEdgesRenderable(renderable: boolean): void {
     this.layers.setEdgesRenderable(renderable);
   }
@@ -103,6 +121,21 @@ export class GraphRenderController {
     this.layers.setNodeLabelsRenderable(renderable);
   }
 
+  setNodeDetailsRenderable(renderable: boolean): void {
+    if (this.nodeDetailsRenderable === renderable && !this.nodeDetailsRestorePending) return;
+    this.nodeDetailsRenderable = renderable;
+    if (!renderable) {
+      this.nodeDetailsRestorePending = false;
+      this.nodeDetailsRestoreList = [];
+      for (const node of this.nodes.values()) node.setDetailsRenderable(false);
+      return;
+    }
+    this.nodeDetailsRestorePending = true;
+    this.nodeDetailsRestoreCursor = 0;
+    this.nodeDetailsRestoreList = Array.from(this.nodes.values());
+    requestAnimationFrame(() => this.restoreNodeDetailsChunk());
+  }
+
   edgesRenderable(): boolean {
     return this.layers.edgeLayer.renderable;
   }
@@ -111,7 +144,58 @@ export class GraphRenderController {
     return this.layers.nodeLabelLayer.renderable;
   }
 
+  private restoreNodeDetailsChunk(): void {
+    if (!this.nodeDetailsRestorePending) return;
+    const nodes = this.nodeDetailsRestoreList;
+    // Restore quickly after camera idle. Large graphs should finish in a few
+    // frames rather than visibly waiting for seconds.
+    const budget = this.nodes.size >= 50000 ? 12000 : 6000;
+    const end = Math.min(nodes.length, this.nodeDetailsRestoreCursor + budget);
+    const zoomStep = this.currentZoomStep();
+    for (let i = this.nodeDetailsRestoreCursor; i < end; i += 1) {
+      nodes[i].updateVisibility(zoomStep);
+    }
+    this.nodeDetailsRestoreCursor = end;
+    if (this.nodeDetailsRestoreCursor < nodes.length) {
+      requestAnimationFrame(() => this.restoreNodeDetailsChunk());
+    } else {
+      this.nodeDetailsRestorePending = false;
+      this.nodeDetailsRestoreCursor = 0;
+      this.nodeDetailsRestoreList = [];
+    }
+  }
+
   private cull(): void {
     Culler.shared.cull(this.viewport, this.app.renderer.screen);
+    this.fastVisibleInitialized = false;
+  }
+
+  private fastCullNodes(): void {
+    this.spatialNodeIndex.ensureFresh(this.nodes);
+    if (!this.fastVisibleInitialized) {
+      this.fastVisibleNodes.clear();
+      for (const [key, node] of this.nodes) {
+        if (!node.nodeGfx.culled) this.fastVisibleNodes.add(key);
+      }
+      this.fastVisibleInitialized = true;
+    }
+
+    const nextVisible = new Set(this.spatialNodeIndex.query(this.viewport.getVisibleBounds()));
+    for (const key of this.fastVisibleNodes) {
+      if (nextVisible.has(key)) continue;
+      const node = this.nodes.get(key);
+      if (!node) continue;
+      node.nodeGfx.culled = true;
+      node.nodeLabelGfx.culled = true;
+    }
+    for (const key of nextVisible) {
+      const node = this.nodes.get(key);
+      if (!node) continue;
+      node.nodeGfx.culled = false;
+      node.nodeLabelGfx.culled = false;
+    }
+
+    this.fastVisibleNodes.clear();
+    for (const key of nextVisible) this.fastVisibleNodes.add(key);
   }
 }
