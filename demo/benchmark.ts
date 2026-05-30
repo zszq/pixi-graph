@@ -1,4 +1,4 @@
-export type BenchmarkPhase = 'init' | 'render' | 'select' | 'drag' | 'zoom' | 'cull';
+export type BenchmarkPhase = 'init' | 'select' | 'drag' | 'zoom' | 'cull';
 
 export interface BenchmarkSample {
   phase: BenchmarkPhase;
@@ -42,7 +42,6 @@ export async function runBenchmark(options: {
   nodeCount: number;
   edgeCount: number;
   init: () => void | Promise<void>;
-  render: () => void | Promise<void>;
   select: () => void | Promise<void>;
   drag: () => void | Promise<void>;
   zoom: () => void | Promise<void>;
@@ -53,7 +52,6 @@ export async function runBenchmark(options: {
 
   const phases: Array<[BenchmarkPhase, () => void | Promise<void>]> = [
     ['init', options.init],
-    ['render', options.render],
     ['select', options.select],
     ['drag', options.drag],
     ['zoom', options.zoom],

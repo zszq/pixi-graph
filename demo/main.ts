@@ -80,9 +80,6 @@ async function main() {
           pixiCreateMs: measure('pixi:start', 'pixi:end')
         });
       },
-      render: async () => {
-        await pixiGraph.extract(false, 'webp', 0.5);
-      },
       select: () => {
         selectInRectangle(graph, pixiGraph.viewport, start, end, true);
       },

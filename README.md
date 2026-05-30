@@ -329,7 +329,7 @@ npm run format     # prettier 写回
 http://localhost:5173/?bench=1&data=data-50000-100000
 ```
 
-`bench=1` 会在 demo 完成加载后自动输出一份 `pixiGraphBenchmark` 报告到控制台和 `window.pixiGraphBenchmark`，覆盖下载/建图/布局/`PixiGraph.create`、当前视图导出、框选命中、单节点位置更新、缩放和 uncull 等阶段。可用 `data=` 切换 `demo/data/*.json` 数据集；不传 `data` 时默认使用 `data-50000-100000`。
+`bench=1` 会在 demo 完成加载后自动输出一份 `pixiGraphBenchmark` 报告到控制台和 `window.pixiGraphBenchmark`，覆盖下载/建图/布局/`PixiGraph.create`、框选命中、单节点位置更新、缩放和 uncull 等阶段。它**不会**自动执行 `extract()`，避免 benchmark 本身触发额外的大图离屏渲染。可用 `data=` 切换 `demo/data/*.json` 数据集；不传 `data` 时默认使用 `data-50000-100000`。
 
 
 源码组织结构：`PixiGraph.ts`（编排核心）· `elements/`（PixiNode / PixiEdge 包装类）· `renderers/`（无状态绘制函数）· `textures/`（纹理缓存）· `style/`（样式解析）· `features/`（框选、水印）· `core/`（常量与类型）· `utils/`（颜色、文本、节流等工具）。
