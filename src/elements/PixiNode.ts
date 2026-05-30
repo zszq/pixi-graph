@@ -1,20 +1,12 @@
-import { Container, type PointData, type FederatedPointerEvent } from 'pixi.js';
+import { Container, type PointData } from 'pixi.js';
 import { EventEmitter } from 'eventemitter3';
 import { createNode, updateNodeStyle, updateNodeVisibility } from '../renderers/node';
 import { createNodeLabel, updateNodeLabelStyle, updateNodeLabelVisibility } from '../renderers/nodeLabel';
 import type { NodeStyle } from '../style/style';
 import type { TextureCache } from '../textures/TextureCache';
+import { bindPointerEvents, type DisplayObjectPointerEvents } from './interaction';
 
-export interface PixiNodeEvents {
-  mousemove: (event: FederatedPointerEvent) => void;
-  mouseover: (event: FederatedPointerEvent) => void;
-  mouseout: (event: FederatedPointerEvent) => void;
-  mousedown: (event: FederatedPointerEvent) => void;
-  mouseup: (event: FederatedPointerEvent) => void;
-  rightclick: (event: FederatedPointerEvent) => void;
-  click: (event: FederatedPointerEvent) => void;
-  dbclick: (event: FederatedPointerEvent) => void;
-}
+export type PixiNodeEvents = DisplayObjectPointerEvents;
 
 /**
  * 单个节点的包装类：持有图形容器（nodeGfx）与标签容器（nodeLabelGfx），把 PIXI 的
@@ -36,21 +28,8 @@ export class PixiNode extends EventEmitter<PixiNodeEvents> {
     this.nodeLabelGfx = this.createNodeLabelContainer();
   }
 
-  // 把 PIXI 指针事件转成本类的类型化事件；click 用 event.detail 区分单击/双击。
   private bindInteraction(gfx: Container): void {
-    gfx.on('mousemove', event => this.emit('mousemove', event.originalEvent as FederatedPointerEvent));
-    gfx.on('mouseover', event => this.emit('mouseover', event.originalEvent as FederatedPointerEvent));
-    gfx.on('mouseout', event => this.emit('mouseout', event.originalEvent as FederatedPointerEvent));
-    gfx.on('mousedown', event => this.emit('mousedown', event.originalEvent as FederatedPointerEvent));
-    gfx.on('mouseup', event => this.emit('mouseup', event.originalEvent as FederatedPointerEvent));
-    gfx.on('rightclick', event => this.emit('rightclick', event.originalEvent as FederatedPointerEvent));
-    gfx.on('click', event => {
-      if (event.detail === 2) {
-        this.emit('dbclick', event.originalEvent as FederatedPointerEvent);
-      } else if (event.detail === 1) {
-        this.emit('click', event.originalEvent as FederatedPointerEvent);
-      }
-    });
+    bindPointerEvents(gfx, this.emit.bind(this));
   }
 
   private createNodeContainer(): Container {
@@ -76,6 +55,7 @@ export class PixiNode extends EventEmitter<PixiNodeEvents> {
   }
 
   updateStyle(nodeStyle: NodeStyle, textureCache: TextureCache): void {
+    this.nodeStyle = nodeStyle;
     updateNodeStyle(this.nodeGfx, nodeStyle, textureCache);
     updateNodeLabelStyle(this.nodeLabelGfx, nodeStyle, textureCache);
   }
@@ -97,5 +77,11 @@ export class PixiNode extends EventEmitter<PixiNodeEvents> {
 
   isVisible(): boolean {
     return this.nodeGfx.visible;
+  }
+
+  destroy(): void {
+    this.removeAllListeners();
+    this.nodeGfx.destroy({ children: true });
+    this.nodeLabelGfx.destroy({ children: true });
   }
 }

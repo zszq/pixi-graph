@@ -1,7 +1,7 @@
 import { Graphics, Point, type Container, type FederatedPointerEvent } from 'pixi.js';
 import type { Viewport } from 'pixi-viewport';
 import type { AbstractGraph } from 'graphology-types';
-import { selectInRectangle, type SelectionResult } from './selectionGeometry';
+import { selectInRectangle } from './selectionGeometry';
 import { throttle } from '../../utils/throttle';
 
 export interface BoxSelectViewportOptions {
@@ -9,7 +9,8 @@ export interface BoxSelectViewportOptions {
   stage: Container;
   viewport: Viewport;
   isDragging: () => boolean;
-  complete: ((selection: SelectionResult) => void) | null;
+  onChange: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
+  onComplete: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
   lazy?: boolean;
   realTime?: boolean;
 }
@@ -23,13 +24,15 @@ export class BoxSelectViewport {
   private readonly stage: Container;
   private readonly viewport: Viewport;
   private readonly isDragging: () => boolean;
-  private readonly complete: ((selection: SelectionResult) => void) | null;
+  private readonly onChange: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
+  private readonly onComplete: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
   private readonly lazy?: boolean;
   private readonly realTime?: boolean;
 
   private readonly graphics = new Graphics();
   private startPoint = new Point(0, 0);
   private endPoint = new Point(0, 0);
+  private isSelecting = false;
 
   private readonly onMousedown = (event: FederatedPointerEvent) => this.handleMousedown(event);
   private readonly onMousemove = (event: FederatedPointerEvent) => this.handleMousemove(event);
@@ -41,7 +44,8 @@ export class BoxSelectViewport {
     this.stage = options.stage;
     this.viewport = options.viewport;
     this.isDragging = options.isDragging;
-    this.complete = options.complete;
+    this.onChange = options.onChange;
+    this.onComplete = options.onComplete;
     this.lazy = options.lazy;
     this.realTime = options.realTime;
 
@@ -55,6 +59,7 @@ export class BoxSelectViewport {
 
     this.startPoint = event.getLocalPosition(this.stage);
     this.endPoint = this.startPoint;
+    this.isSelecting = true;
 
     this.stage.on('mousemove', this.onMousemove);
     document.addEventListener('mouseup', this.onMouseup, { once: true });
@@ -76,20 +81,30 @@ export class BoxSelectViewport {
   }
 
   private handleMouseup(): void {
+    if (!this.isSelecting) return;
+    this.isSelecting = false;
     this.graphics.clear();
     this.stage.off('mousemove', this.onMousemove);
-    this.judge();
+    document.removeEventListener('mouseup', this.onMouseup);
+    this.complete();
   }
 
   private judge(): void {
     if (this.startPoint.x === this.endPoint.x && this.startPoint.y === this.endPoint.y) return;
     const selection = selectInRectangle(this.graph, this.viewport, this.startPoint, this.endPoint, this.lazy);
-    this.complete?.(selection);
+    this.onChange?.(selection);
+  }
+
+  private complete(): void {
+    if (this.startPoint.x === this.endPoint.x && this.startPoint.y === this.endPoint.y) return;
+    const selection = selectInRectangle(this.graph, this.viewport, this.startPoint, this.endPoint, this.lazy);
+    this.onComplete?.(selection);
   }
 
   destroy(): void {
     this.stage.off('mousedown', this.onMousedown);
     this.stage.off('mousemove', this.onMousemove);
+    document.removeEventListener('mouseup', this.onMouseup);
     this.graphics.destroy();
   }
 }

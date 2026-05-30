@@ -1,14 +1,15 @@
 import type { AbstractGraph } from 'graphology-types';
 import type { Viewport } from 'pixi-viewport';
 import type { PointData } from 'pixi.js';
-import { selectInRectangle, type SelectionResult } from './selectionGeometry';
+import { selectInRectangle } from './selectionGeometry';
 import { throttle } from '../../utils/throttle';
 
 export interface BoxSelectDomOptions {
   container: HTMLElement;
   graph: AbstractGraph;
   viewport: Viewport;
-  complete: ((selection: SelectionResult) => void) | null;
+  onChange: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
+  onComplete: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
   lazy?: boolean;
   realTime?: boolean;
 }
@@ -21,7 +22,8 @@ export class BoxSelectDom {
   private readonly container: HTMLElement;
   private readonly graph: AbstractGraph;
   private readonly viewport: Viewport;
-  private readonly complete: ((selection: SelectionResult) => void) | null;
+  private readonly onChange: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
+  private readonly onComplete: ((selection: { nodes: string[]; edges: string[] }) => void) | null;
   private readonly lazy?: boolean;
   private readonly realTime?: boolean;
 
@@ -31,6 +33,7 @@ export class BoxSelectDom {
   private readonly selectedArea: HTMLElement;
   private isChoosing = false;
   private shiftHeld = false;
+  private hasSelectionDrag = false;
 
   private readonly onMousedown = (event: MouseEvent) => this.handleMousedown(event);
   private readonly onMousemove = (event: MouseEvent) => this.handleMousemove(event);
@@ -46,13 +49,15 @@ export class BoxSelectDom {
     this.container = options.container;
     this.graph = options.graph;
     this.viewport = options.viewport;
-    this.complete = options.complete;
+    this.onChange = options.onChange;
+    this.onComplete = options.onComplete;
     this.lazy = options.lazy;
     this.realTime = options.realTime;
 
     this.overlay = document.createElement('div');
     this.overlay.style.position = 'fixed';
-    this.overlay.style.zIndex = `${Number(this.container.style.zIndex) + 1}`;
+    const containerZIndex = Number.parseInt(getComputedStyle(this.container).zIndex, 10);
+    this.overlay.style.zIndex = `${Number.isFinite(containerZIndex) ? containerZIndex + 1 : 1}`;
     this.overlay.style.display = 'none';
 
     this.selectedArea = document.createElement('div');
@@ -77,16 +82,16 @@ export class BoxSelectDom {
   }
 
   private handleKeydown(event: KeyboardEvent): void {
-    if (this.shiftHeld) return;
-    this.shiftHeld = true;
     if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
+      if (this.shiftHeld) return;
+      this.shiftHeld = true;
       this.open();
     }
   }
 
   private handleKeyup(event: KeyboardEvent): void {
-    this.shiftHeld = false;
     if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
+      this.shiftHeld = false;
       this.cancel();
     }
   }
@@ -95,6 +100,7 @@ export class BoxSelectDom {
     if (!this.isChoosing) return;
     this.startPoint = { x: event.offsetX, y: event.offsetY };
     this.endPoint = { x: event.offsetX, y: event.offsetY };
+    this.hasSelectionDrag = true;
     this.selectedArea.style.display = 'block';
     this.overlay.addEventListener('mousemove', this.onMousemove);
     document.addEventListener('mouseup', this.onMouseup, { once: true });
@@ -126,19 +132,26 @@ export class BoxSelectDom {
   cancel(): void {
     if (!this.isChoosing) return;
     this.isChoosing = false;
-    this.judge(this.endPoint);
+    if (this.hasSelectionDrag) this.complete(this.endPoint);
 
     this.startPoint = { x: 0, y: 0 };
     this.endPoint = { x: 0, y: 0 };
+    this.hasSelectionDrag = false;
 
     Object.assign(this.selectedArea.style, { width: '0px', height: '0px', left: '0px', top: '0px', display: 'none' });
     this.overlay.style.display = 'none';
     this.overlay.removeEventListener('mousemove', this.onMousemove);
+    document.removeEventListener('mouseup', this.onMouseup);
   }
 
   private judge(endPoint: PointData): void {
     const selection = selectInRectangle(this.graph, this.viewport, this.startPoint, endPoint, this.lazy);
-    this.complete?.(selection);
+    this.onChange?.(selection);
+  }
+
+  private complete(endPoint: PointData): void {
+    const selection = selectInRectangle(this.graph, this.viewport, this.startPoint, endPoint, this.lazy);
+    this.onComplete?.(selection);
   }
 
   destroy(): void {
@@ -147,6 +160,7 @@ export class BoxSelectDom {
     document.removeEventListener('keydown', this.onKeydown);
     document.removeEventListener('keyup', this.onKeyup);
     document.removeEventListener('mousedown', this.onPreventSelect);
+    document.removeEventListener('mouseup', this.onMouseup);
     this.overlay.remove();
   }
 }

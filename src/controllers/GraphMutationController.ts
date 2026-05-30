@@ -1,0 +1,422 @@
+import { type PointData } from 'pixi.js';
+import type { AbstractGraph } from 'graphology-types';
+import type { GraphStyleDefinition } from '../style/style';
+import { DEFAULT_STYLE } from '../core/constants';
+import { resolveStyleDefinitions } from '../style/style';
+import { isSamePoint } from '../utils/pointer';
+import { ParallelEdgeIndex } from '../core/ParallelEdgeIndex';
+import { PixiNode } from '../elements/PixiNode';
+import { PixiEdge } from '../elements/PixiEdge';
+import type { TextureCache } from '../textures/TextureCache';
+import type { GraphLayers } from '../renderers/GraphLayers';
+import type { BaseEdgeAttributes, BaseNodeAttributes } from '../types/attributes';
+import type { EventEmitter } from 'eventemitter3';
+import type { PixiGraphEvents } from '../core/types';
+
+type GraphEventEmitter = EventEmitter<PixiGraphEvents>;
+type GraphEmit = GraphEventEmitter['emit'];
+
+export interface GraphMutationControllerOptions<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> {
+  graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
+  style: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
+  hoverStyle: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
+  textureCache: TextureCache;
+  layers: GraphLayers;
+  nodes: Map<string, PixiNode>;
+  edges: Map<string, PixiEdge>;
+  emit: GraphEmit;
+  isCanvasTarget: () => boolean;
+  isViewportDragging: () => boolean;
+  shouldIgnoreNodeAttributeUpdate: (nodeKey: string) => boolean;
+  startNodeDrag: (event: MouseEvent, nodeKey: string, node: PixiNode) => void;
+}
+
+/**
+ * Owns graph mutation, hover, and element lifecycle concerns.
+ */
+export class GraphMutationController<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> {
+  private readonly graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
+  private readonly style: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
+  private readonly hoverStyle: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
+  private readonly textureCache: TextureCache;
+  private readonly layers: GraphLayers;
+  private readonly nodeKeyToNodeObject: Map<string, PixiNode>;
+  private readonly edgeKeyToEdgeObject: Map<string, PixiEdge>;
+  private readonly emit: GraphEmit;
+  private readonly isCanvasTarget: () => boolean;
+  private readonly isViewportDragging: () => boolean;
+  private readonly shouldIgnoreNodeAttributeUpdate: (nodeKey: string) => boolean;
+  private readonly startNodeDrag: (event: MouseEvent, nodeKey: string, node: PixiNode) => void;
+  private readonly parallelEdgeIndex = new ParallelEdgeIndex();
+
+  private mousedownNodeKey: string | null = null;
+  private nodeMouseStartX = 0;
+  private nodeMouseStartY = 0;
+  private nodeMouseEndX = 0;
+  private nodeMouseEndY = 0;
+  private edgeMouseX = 0;
+  private edgeMouseY = 0;
+
+  constructor(options: GraphMutationControllerOptions<NodeAttributes, EdgeAttributes>) {
+    this.graph = options.graph;
+    this.style = options.style;
+    this.hoverStyle = options.hoverStyle;
+    this.textureCache = options.textureCache;
+    this.layers = options.layers;
+    this.nodeKeyToNodeObject = options.nodes;
+    this.edgeKeyToEdgeObject = options.edges;
+    this.emit = options.emit;
+    this.isCanvasTarget = options.isCanvasTarget;
+    this.isViewportDragging = options.isViewportDragging;
+    this.shouldIgnoreNodeAttributeUpdate = options.shouldIgnoreNodeAttributeUpdate;
+    this.startNodeDrag = options.startNodeDrag;
+  }
+
+  destroy(): void {
+    this.parallelEdgeIndex.clear();
+  }
+
+  handleGraphNodeAdded(data: { key: string; attributes: NodeAttributes }): void {
+    this.createNode(data.key, data.attributes);
+  }
+
+  handleGraphNodeDropped(data: { key: string }): void {
+    this.dropRenderedNodeEdges(data.key);
+    this.dropNode(data.key);
+  }
+
+  handleGraphEdgeAdded(data: { key: string; attributes: EdgeAttributes; source: string; target: string }): void {
+    this.createEdge(data.key, data.attributes, data.source, data.target);
+  }
+
+  handleGraphEdgeDropped(data: { key: string }): void {
+    this.dropEdge(data.key);
+  }
+
+  handleGraphCleared(): void {
+    this.parallelEdgeIndex.clear();
+    for (const key of Array.from(this.edgeKeyToEdgeObject.keys())) this.dropEdge(key);
+    for (const key of Array.from(this.nodeKeyToNodeObject.keys())) this.dropNode(key);
+  }
+
+  handleGraphEdgesCleared(): void {
+    this.parallelEdgeIndex.clear();
+    for (const key of Array.from(this.edgeKeyToEdgeObject.keys())) this.dropEdge(key);
+  }
+
+  handleGraphNodeAttributesUpdated(data: { key: string }): void {
+    if (this.shouldIgnoreNodeAttributeUpdate(data.key)) return;
+    this.updateNodeStyleByKey(data.key);
+    this.updateConnectedEdgesByNodeKey(data.key, true);
+  }
+
+  handleGraphEdgeAttributesUpdated(data: { key: string }): void {
+    this.updateEdgeStyleByKey(data.key);
+  }
+
+  handleGraphEachNodeAttributesUpdated(): void {
+    this.graph.forEachNode(this.updateNodeStyle.bind(this));
+    this.graph.forEachEdge(this.updateEdgeStyleByKey.bind(this));
+  }
+
+  handleGraphEachEdgeAttributesUpdated(): void {
+    this.graph.forEachEdge(this.updateEdgeStyleByKey.bind(this));
+  }
+
+  setNodeVisible(nodeKey: string, visible: boolean): void {
+    const node = this.nodeKeyToNodeObject.get(nodeKey);
+    if (node) node.setVisible(visible);
+  }
+
+  isNodeVisible(nodeKey: string): boolean | undefined {
+    const node = this.nodeKeyToNodeObject.get(nodeKey);
+    return node?.isVisible();
+  }
+
+  setEdgeVisible(edgeKey: string, visible: boolean): void {
+    const edge = this.edgeKeyToEdgeObject.get(edgeKey);
+    if (edge) edge.setVisible(visible);
+  }
+
+  isEdgeVisible(edgeKey: string): boolean | undefined {
+    const edge = this.edgeKeyToEdgeObject.get(edgeKey);
+    return edge?.isVisible();
+  }
+
+  setNodeEdgesRenderable(nodeKey: string, renderable: boolean): void {
+    this.graph.forEachEdge(nodeKey, edgeKey => {
+      const edge = this.edgeKeyToEdgeObject.get(edgeKey);
+      if (edge) edge.setRenderable(renderable);
+      if (renderable) this.updateEdgeStyleByKey(edgeKey);
+    });
+  }
+
+  updateNodeStyleByKey(nodeKey: string): void {
+    this.updateNodeStyle(nodeKey, this.graph.getNodeAttributes(nodeKey));
+  }
+
+  updateEdgeStyleByKey(edgeKey: string): void {
+    const edgeAttributes = this.graph.getEdgeAttributes(edgeKey);
+    const sourceNodeKey = this.graph.source(edgeKey);
+    const targetNodeKey = this.graph.target(edgeKey);
+    this.updateEdgeStyle(edgeKey, edgeAttributes, sourceNodeKey, targetNodeKey, this.graph.getNodeAttributes(sourceNodeKey), this.graph.getNodeAttributes(targetNodeKey));
+  }
+
+  updateConnectedEdgesByNodeKey(nodeKey: string, refreshStyle: boolean): void {
+    this.graph.forEachEdge(nodeKey, edgeKey => {
+      if (!this.edgeKeyToEdgeObject.has(edgeKey)) return;
+      if (refreshStyle) this.updateEdgeStyleByKey(edgeKey);
+      else this.updateEdgePositionByKey(edgeKey);
+    });
+  }
+
+  updateNodePositionByKey(nodeKey: string, position: PointData): void {
+    const node = this.nodeKeyToNodeObject.get(nodeKey);
+    if (node) node.updatePosition(position);
+  }
+
+  endNodeDrag(nodeKey: string): void {
+    this.mousedownNodeKey = null;
+    const node = this.nodeKeyToNodeObject.get(nodeKey);
+    if (node && node.hovered) {
+      this.unhoverNode(nodeKey);
+    }
+  }
+
+  updateEdgePositionByKey(edgeKey: string): void {
+    const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
+    const edgeAttributes = this.graph.getEdgeAttributes(edgeKey);
+    const sourceNodeKey = this.graph.source(edgeKey);
+    const targetNodeKey = this.graph.target(edgeKey);
+    const sourceNodeAttributes = this.graph.getNodeAttributes(sourceNodeKey);
+    const targetNodeAttributes = this.graph.getNodeAttributes(targetNodeKey);
+    const sourceNode = this.nodeKeyToNodeObject.get(sourceNodeKey)!;
+    const targetNode = this.nodeKeyToNodeObject.get(targetNodeKey)!;
+    const edgeStyle = resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, edge.hovered ? this.hoverStyle.edge : undefined], edgeAttributes);
+    const sourceNodeStyle = resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, sourceNode.hovered ? this.hoverStyle.node : undefined], sourceNodeAttributes);
+    const targetNodeStyle = resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, targetNode.hovered ? this.hoverStyle.node : undefined], targetNodeAttributes);
+
+    edge.updatePosition(
+      { x: sourceNodeAttributes.x, y: sourceNodeAttributes.y },
+      { x: targetNodeAttributes.x, y: targetNodeAttributes.y },
+      edgeStyle,
+      sourceNodeStyle,
+      targetNodeStyle
+    );
+  }
+
+  private createNode(nodeKey: string, nodeAttributes: NodeAttributes): void {
+    const nodeStyle = resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, undefined], nodeAttributes);
+    const node = new PixiNode({ nodeStyle });
+
+    node.on('mousemove', event => this.emit('nodeMousemove', event, nodeKey, node.nodeStyle));
+    node.on('mouseover', event => {
+      if (!this.isCanvasTarget()) return;
+      if (!this.mousedownNodeKey && !this.isViewportDragging()) {
+        this.hoverNode(nodeKey);
+        this.emit('nodeMouseover', event, nodeKey, node.nodeStyle);
+      }
+    });
+    node.on('mouseout', event => {
+      if (!this.mousedownNodeKey && !this.isViewportDragging()) {
+        this.unhoverNode(nodeKey);
+        this.emit('nodeMouseout', event, nodeKey, node.nodeStyle);
+      }
+    });
+    node.on('mousedown', event => {
+      this.nodeMouseStartX = event.offsetX;
+      this.nodeMouseStartY = event.offsetY;
+      this.mousedownNodeKey = nodeKey;
+      this.startNodeDrag(event, nodeKey, node);
+      this.emit('nodeMousedown', event, nodeKey, node.nodeStyle);
+    });
+    node.on('mouseup', event => {
+      this.nodeMouseEndX = event.offsetX;
+      this.nodeMouseEndY = event.offsetY;
+      this.emit('nodeMouseup', event, nodeKey, node.nodeStyle);
+    });
+    node.on('click', event => {
+      if (isSamePoint({ x: this.nodeMouseStartX, y: this.nodeMouseStartY }, { x: this.nodeMouseEndX, y: this.nodeMouseEndY }, 2)) {
+        this.emit('nodeClick', event, nodeKey, node.nodeStyle);
+      }
+    });
+    node.on('dbclick', event => {
+      if (isSamePoint({ x: this.nodeMouseStartX, y: this.nodeMouseStartY }, { x: this.nodeMouseEndX, y: this.nodeMouseEndY }, 2)) {
+        this.emit('nodeDbclick', event, nodeKey, node.nodeStyle);
+      }
+    });
+    node.on('rightclick', event => this.emit('nodeRightclick', event, nodeKey, node.nodeStyle));
+
+    this.layers.nodeLayer.addChild(node.nodeGfx);
+    this.layers.nodeLabelLayer.addChild(node.nodeLabelGfx);
+    this.nodeKeyToNodeObject.set(nodeKey, node);
+
+    this.updateNodeStyle(nodeKey, nodeAttributes);
+  }
+
+  private createEdge(edgeKey: string, edgeAttributes: EdgeAttributes, sourceNodeKey: string, targetNodeKey: string): void {
+    const edgeStyle = resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, undefined], edgeAttributes);
+    const selfLoop = sourceNodeKey === targetNodeKey;
+    const edge = new PixiEdge({ selfLoop });
+
+    edge.on('mousemove', event => this.emit('edgeMousemove', event, edgeKey, edge.edgeStyle ?? edgeStyle));
+    edge.on('mouseover', event => {
+      if (!this.isCanvasTarget()) return;
+      if (!this.mousedownNodeKey && !this.isViewportDragging()) {
+        this.hoverEdge(edgeKey);
+        this.emit('edgeMouseover', event, edgeKey, edge.edgeStyle ?? edgeStyle);
+      }
+    });
+    edge.on('mouseout', event => {
+      if (!this.mousedownNodeKey && !this.isViewportDragging()) {
+        this.unhoverEdge(edgeKey);
+        this.emit('edgeMouseout', event, edgeKey, edge.edgeStyle ?? edgeStyle);
+      }
+    });
+    edge.on('mousedown', event => {
+      this.edgeMouseX = event.offsetX;
+      this.edgeMouseY = event.offsetY;
+      this.emit('edgeMousedown', event, edgeKey, edge.edgeStyle ?? edgeStyle);
+    });
+    edge.on('mouseup', event => this.emit('edgeMouseup', event, edgeKey, edge.edgeStyle ?? edgeStyle));
+    edge.on('click', event => {
+      if (isSamePoint({ x: this.edgeMouseX, y: this.edgeMouseY }, { x: event.offsetX, y: event.offsetY }, 2)) {
+        this.emit('edgeClick', event, edgeKey, edge.edgeStyle ?? edgeStyle);
+      }
+    });
+    edge.on('dbclick', event => {
+      if (isSamePoint({ x: this.edgeMouseX, y: this.edgeMouseY }, { x: event.offsetX, y: event.offsetY }, 2)) {
+        this.emit('edgeDbclick', event, edgeKey, edge.edgeStyle ?? edgeStyle);
+      }
+    });
+    edge.on('rightclick', event => this.emit('edgeRightclick', event, edgeKey, edge.edgeStyle ?? edgeStyle));
+
+    this.layers.edgeLayer.addChild(edge.edgeGfx, edge.edgeArrowGfx);
+    this.layers.edgeLabelLayer.addChild(edge.edgeLabelGfx);
+    this.edgeKeyToEdgeObject.set(edgeKey, edge);
+
+    this.updateParallelEdgeGroup(edgeKey, sourceNodeKey, targetNodeKey);
+  }
+
+  private hoverNode(nodeKey: string): void {
+    const node = this.nodeKeyToNodeObject.get(nodeKey)!;
+    if (node.hovered) return;
+    node.hovered = true;
+    this.updateNodeStyleByKey(nodeKey);
+    this.layers.nodeLayer.setChildIndex(node.nodeGfx, this.layers.nodeLayer.children.length - 1);
+    this.layers.nodeLabelLayer.setChildIndex(node.nodeLabelGfx, this.layers.nodeLabelLayer.children.length - 1);
+  }
+
+  private unhoverNode(nodeKey: string): void {
+    const node = this.nodeKeyToNodeObject.get(nodeKey)!;
+    if (!node.hovered) return;
+    node.hovered = false;
+    this.updateNodeStyleByKey(nodeKey);
+  }
+
+  private hoverEdge(edgeKey: string): void {
+    const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
+    if (edge.hovered) return;
+    edge.hovered = true;
+    this.updateEdgeStyleByKey(edgeKey);
+    this.layers.edgeLayer.setChildIndex(edge.edgeGfx, this.layers.edgeLayer.children.length - 1);
+    this.layers.edgeLayer.setChildIndex(edge.edgeArrowGfx, this.layers.edgeLayer.children.length - 1);
+    this.layers.edgeLabelLayer.setChildIndex(edge.edgeLabelGfx, this.layers.edgeLabelLayer.children.length - 1);
+  }
+
+  private unhoverEdge(edgeKey: string): void {
+    const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
+    if (!edge.hovered) return;
+    edge.hovered = false;
+    this.updateEdgeStyleByKey(edgeKey);
+  }
+
+  private updateNodeStyle(nodeKey: string, nodeAttributes: NodeAttributes): void {
+    const node = this.nodeKeyToNodeObject.get(nodeKey)!;
+    node.updatePosition({ x: nodeAttributes.x, y: nodeAttributes.y });
+
+    const nodeStyle = resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, node.hovered ? this.hoverStyle.node : undefined], nodeAttributes);
+    node.updateStyle(nodeStyle, this.textureCache);
+    node.updateAlpha(nodeStyle);
+  }
+
+  private updateEdgeStyle(
+    edgeKey: string,
+    edgeAttributes: EdgeAttributes,
+    sourceNodeKey: string,
+    targetNodeKey: string,
+    sourceNodeAttributes: NodeAttributes,
+    targetNodeAttributes: NodeAttributes
+  ): void {
+    const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
+    const sourceNode = this.nodeKeyToNodeObject.get(sourceNodeKey)!;
+    const targetNode = this.nodeKeyToNodeObject.get(targetNodeKey)!;
+
+    const edgeStyle = resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, edge.hovered ? this.hoverStyle.edge : undefined], edgeAttributes);
+    edge.updateStyle(edgeStyle, this.textureCache);
+
+    const sourceNodeStyle = resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, sourceNode.hovered ? this.hoverStyle.node : undefined], sourceNodeAttributes);
+    const targetNodeStyle = resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, targetNode.hovered ? this.hoverStyle.node : undefined], targetNodeAttributes);
+
+    edge.updatePosition(
+      { x: sourceNodeAttributes.x, y: sourceNodeAttributes.y },
+      { x: targetNodeAttributes.x, y: targetNodeAttributes.y },
+      edgeStyle,
+      sourceNodeStyle,
+      targetNodeStyle
+    );
+    edge.updateAlpha(edgeStyle);
+  }
+
+  private updateParallelEdgeGroup(edgeKey: string, sourceNodeKey: string, targetNodeKey: string): void {
+    const parallelEdgeKeys = this.parallelEdgeIndex.register(edgeKey, sourceNodeKey, targetNodeKey);
+    const hasParallelEdges = parallelEdgeKeys.length > 1;
+
+    for (const key of parallelEdgeKeys) {
+      const edge = this.edgeKeyToEdgeObject.get(key);
+      if (!edge) continue;
+      edge.isBilateral = hasParallelEdges;
+      if (key === edgeKey) {
+        this.updateEdgeStyleByKey(key);
+      } else {
+        this.updateEdgePositionByKey(key);
+      }
+    }
+  }
+
+  private dropNode(nodeKey: string): void {
+    const node = this.nodeKeyToNodeObject.get(nodeKey);
+    if (!node) return;
+    this.layers.nodeLayer.removeChild(node.nodeGfx);
+    this.layers.nodeLabelLayer.removeChild(node.nodeLabelGfx);
+    this.nodeKeyToNodeObject.delete(nodeKey);
+    node.destroy();
+  }
+
+  private dropRenderedNodeEdges(nodeKey: string): void {
+    for (const edgeKey of Array.from(this.edgeKeyToEdgeObject.keys())) {
+      if (!this.graph.hasEdge(edgeKey)) {
+        this.dropEdge(edgeKey);
+        continue;
+      }
+      if (this.graph.source(edgeKey) === nodeKey || this.graph.target(edgeKey) === nodeKey) {
+        this.dropEdge(edgeKey);
+      }
+    }
+  }
+
+  private dropEdge(edgeKey: string): void {
+    const edge = this.edgeKeyToEdgeObject.get(edgeKey);
+    if (!edge) return;
+    const parallelEdgeKeys = this.parallelEdgeIndex.unregister(edgeKey);
+    this.layers.edgeLayer.removeChild(edge.edgeGfx, edge.edgeArrowGfx);
+    this.layers.edgeLabelLayer.removeChild(edge.edgeLabelGfx);
+    this.edgeKeyToEdgeObject.delete(edgeKey);
+    edge.destroy();
+    for (const parallelEdgeKey of parallelEdgeKeys) {
+      if (this.graph.hasEdge(parallelEdgeKey)) {
+        this.updateParallelEdgeGroup(parallelEdgeKey, this.graph.source(parallelEdgeKey), this.graph.target(parallelEdgeKey));
+      }
+    }
+  }
+}

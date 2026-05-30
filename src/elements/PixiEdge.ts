@@ -1,21 +1,13 @@
-import { Container, type PointData, type FederatedPointerEvent } from 'pixi.js';
+import { Container, type PointData } from 'pixi.js';
 import { EventEmitter } from 'eventemitter3';
 import { createEdge, updateEdgeStyle } from '../renderers/edge';
 import { createEdgeArrow, updateEdgeArrowStyle, updateEdgeArrowVisibility } from '../renderers/edgeArrow';
 import { createEdgeLabel, updateEdgeLabelStyle, updateEdgeLabelVisibility } from '../renderers/edgeLabel';
 import type { EdgeStyle, NodeStyle } from '../style/style';
 import type { TextureCache } from '../textures/TextureCache';
+import { bindPointerEvents, type DisplayObjectPointerEvents } from './interaction';
 
-export interface PixiEdgeEvents {
-  mousemove: (event: FederatedPointerEvent) => void;
-  mouseover: (event: FederatedPointerEvent) => void;
-  mouseout: (event: FederatedPointerEvent) => void;
-  mousedown: (event: FederatedPointerEvent) => void;
-  mouseup: (event: FederatedPointerEvent) => void;
-  rightclick: (event: FederatedPointerEvent) => void;
-  click: (event: FederatedPointerEvent) => void;
-  dbclick: (event: FederatedPointerEvent) => void;
-}
+export type PixiEdgeEvents = DisplayObjectPointerEvents;
 
 /**
  * 单条边的包装类：持有线段/圆环（edgeGfx）、标签（edgeLabelGfx）、箭头（edgeArrowGfx）
@@ -25,6 +17,7 @@ export interface PixiEdgeEvents {
 export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
   readonly isSelfLoop: boolean; // 自环边：source === target
   isBilateral = false; // 是否为平行边（两点间多条边），需横向错开避免重叠
+  edgeStyle: EdgeStyle | undefined;
   readonly edgeGfx: Container;
   readonly edgeLabelGfx: Container;
   readonly edgeArrowGfx: Container;
@@ -39,21 +32,8 @@ export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
     this.edgeArrowGfx = this.createEdgeArrowContainer();
   }
 
-  // 把 PIXI 指针事件转成本类的类型化事件；click 用 event.detail 区分单击/双击。
   private bindInteraction(gfx: Container): void {
-    gfx.on('mousemove', event => this.emit('mousemove', event.originalEvent as FederatedPointerEvent));
-    gfx.on('mouseover', event => this.emit('mouseover', event.originalEvent as FederatedPointerEvent));
-    gfx.on('mouseout', event => this.emit('mouseout', event.originalEvent as FederatedPointerEvent));
-    gfx.on('mousedown', event => this.emit('mousedown', event.originalEvent as FederatedPointerEvent));
-    gfx.on('mouseup', event => this.emit('mouseup', event.originalEvent as FederatedPointerEvent));
-    gfx.on('rightclick', event => this.emit('rightclick', event.originalEvent as FederatedPointerEvent));
-    gfx.on('click', event => {
-      if (event.detail === 2) {
-        this.emit('dbclick', event.originalEvent as FederatedPointerEvent);
-      } else if (event.detail === 1) {
-        this.emit('click', event.originalEvent as FederatedPointerEvent);
-      }
-    });
+    bindPointerEvents(gfx, this.emit.bind(this));
   }
 
   private createInteractiveContainer(): Container {
@@ -104,10 +84,10 @@ export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
     const rotation = -Math.atan2(targetNodePosition.x - sourceNodePosition.x, targetNodePosition.y - sourceNodePosition.y);
     // 两节点圆心间距，减去两端半径+描边与箭头高度（正三角高 = √3/2·边长），得到可见线段长度。
     const stLength = Math.hypot(targetNodePosition.x - sourceNodePosition.x, targetNodePosition.y - sourceNodePosition.y);
-    const lineLength =
-      stLength - (Math.sqrt(3) / 2) * edgeStyle.arrow.size - targetNodeStyle.size - sourceNodeStyle.size - targetNodeStyle.border.width - sourceNodeStyle.border.width;
+    const arrowHeight = edgeStyle.arrow.show ? (Math.sqrt(3) / 2) * edgeStyle.arrow.size : 0;
+    const lineLength = Math.max(0, stLength - arrowHeight - targetNodeStyle.size - sourceNodeStyle.size - targetNodeStyle.border.width - sourceNodeStyle.border.width);
     // 线段中点到目标圆心的距离，用于把线段中心（锚点 0.5）摆到正确位置。
-    const lineLengthHalf = lineLength / 2 + targetNodeStyle.size + (Math.sqrt(3) / 2) * edgeStyle.arrow.size + targetNodeStyle.border.width;
+    const lineLengthHalf = lineLength / 2 + targetNodeStyle.size + arrowHeight + targetNodeStyle.border.width;
 
     const centerPosition = {
       x: targetNodePosition.x + Math.sin(rotation) * lineLengthHalf,
@@ -129,6 +109,8 @@ export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
     if (edgeStyle.label.parallel) {
       const degrees = radian * (180 / Math.PI);
       this.edgeLabelGfx.rotation = degrees > -90 && degrees <= 90 ? radian : radian + Math.PI;
+    } else {
+      this.edgeLabelGfx.rotation = 0;
     }
 
     // 箭头：贴在目标节点外缘（再加箭头自身高度的一部分），尖端指向目标节点圆心。
@@ -143,6 +125,7 @@ export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
   }
 
   updateStyle(edgeStyle: EdgeStyle, textureCache: TextureCache): void {
+    this.edgeStyle = edgeStyle;
     updateEdgeStyle(this.edgeGfx, edgeStyle, textureCache, this.isSelfLoop);
     updateEdgeArrowStyle(this.edgeArrowGfx, edgeStyle, textureCache, this.isSelfLoop);
     updateEdgeLabelStyle(this.edgeLabelGfx, edgeStyle, textureCache);
@@ -174,5 +157,12 @@ export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
 
   isVisible(): boolean {
     return this.edgeGfx.visible;
+  }
+
+  destroy(): void {
+    this.removeAllListeners();
+    this.edgeGfx.destroy({ children: true });
+    this.edgeLabelGfx.destroy({ children: true });
+    this.edgeArrowGfx.destroy({ children: true });
   }
 }

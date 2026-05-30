@@ -39,6 +39,20 @@ describe('selectInRectangle', () => {
     expect(result.edges).toContain('A-B');
   });
 
+  it('in non-lazy mode includes horizontal and vertical edges crossing the rectangle', () => {
+    const graph = new Graph();
+    graph.addNode('L', { x: -10, y: 5 });
+    graph.addNode('R', { x: 10, y: 5 });
+    graph.addNode('T', { x: 5, y: -10 });
+    graph.addNode('B', { x: 5, y: 10 });
+    graph.addEdgeWithKey('horizontal', 'L', 'R');
+    graph.addEdgeWithKey('vertical', 'T', 'B');
+
+    const result = selectInRectangle(graph, fakeViewport, { x: 0, y: 0 }, { x: 6, y: 6 }, false);
+
+    expect(result.edges.sort()).toEqual(['horizontal', 'vertical']);
+  });
+
   it('selects nothing for a rectangle away from the graph', () => {
     const result = selectInRectangle(buildGraph(), fakeViewport, { x: 200, y: 200 }, { x: 300, y: 300 }, true);
     expect(result.nodes).toEqual([]);

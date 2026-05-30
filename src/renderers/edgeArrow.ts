@@ -23,6 +23,7 @@ export function createEdgeArrow(edgeArrowGfx: Container, isSelfLoop: boolean): v
 }
 
 export function updateEdgeArrowStyle(edgeArrowGfx: Container, edgeStyle: EdgeStyle, textureCache: TextureCache, isSelfLoop: boolean): void {
+  edgeArrowGfx.visible = edgeStyle.arrow.show && !isSelfLoop && edgeStyle.arrow.size > 0;
   if (!edgeStyle.arrow.show || isSelfLoop || edgeStyle.arrow.size === 0) {
     return;
   }
@@ -44,5 +45,5 @@ export function updateEdgeArrowStyle(edgeArrowGfx: Container, edgeStyle: EdgeSty
 export function updateEdgeArrowVisibility(edgeArrowGfx: Container, zoomStep: number, isSelfLoop: boolean): void {
   if (isSelfLoop) return;
   const edgeArrow = edgeArrowGfx.getChildByLabel(EDGE_ARROW) as Sprite;
-  edgeArrow.renderable = zoomStep >= 1;
+  edgeArrow.renderable = edgeArrowGfx.visible && zoomStep >= 1;
 }
