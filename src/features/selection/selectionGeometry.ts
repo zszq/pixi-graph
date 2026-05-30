@@ -33,6 +33,12 @@ export function selectInRectangle(graph: AbstractGraph, viewport: Viewport, star
   });
 
   if (!lazy) {
+    // 非 lazy：逐条做「线段 vs 矩形」相交判定。把边看作直线 y = kx + b，下面几个条件分别检查：
+    //   1) 直线与矩形上/下边（y=startY、y=endY）的交点是否落在矩形横向范围且在线段内；
+    //   2) 竖直边（x2-x1=0）的特例；
+    //   3) 直线与矩形左/右边（x=startX、x=endX）的交点是否落在矩形纵向范围且在线段内；
+    //   4) 线段两端点是否都在矩形内（完全包含）。
+    // 任一成立即视为该边被框选命中。
     graph.forEachEdge((edgeKey, _attributes, _source, _target, sourceAttributes, targetAttributes) => {
       const { x: x1, y: y1 } = viewport.toScreen(sourceAttributes.x, sourceAttributes.y);
       const { x: x2, y: y2 } = viewport.toScreen(targetAttributes.x, targetAttributes.y);

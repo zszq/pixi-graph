@@ -17,9 +17,14 @@ export interface PixiEdgeEvents {
   dbclick: (event: FederatedPointerEvent) => void;
 }
 
+/**
+ * 单条边的包装类：持有线段/圆环（edgeGfx）、标签（edgeLabelGfx）、箭头（edgeArrowGfx）
+ * 三个容器，并像 PixiNode 一样把指针事件转成类型化事件。绘制委托给 renderers/edge*.ts，
+ * 本类额外负责按两端节点坐标计算各部分的位置与旋转（见 updatePosition）。
+ */
 export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
-  readonly isSelfLoop: boolean;
-  isBilateral = false;
+  readonly isSelfLoop: boolean; // 自环边：source === target
+  isBilateral = false; // 是否为平行边（两点间多条边），需横向错开避免重叠
   readonly edgeGfx: Container;
   readonly edgeLabelGfx: Container;
   readonly edgeArrowGfx: Container;
@@ -34,6 +39,7 @@ export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
     this.edgeArrowGfx = this.createEdgeArrowContainer();
   }
 
+  // 把 PIXI 指针事件转成本类的类型化事件；click 用 event.detail 区分单击/双击。
   private bindInteraction(gfx: Container): void {
     gfx.on('mousemove', event => this.emit('mousemove', event.originalEvent as FederatedPointerEvent));
     gfx.on('mouseover', event => this.emit('mouseover', event.originalEvent as FederatedPointerEvent));
@@ -77,8 +83,13 @@ export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
     return edgeArrowGfx;
   }
 
+  /**
+   * 按两端节点的世界坐标摆放线段、标签、箭头。线段两端要从节点圆外缘起算（扣掉两端
+   * 半径+描边），目标端再为箭头留出空间；平行边整体沿法线方向偏移半个 gap 避免重叠。
+   */
   updatePosition(sourceNodePosition: PointData, targetNodePosition: PointData, edgeStyle: EdgeStyle, sourceNodeStyle: NodeStyle, targetNodeStyle: NodeStyle): void {
     if (this.isSelfLoop) {
+      // 自环画成贴在节点正上方的圆环：圆心取节点外缘再上移一个环半径，cross 是微调量。
       const radius = targetNodeStyle.size + targetNodeStyle.border.width;
       const selefLoopRadius = edgeStyle.selefLoop.radius;
       const selefLoopCross = edgeStyle.selefLoop.cross;
@@ -88,12 +99,14 @@ export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
       return;
     }
 
-    // 两点之间的弧度
+    // radian：源→目标方向的角度；rotation：矩形线段需竖直为基准，故为法线方向角。
     const radian = Math.atan2(targetNodePosition.y - sourceNodePosition.y, targetNodePosition.x - sourceNodePosition.x);
     const rotation = -Math.atan2(targetNodePosition.x - sourceNodePosition.x, targetNodePosition.y - sourceNodePosition.y);
+    // 两节点圆心间距，减去两端半径+描边与箭头高度（正三角高 = √3/2·边长），得到可见线段长度。
     const stLength = Math.hypot(targetNodePosition.x - sourceNodePosition.x, targetNodePosition.y - sourceNodePosition.y);
     const lineLength =
       stLength - (Math.sqrt(3) / 2) * edgeStyle.arrow.size - targetNodeStyle.size - sourceNodeStyle.size - targetNodeStyle.border.width - sourceNodeStyle.border.width;
+    // 线段中点到目标圆心的距离，用于把线段中心（锚点 0.5）摆到正确位置。
     const lineLengthHalf = lineLength / 2 + targetNodeStyle.size + (Math.sqrt(3) / 2) * edgeStyle.arrow.size + targetNodeStyle.border.width;
 
     const centerPosition = {
@@ -101,23 +114,24 @@ export class PixiEdge extends EventEmitter<PixiEdgeEvents> {
       y: targetNodePosition.y - Math.cos(rotation) * lineLengthHalf
     };
     if (this.isBilateral) {
+      // 平行边沿法线方向错开半个 gap，使来回两条边及其标签不重叠。
       centerPosition.x -= Math.cos(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
       centerPosition.y -= Math.sin(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
     }
 
-    // edge line
+    // 线段：摆到中点、按法线旋转、用 height 拉到目标长度（矩形 Sprite 竖直方向即长度）。
     this.edgeGfx.position.copyFrom(centerPosition);
     this.edgeGfx.rotation = rotation;
     this.edgeGfx.height = lineLength;
 
-    // edge label
+    // 标签：置于线段中点；parallel 时随边走向旋转，并翻转上下半区使文字始终正向可读。
     this.edgeLabelGfx.position.copyFrom(centerPosition);
     if (edgeStyle.label.parallel) {
       const degrees = radian * (180 / Math.PI);
       this.edgeLabelGfx.rotation = degrees > -90 && degrees <= 90 ? radian : radian + Math.PI;
     }
 
-    // edge arrow
+    // 箭头：贴在目标节点外缘（再加箭头自身高度的一部分），尖端指向目标节点圆心。
     const arrowRadius = targetNodeStyle.size + targetNodeStyle.border.width + (Math.sqrt(3) / 4) * edgeStyle.arrow.size;
     const arrowPosition = { x: targetNodePosition.x - Math.cos(radian) * arrowRadius, y: targetNodePosition.y - Math.sin(radian) * arrowRadius };
     if (this.isBilateral) {

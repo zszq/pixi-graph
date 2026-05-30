@@ -16,10 +16,16 @@ export interface PixiNodeEvents {
   dbclick: (event: FederatedPointerEvent) => void;
 }
 
+/**
+ * 单个节点的包装类：持有图形容器（nodeGfx）与标签容器（nodeLabelGfx），把 PIXI 的
+ * 指针事件重新发射为带类型的事件，交由 PixiGraph 转发为 nodeClick / nodeMouseover 等。
+ * 真正的绘制委托给 renderers/node.ts、renderers/nodeLabel.ts 的纯函数，自身只保存
+ * 当前样式与 hover 状态。
+ */
 export class PixiNode extends EventEmitter<PixiNodeEvents> {
   nodeStyle: NodeStyle;
-  readonly nodeGfx: Container;
-  readonly nodeLabelGfx: Container;
+  readonly nodeGfx: Container; // 节点圆 + 描边 + 图标，加入 nodeLayer
+  readonly nodeLabelGfx: Container; // 标签文本 + 背景，加入 nodeLabelLayer
 
   hovered = false;
 
@@ -30,6 +36,7 @@ export class PixiNode extends EventEmitter<PixiNodeEvents> {
     this.nodeLabelGfx = this.createNodeLabelContainer();
   }
 
+  // 把 PIXI 指针事件转成本类的类型化事件；click 用 event.detail 区分单击/双击。
   private bindInteraction(gfx: Container): void {
     gfx.on('mousemove', event => this.emit('mousemove', event.originalEvent as FederatedPointerEvent));
     gfx.on('mouseover', event => this.emit('mouseover', event.originalEvent as FederatedPointerEvent));

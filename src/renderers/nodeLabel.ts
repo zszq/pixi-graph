@@ -1,3 +1,5 @@
+// 节点标签渲染器：背景 Sprite + 文本 Sprite 两层，整体置于节点圆下方。
+// 与节点图形分属不同显示层（nodeLabelLayer），故拆成独立的 Container 与一组纯函数。
 import { Container, Sprite, Texture } from 'pixi.js';
 import { colorToPixi } from '../utils/color';
 import type { NodeStyle } from '../style/style';
@@ -21,6 +23,7 @@ export function createNodeLabel(nodeLabelGfx: Container): void {
   nodeLabelGfx.addChild(nodeLabelText);
 }
 
+// 刷新标签文本纹理与背景框。背景按文本尺寸加 padding 撑开；整体下移到节点圆外缘之下。
 export function updateNodeLabelStyle(nodeLabelGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache): void {
   const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
   const { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness, content, type, padding, backgroundColor } = nodeStyle.label;
@@ -43,6 +46,7 @@ export function updateNodeLabelStyle(nodeLabelGfx: Container, nodeStyle: NodeSty
   nodeLabelText.y = labelOffsetY;
 }
 
+// LOD：文本在 zoomStep>=2 出现，背景框更晚（zoomStep>=3）才出现，避免远观时一片色块。
 export function updateNodeLabelVisibility(nodeLabelGfx: Container, zoomStep: number): void {
   const nodeLabelBackground = nodeLabelGfx.getChildByLabel(NODE_LABEL_BACKGROUND) as Sprite;
   nodeLabelBackground.renderable = zoomStep >= 3;

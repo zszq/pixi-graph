@@ -1,3 +1,6 @@
+// 边主体渲染器。两种形态：
+//  - 普通边：一条白色矩形 Sprite，靠 width/旋转/位置（在 PixiEdge.updatePosition 里设）拉成线段，tint 着色。
+//  - 自环边（source===target）：画成一个圆环（填充 Sprite 透明 + 描边 Sprite 着色），绕在节点上方。
 import { Container, Circle, Sprite, Graphics, Texture } from 'pixi.js';
 import { colorToPixi } from '../utils/color';
 import type { EdgeStyle } from '../style/style';
@@ -58,12 +61,14 @@ export function updateEdgeStyle(edgeGfx: Container, edgeStyle: EdgeStyle, textur
     edgeCircleBorder.texture = edgeCircleBorderTexture;
     [edgeCircleBorder.tint, edgeCircleBorder.alpha] = colorToPixi(edgeStyle.color);
   } else {
+    // 普通边：白色矩形只需设线宽与着色，长度/角度由 PixiEdge.updatePosition 控制。
     const edgeLine = edgeGfx.getChildByLabel(EDGE_LINE) as Sprite;
     edgeLine.width = edgeStyle.width;
     [edgeLine.tint, edgeLine.alpha] = colorToPixi(edgeStyle.color);
   }
 }
 
+// LOD：缩放过小（zoomStep<1）时整条边不绘制；自环取描边层、普通边取线段层。
 export function updateEdgeVisibility(edgeGfx: Container, zoomStep: number, isSelfLoop: boolean): void {
   const label = isSelfLoop ? EDGE_LINE_BORDER : EDGE_LINE;
   const edgeLine = edgeGfx.getChildByLabel(label) as Sprite;

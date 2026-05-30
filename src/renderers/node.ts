@@ -1,9 +1,14 @@
+// 节点渲染器：无状态纯函数，作用在传入的 nodeGfx Container 上。
+// 节点由三个叠放的 Sprite 组成（圆形填充 / 圆形描边 / 图标），各自的位图先经
+// TextureCache 渲染成纹理再复用。createNode 一次性建好结构，updateNodeStyle 按样式
+// 刷新纹理与着色，updateNodeVisibility 按缩放档位（zoomStep）切换各层是否绘制。
 import { Container, Circle, Rectangle, Sprite, Graphics, Texture, Assets } from 'pixi.js';
 import { colorToPixi } from '../utils/color';
 import type { NodeStyle } from '../style/style';
 import { textToPixi, TextType } from '../utils/text';
 import type { TextureCache } from '../textures/TextureCache';
 
+// 纹理缓存 key 的分隔符；用 label 标记子 Sprite，便于后续按名取回。
 const DELIMITER = '::';
 const WHITE = 0xffffff;
 
@@ -11,6 +16,7 @@ const NODE_CIRCLE = 'NODE_CIRCLE';
 const NODE_CIRCLE_BORDER = 'NODE_CIRCLE_BORDER';
 const NODE_ICON = 'NODE_ICON';
 
+// 建好节点容器的三层子 Sprite（此时纹理为空，样式由 updateNodeStyle 填充）。
 export function createNode(nodeGfx: Container): void {
   nodeGfx.hitArea = new Circle(0, 0);
 
@@ -30,6 +36,8 @@ export function createNode(nodeGfx: Container): void {
   nodeGfx.addChild(nodeIcon);
 }
 
+// 按样式刷新三层 Sprite 的纹理与着色。cache key 必须含每个影响外观的样式属性，
+// 否则会复用到过期纹理（圆/描边随 size、宽度变；图标随文字/字体/颜色或图片 URL 变）。
 export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache): void {
   const nodeOuterSize = nodeStyle.size + nodeStyle.border.width;
 
@@ -109,6 +117,8 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
   [nodeCircleBorder.tint, nodeCircleBorder.alpha] = colorToPixi(nodeStyle.border.color);
 }
 
+// LOD：缩放档位越高显示越多细节。圆形主体始终绘制（剔除由 Culler 负责），
+// 描边在 zoomStep>=1 出现、图标在 zoomStep>=2 才出现，远观时省去细碎绘制。
 export function updateNodeVisibility(nodeGfx: Container, zoomStep: number): void {
   const nodeCircleBorder = nodeGfx.getChildByLabel(NODE_CIRCLE_BORDER) as Sprite;
   nodeCircleBorder.renderable = zoomStep >= 1;

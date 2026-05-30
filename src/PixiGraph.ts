@@ -16,6 +16,16 @@ import type { BaseNodeAttributes, BaseEdgeAttributes } from './types/attributes'
 
 type SelectionCallback = (selection: SelectionResult) => void;
 
+/**
+ * 库的核心类：把一张 Graphology 图渲染到 PIXI 画布上，并维护两者的同步。
+ *
+ * 职责：持有 PIXI Application、pixi-viewport 的 Viewport（平移/缩放）与 Culler（剔除）；
+ * 订阅图的增删改事件，将变更映射到对应的 PixiNode / PixiEdge 渲染对象（见两张 key→对象 Map）；
+ * 转发指针交互为类型化事件（nodeClick、edgeMouseover 等）；按缩放档位做 LOD 与高性能模式切换。
+ *
+ * 由于 PIXI v8 渲染器异步初始化，请用 `await PixiGraph.create(options)` 构造，或在
+ * `new` 之后 `await instance.ready`；在 ready 兑现前 viewport、textureCache 等字段尚未就绪。
+ */
 export class PixiGraph<
   NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes,
   EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes
@@ -40,34 +50,38 @@ export class PixiGraph<
   private textureCache!: TextureCache;
   private resizeObserver!: ResizeObserver;
 
+  // 四个独立显示层，按 z 序加入 viewport（边 → 边标签 → 节点标签 → 节点）。
   private edgeLayer!: Container;
   private edgeLabelLayer!: Container;
   private nodeLayer!: Container;
   private nodeLabelLayer!: Container;
-  private watermarkLayer!: Container;
+  private watermarkLayer!: Container; // 加在 stage 而非 viewport，故不随平移/缩放
   private watermarkCount = 0;
 
+  // 图 key → 渲染对象，事件处理与样式刷新都靠它定位对应元素。
   private readonly nodeKeyToNodeObject = new Map<string, PixiNode>();
   private readonly edgeKeyToEdgeObject = new Map<string, PixiEdge>();
 
-  private mousedownNodeKey: string | null = null;
+  private mousedownNodeKey: string | null = null; // 当前正被拖拽的节点 key
   private isDragging = false;
-  private highMode = false; // graph exceeds highPerformance thresholds
+  private highMode = false; // 图规模超过 highPerformance 阈值，交互时隐藏边/标签
+  // 记录节点按下/抬起的屏幕坐标，用于判定是「点击」还是「拖拽」（起止一致才算点击）。
   private nodeMouseStartX = 0;
   private nodeMouseStartY = 0;
   private nodeMouseEndX = 0;
   private nodeMouseEndY = 0;
-  private edgeMouseX = 0;
+  private edgeMouseX = 0; // 同上，用于边的点击/拖拽判定
   private edgeMouseY = 0;
-  private nodeMouseOffsetX = 0;
+  private nodeMouseOffsetX = 0; // dragOffset 模式下光标相对节点中心的偏移
   private nodeMouseOffsetY = 0;
-  private viewportClickStartTime = 0;
+  private viewportClickStartTime = 0; // 空白处按下时刻，配合 VIEWPORT_CLICK_VALID_TIME 区分点击/拖拽
   private viewportClickTimer: number | undefined;
   private isViewportDragged = false;
-  private isCanvasTarget = false;
+  private isCanvasTarget = false; // 指针当前是否落在画布上（用于 hover 穿透判断）
 
   private boxSelectViewport?: BoxSelectViewport;
 
+  // 事件处理器在字段初始化时一次性预绑定，使 on/off 用的是同一引用，destroy 时才能精确注销。
   private readonly onGraphNodeAddedBound = this.onGraphNodeAdded.bind(this);
   private readonly onGraphEdgeAddedBound = this.onGraphEdgeAdded.bind(this);
   private readonly onGraphNodeDroppedBound = this.onGraphNodeDropped.bind(this);
@@ -645,6 +659,8 @@ export class PixiGraph<
 
   // --- visibility / culling ------------------------------------------------
 
+  // viewport 标记 dirty（平移/缩放/resize）时运行：先剔除屏外元素，再把当前缩放映射到
+  // 离散的 zoomStep 桶，逐个让节点/边按档位切换各部分可见性（LOD）。
   private updateGraphVisibility(): void {
     this.cull();
 

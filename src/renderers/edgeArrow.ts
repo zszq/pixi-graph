@@ -1,3 +1,5 @@
+// 边箭头渲染器：靠近目标节点的一个三角形 Sprite，朝向由 PixiEdge.updatePosition 旋转。
+// 自环边不画箭头。
 import { Container, Sprite, Graphics } from 'pixi.js';
 import { colorToPixi } from '../utils/color';
 import type { EdgeStyle } from '../style/style';
@@ -27,6 +29,7 @@ export function updateEdgeArrowStyle(edgeArrowGfx: Container, edgeStyle: EdgeSty
 
   const edgeArrowTextureKey = [EDGE_ARROW, edgeStyle.arrow.size].join(DELIMITER);
   const edgeArrowTexture = textureCache.get(edgeArrowTextureKey, () => {
+    // size 凑成偶数，使三角形左右对称、像素居中，避免锚点 0.5 时出现半像素糊边。
     const arrowSize = edgeStyle.arrow.size % 2 === 0 ? edgeStyle.arrow.size : edgeStyle.arrow.size + 1;
     const graphics = new Graphics();
     graphics.poly([-arrowSize / 2, arrowSize, arrowSize / 2, arrowSize, 0, 0]).fill(WHITE);

@@ -1,3 +1,5 @@
+// 边标签渲染器：背景 Sprite + 文本 Sprite，置于边中点。
+// 是否随边方向旋转、平行边的偏移由 PixiEdge.updatePosition 处理，这里只管纹理与背景框。
 import { Container, Sprite, Texture } from 'pixi.js';
 import { colorToPixi } from '../utils/color';
 import type { EdgeStyle } from '../style/style';
@@ -38,6 +40,7 @@ export function updateEdgeLabelStyle(edgeLabelGfx: Container, edgeStyle: EdgeSty
   edgeLabelText.texture = edgeLabelTextTexture;
 }
 
+// LOD：与节点标签一致——文本 zoomStep>=2 出现，背景框 zoomStep>=3 才出现。
 export function updateEdgeLabelVisibility(edgeLabelGfx: Container, zoomStep: number): void {
   const edgeLabelBackground = edgeLabelGfx.getChildByLabel(EDGE_LABEL_BACKGROUND) as Sprite;
   edgeLabelBackground.renderable = zoomStep >= 3;
