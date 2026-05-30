@@ -1,4 +1,4 @@
-import { Attributes } from 'graphology-types';
+import type { Attributes } from 'graphology-types';
 
 export type BaseAttributes = Attributes;
 export type BaseNodeAttributes = BaseAttributes & { x: number; y: number };

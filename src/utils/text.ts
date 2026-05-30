@@ -1,49 +1,57 @@
-import { Text, TextStyleAlign, TextStyleFontWeight } from '@pixi/text';
-import { BitmapText } from '@pixi/text-bitmap';
+import { Text, BitmapText } from 'pixi.js';
 
 export enum TextType {
   TEXT = 'TEXT',
   BITMAP_TEXT = 'BITMAP_TEXT',
   IMAGE = 'IMAGE'
-  // TODO: SDF_TEXT
-  // see https://github.com/PixelsCommander/pixi-sdf-text/issues/12
 }
 
-// TODO: use TextStyle from @pixi/text directly?
+export type FontWeight = 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
+export type TextAlign = 'left' | 'center' | 'right' | 'justify';
+
 export interface TextStyle {
   fontFamily: string;
   fontSize: number;
-  fontWeight: TextStyleFontWeight;
-  align: TextStyleAlign;
+  fontWeight: FontWeight;
+  align: TextAlign;
   color: string;
   stroke: string;
   strokeThickness: number;
 }
 
-export function textToPixi(type: TextType, content: string, style: TextStyle) {
-  let text;
+/**
+ * Build a PIXI text view (regular or bitmap) from a {@link TextStyle}. The
+ * returned object is rendered once into a cached texture by the renderers.
+ */
+export function textToPixi(type: TextType, content: string, style: TextStyle): Text | BitmapText {
   if (type === TextType.TEXT) {
-    // TODO: convert to bitmap font with BitmapFont.from?
-    text = new Text(content, {
-      fontFamily: style.fontFamily,
-      fontSize: style.fontSize,
-      fontWeight: style.fontWeight,
-      align: style.align,
-      fill: style.color,
-      stroke: style.stroke,
-      strokeThickness: style.strokeThickness
-      // wordWrap: true,
-      // wordWrapWidth: 200
+    const text = new Text({
+      text: content,
+      style: {
+        fontFamily: style.fontFamily,
+        fontSize: style.fontSize,
+        fontWeight: style.fontWeight,
+        align: style.align,
+        fill: style.color,
+        stroke: style.strokeThickness > 0 ? { color: style.stroke, width: style.strokeThickness } : undefined
+      }
     });
     text.resolution = 2;
-  } else if (type === TextType.BITMAP_TEXT) {
-    text = new BitmapText(content, {
-      fontName: style.fontFamily,
-      fontSize: style.fontSize
-    });
-  } else {
-    throw new Error('Invalid state');
+    text.roundPixels = true;
+    return text;
   }
-  text.roundPixels = true;
-  return text;
+
+  if (type === TextType.BITMAP_TEXT) {
+    const text = new BitmapText({
+      text: content,
+      style: {
+        fontFamily: style.fontFamily,
+        fontSize: style.fontSize
+      }
+    });
+    text.roundPixels = true;
+    return text;
+  }
+
+  throw new Error(`Invalid text type ${type}`);
 }

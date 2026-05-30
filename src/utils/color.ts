@@ -1,12 +1,15 @@
-import { Color } from '@pixi/core';
 import rgba from 'color-rgba';
 
-export function colorToPixi(color: string) {
+/**
+ * Resolve any CSS color string (named, hex, rgb(a), hsl(a)) into a PIXI tint
+ * number and an alpha value, ready to assign to `sprite.tint` / `sprite.alpha`.
+ */
+export function colorToPixi(color: string): [tint: number, alpha: number] {
   const rgbaColor = rgba(color);
-  if (!rgbaColor) {
+  if (!rgbaColor || rgbaColor.length < 3) {
     throw new Error(`Invalid color ${color}`);
   }
-  const pixiColor = new Color([rgbaColor[0] / 255, rgbaColor[1] / 255, rgbaColor[2] / 255]).toHex();
-  const alpha = rgbaColor[3];
-  return [pixiColor, alpha] as [string, number];
+  const [r = 0, g = 0, b = 0, alpha = 1] = rgbaColor;
+  const tint = (Math.round(r) << 16) + (Math.round(g) << 8) + Math.round(b);
+  return [tint, alpha];
 }

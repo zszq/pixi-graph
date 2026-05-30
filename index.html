@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pixi-graph demo</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: system-ui, sans-serif;
+      }
+      #graph {
+        width: 100vw;
+        height: 100vh;
+      }
+      #controls {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #controls button {
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 6px 10px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      #controls button:hover {
+        background: #f3f4f6;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="graph"></div>
+    <div id="controls">
+      <button id="zoom-in">Zoom In</button>
+      <button id="zoom-out">Zoom Out</button>
+      <button id="watermark">Toggle Watermark</button>
+      <button id="extract">Extract PNG</button>
+    </div>
+    <script type="module" src="/demo/main.ts"></script>
+  </body>
+</html>

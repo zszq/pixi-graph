@@ -1,67 +1,67 @@
 {
   "name": "pixi-graph",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "description": "Graph visualization library using PIXI.js and Graphology",
   "type": "module",
   "keywords": [
     "pixi",
-    "graph"
+    "graph",
+    "graphology",
+    "visualization"
   ],
   "license": "MIT",
   "author": "Jan Zak <zj@zakjan.cz>",
   "repository": "github:zakjan/pixi-graph",
+  "main": "./dist/pixi-graph.umd.cjs",
+  "module": "./dist/pixi-graph.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/pixi-graph.js",
+      "require": "./dist/pixi-graph.umd.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
   "scripts": {
-    "dev": "rimraf dist && cross-env ENV=development rollup -c -w",
-    "build": "rimraf dist && cross-env ENV=production rollup -c",
-    "test": "jest",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . && prettier --check \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.{ts,js}\"",
     "prepublishOnly": "npm run build"
   },
+  "peerDependencies": {
+    "graphology": "^0.25.0",
+    "graphology-types": "^0.24.0"
+  },
   "dependencies": {
-    "@pixi-essentials/cull": "^2.0.0",
-    "@pixi/app": "^7.4.0",
-    "@pixi/assets": "^7.4.0",
-    "@pixi/canvas-renderer": "^7.4.0",
-    "@pixi/core": "^7.4.0",
-    "@pixi/display": "^7.4.0",
-    "@pixi/events": "^7.4.0",
-    "@pixi/extract": "^7.4.0",
-    "@pixi/filter-fxaa": "^7.4.0",
-    "@pixi/graphics": "^7.4.0",
-    "@pixi/graphics-extras": "^7.4.0",
-    "@pixi/graphics-smooth": "^1.1.0",
-    "@pixi/math": "^7.4.0",
-    "@pixi/mesh": "^7.4.0",
-    "@pixi/mixin-get-child-by-name": "^7.4.0",
-    "@pixi/sprite": "^7.4.0",
-    "@pixi/text": "^7.4.0",
-    "@pixi/text-bitmap": "^7.4.0",
-    "@pixi/ticker": "^7.4.0",
     "color-rgba": "^3.0.0",
     "deepmerge": "^4.3.1",
     "eventemitter3": "^5.0.1",
-    "events": "^3.3.0",
-    "pixi-viewport": "^5.0.2",
-    "pixi.js": "^7.4.0",
-    "tiny-typed-emitter": "^2.1.0"
+    "pixi-viewport": "^6.0.3",
+    "pixi.js": "^8.6.0"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^25.0.7",
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^11.1.6",
     "@types/color-rgba": "^2.1.2",
-    "@types/deepmerge": "^2.2.0",
-    "@types/resize-observer-browser": "^0.1.11",
-    "cross-env": "^7.0.3",
+    "@types/node": "^22.19.19",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "graphology": "^0.25.4",
+    "graphology-layout-forceatlas2": "^0.10.1",
     "graphology-types": "^0.24.7",
-    "resource-loader": "^4.0.0-rc4",
-    "rimraf": "^5.0.5",
-    "rollup": "^4.12.0",
-    "rollup-plugin-dts": "^6.1.0",
-    "rollup-plugin-livereload": "^2.0.5",
-    "rollup-plugin-polyfill-node": "^0.13.0",
-    "rollup-plugin-serve": "^1.1.1",
-    "rollup-plugin-visualizer": "^5.12.0",
-    "typescript": "^5.3.3"
+    "jsdom": "^25.0.1",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0",
+    "vite": "^6.0.5",
+    "vite-plugin-dts": "^4.4.0",
+    "vitest": "^3.2.4"
   }
 }

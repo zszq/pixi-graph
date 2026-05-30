@@ -1,19 +1,21 @@
-import { AbstractGraph } from 'graphology-types';
-import { Viewport } from 'pixi-viewport';
-import { IPointData } from '@pixi/core';
+import type { AbstractGraph } from 'graphology-types';
+import type { Viewport } from 'pixi-viewport';
+import type { PointData } from 'pixi.js';
+
+export interface SelectionResult {
+  nodes: string[];
+  edges: string[];
+}
 
 /**
+ * Hit-test graph nodes (and optionally edges) against a screen-space rectangle.
  *
- * @param graph 图数据管理
- * @param viewport pixi-viewport
- * @param startPoint 起始点
- * @param endPoint 结束点
- * @param lazy 是否选中线
- * @returns 选中的点线
+ * @param lazy when true, skip edge line intersection and instead select every
+ *   edge incident to a selected node (cheaper, "select edges with nodes").
  */
-export default function judge(graph: AbstractGraph, viewport: Viewport, startPoint: IPointData, endPoint: IPointData, lazy?: boolean) {
-  const nodes = new Set();
-  const edges = new Set();
+export function selectInRectangle(graph: AbstractGraph, viewport: Viewport, startPoint: PointData, endPoint: PointData, lazy?: boolean): SelectionResult {
+  const nodes = new Set<string>();
+  const edges = new Set<string>();
 
   const startX = Math.min(startPoint.x, endPoint.x);
   const startY = Math.min(startPoint.y, endPoint.y);
@@ -24,18 +26,14 @@ export default function judge(graph: AbstractGraph, viewport: Viewport, startPoi
     const { x, y } = viewport.toScreen(attributes.x, attributes.y);
     if (x >= startX && x <= endX && y >= startY && y <= endY) {
       nodes.add(nodeKey);
-
       if (lazy) {
-        let edgeNeighbors = graph.edges(nodeKey);
-        edgeNeighbors.forEach(edgeKey => {
-          edges.add(edgeKey);
-        });
+        graph.edges(nodeKey).forEach(edgeKey => edges.add(edgeKey));
       }
     }
   });
 
   if (!lazy) {
-    graph.forEachEdge((edgeKey, attributes, source, target, sourceAttributes, targetAttributes) => {
+    graph.forEachEdge((edgeKey, _attributes, _source, _target, sourceAttributes, targetAttributes) => {
       const { x: x1, y: y1 } = viewport.toScreen(sourceAttributes.x, sourceAttributes.y);
       const { x: x2, y: y2 } = viewport.toScreen(targetAttributes.x, targetAttributes.y);
 
@@ -65,8 +63,5 @@ export default function judge(graph: AbstractGraph, viewport: Viewport, startPoi
     });
   }
 
-  return {
-    nodes: Array.from(nodes) as string[],
-    edges: Array.from(edges) as string[]
-  };
+  return { nodes: Array.from(nodes), edges: Array.from(edges) };
 }

@@ -14,17 +14,12 @@ Developing a full-featured graph visualization library is a significant effort. 
 
 <img src="demo/screenshot@2x.jpg" alt="Screenshot" width="640" height="320">
 
+> **v2** is built on **PIXI.js v8** and ships as ESM (with a UMD bundle). `pixi.js`, `pixi-viewport`, and `graphology` are peer/runtime dependencies that your bundler dedupes. The renderer initializes asynchronously, so construct with the `PixiGraph.create()` factory.
+
 ## Install
 
 ```
-npm install graphology pixi-graph
-```
-
-or
-
-```html
-<script src="https://unpkg.com/graphology@0.18.0/dist/graphology.umd.js"></script>
-<script src="https://unpkg.com/pixi-graph@1.3.0/dist/pixi-graph.umd.min.js"></script>
+npm install pixi-graph pixi.js pixi-viewport graphology
 ```
 
 ## Usage
@@ -32,15 +27,22 @@ or
 ### Basic
 
 ```ts
-const graph = new graphology.Graph();
-// populate Graphology graph with data
+import Graph from 'graphology';
+import { PixiGraph } from 'pixi-graph';
+
+const graph = new Graph();
+// populate the Graphology graph with data
 // assign layout positions as `x`, `y` node attributes
 
-const pixiGraph = new PixiGraph.PixiGraph({
+const pixiGraph = await PixiGraph.create({
   container: document.getElementById('graph'),
-  graph
+  graph,
+  style,
+  hoverStyle
 });
 ```
+
+`PixiGraph.create(options)` resolves once the WebGL/WebGPU renderer is ready. (`new PixiGraph(options)` also works and exposes a `ready` promise.)
 
 ### Layouts
 
@@ -58,7 +60,7 @@ graph.forEachNode(node => {
 });
 forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 80 }});
 
-const pixiGraph = new PixiGraph.PixiGraph({ ..., graph });
+const pixiGraph = await PixiGraph.create({ ..., graph });
 ```
 
 ### Style
@@ -289,6 +291,21 @@ Edge events:
 ```ts
 pixiGraph.on('edgeClick', (event, edgeKey) => ...);
 ```
+
+## Development
+
+Built with [Vite](https://vitejs.dev/) (dev server + library build) and [Vitest](https://vitest.dev/).
+
+```
+npm run dev        # start the demo at localhost:5173 with hot module reload
+npm run build      # typecheck + build dist/ (ESM + UMD + .d.ts)
+npm test           # run unit tests
+npm run test:watch # watch mode
+npm run lint       # eslint + prettier check
+npm run format     # prettier write
+```
+
+The source is organized as: `PixiGraph.ts` (orchestrator) · `elements/` (PixiNode / PixiEdge) · `renderers/` (stateless draw functions) · `textures/` (texture cache) · `style/` (style resolution) · `features/` (box selection, watermark) · `core/` (constants & types) · `utils/`.
 
 ## Sponsors
 
