@@ -10,3 +10,4 @@ export type { BaseAttributes, BaseNodeAttributes, BaseEdgeAttributes } from './t
 
 export type { WatermarkOption } from './features/watermark/watermark';
 export type { SelectionResult } from './features/selection';
+export { selectInRectangle } from './features/selection';

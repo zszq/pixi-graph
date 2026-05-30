@@ -321,6 +321,17 @@ npm run format     # prettier 写回
 
 演示页（`demo/main.ts`）通过 `pixi-graph` 别名直接引用 `src/` 源码，因此改动源码会经 HMR 立即生效，无需先构建。
 
+### 大图 benchmark
+
+启动开发服务器后访问：
+
+```
+http://localhost:5173/?bench=1&data=data-50000-100000
+```
+
+`bench=1` 会在 demo 完成加载后自动输出一份 `pixiGraphBenchmark` 报告到控制台和 `window.pixiGraphBenchmark`，覆盖下载/建图/布局/`PixiGraph.create`、当前视图导出、框选命中、单节点位置更新、缩放和 uncull 等阶段。可用 `data=` 切换 `demo/data/*.json` 数据集；不传 `data` 时默认使用 `data-50000-100000`。
+
+
 源码组织结构：`PixiGraph.ts`（编排核心）· `elements/`（PixiNode / PixiEdge 包装类）· `renderers/`（无状态绘制函数）· `textures/`（纹理缓存）· `style/`（样式解析）· `features/`（框选、水印）· `core/`（常量与类型）· `utils/`（颜色、文本、节流等工具）。
 
 ## 赞助
