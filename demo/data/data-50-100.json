@@ -1,0 +1,906 @@
+{
+  "nodes": [
+    {
+      "id": "node0",
+      "group": 6,
+      "label": "标签0",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node1",
+      "group": 4,
+      "label": "标签1",
+      "icon": "./images/ok.png"
+    },
+    {
+      "id": "node2",
+      "group": 1,
+      "label": "标签2",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node3",
+      "group": 4,
+      "label": "标签3",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node4",
+      "group": 6,
+      "label": "标签4",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node5",
+      "group": 3,
+      "label": "标签5",
+      "icon": "./images/ok.png"
+    },
+    {
+      "id": "node6",
+      "group": 3,
+      "label": "标签6",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node7",
+      "group": 5,
+      "label": "标签7",
+      "icon": "./images/bz.jpeg"
+    },
+    {
+      "id": "node8",
+      "group": 3,
+      "label": "标签8",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node9",
+      "group": 1,
+      "label": "标签9",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node10",
+      "group": 5,
+      "label": "标签10",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node11",
+      "group": 2,
+      "label": "标签11",
+      "icon": "./images/bz.jpeg"
+    },
+    {
+      "id": "node12",
+      "group": 5,
+      "label": "标签12",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node13",
+      "group": 6,
+      "label": "标签13",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node14",
+      "group": 5,
+      "label": "标签14",
+      "icon": "./images/ok.png"
+    },
+    {
+      "id": "node15",
+      "group": 6,
+      "label": "标签15",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node16",
+      "group": 6,
+      "label": "标签16",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node17",
+      "group": 4,
+      "label": "标签17",
+      "icon": "./images/ba.png"
+    },
+    {
+      "id": "node18",
+      "group": 6,
+      "label": "标签18",
+      "icon": "./images/bz.jpeg"
+    },
+    {
+      "id": "node19",
+      "group": 3,
+      "label": "标签19",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node20",
+      "group": 6,
+      "label": "标签20",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node21",
+      "group": 6,
+      "label": "标签21",
+      "icon": "./images/ba.png"
+    },
+    {
+      "id": "node22",
+      "group": 4,
+      "label": "标签22",
+      "icon": "./images/ok.png"
+    },
+    {
+      "id": "node23",
+      "group": 1,
+      "label": "标签23",
+      "icon": "./images/ok.png"
+    },
+    {
+      "id": "node24",
+      "group": 5,
+      "label": "标签24",
+      "icon": "./images/ok.png"
+    },
+    {
+      "id": "node25",
+      "group": 3,
+      "label": "标签25",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node26",
+      "group": 1,
+      "label": "标签26",
+      "icon": "./images/ba.png"
+    },
+    {
+      "id": "node27",
+      "group": 1,
+      "label": "标签27",
+      "icon": "./images/ba.png"
+    },
+    {
+      "id": "node28",
+      "group": 6,
+      "label": "标签28",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node29",
+      "group": 1,
+      "label": "标签29",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node30",
+      "group": 5,
+      "label": "标签30",
+      "icon": "./images/ok.png"
+    },
+    {
+      "id": "node31",
+      "group": 3,
+      "label": "标签31",
+      "icon": "./images/ok.png"
+    },
+    {
+      "id": "node32",
+      "group": 1,
+      "label": "标签32",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node33",
+      "group": 3,
+      "label": "标签33",
+      "icon": "./images/ba.png"
+    },
+    {
+      "id": "node34",
+      "group": 3,
+      "label": "标签34",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node35",
+      "group": 1,
+      "label": "标签35",
+      "icon": "./images/ok.png"
+    },
+    {
+      "id": "node36",
+      "group": 5,
+      "label": "标签36",
+      "icon": "./images/ba.png"
+    },
+    {
+      "id": "node37",
+      "group": 6,
+      "label": "标签37",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node38",
+      "group": 4,
+      "label": "标签38",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node39",
+      "group": 6,
+      "label": "标签39",
+      "icon": "./images/ba.png"
+    },
+    {
+      "id": "node40",
+      "group": 2,
+      "label": "标签40",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node41",
+      "group": 6,
+      "label": "标签41",
+      "icon": "./images/bunny.png"
+    },
+    {
+      "id": "node42",
+      "group": 1,
+      "label": "标签42",
+      "icon": "./images/ok.png"
+    },
+    {
+      "id": "node43",
+      "group": 6,
+      "label": "标签43",
+      "icon": "./images/ba.png"
+    },
+    {
+      "id": "node44",
+      "group": 2,
+      "label": "标签44",
+      "icon": "./images/yz.png"
+    },
+    {
+      "id": "node45",
+      "group": 5,
+      "label": "标签45",
+      "icon": "./images/bz.jpeg"
+    },
+    {
+      "id": "node46",
+      "group": 1,
+      "label": "标签46",
+      "icon": "./images/ba.png"
+    },
+    {
+      "id": "node47",
+      "group": 2,
+      "label": "标签47",
+      "icon": "./images/ok.png"
+    },
+    {
+      "id": "node48",
+      "group": 3,
+      "label": "标签48",
+      "icon": "./images/ba.png"
+    },
+    {
+      "id": "node49",
+      "group": 1,
+      "label": "标签49",
+      "icon": "./images/ok.png"
+    }
+  ],
+  "links": [
+    {
+      "source": "node46",
+      "target": "node49",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node1",
+      "target": "node6",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node11",
+      "target": "node13",
+      "label": "交易400元",
+      "value": 4
+    },
+    {
+      "source": "node4",
+      "target": "node6",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node40",
+      "target": "node48",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node27",
+      "target": "node31",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node29",
+      "target": "node30",
+      "label": "交易100元",
+      "value": 1
+    },
+    {
+      "source": "node40",
+      "target": "node4",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node20",
+      "target": "node25",
+      "label": "交易400元",
+      "value": 4
+    },
+    {
+      "source": "node41",
+      "target": "node42",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node48",
+      "target": "node49",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node25",
+      "target": "node28",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node14",
+      "target": "node17",
+      "label": "交易100元",
+      "value": 1
+    },
+    {
+      "source": "node22",
+      "target": "node32",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node27",
+      "target": "node28",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node34",
+      "target": "node36",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node49",
+      "target": "node5",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node27",
+      "target": "node32",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node26",
+      "target": "node30",
+      "label": "交易200元",
+      "value": 2
+    },
+    {
+      "source": "node17",
+      "target": "node1",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node37",
+      "target": "node39",
+      "label": "交易100元",
+      "value": 1
+    },
+    {
+      "source": "node27",
+      "target": "node33",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node16",
+      "target": "node21",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node49",
+      "target": "node49",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node18",
+      "target": "node31",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node47",
+      "target": "node49",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node15",
+      "target": "node20",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node42",
+      "target": "node45",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node25",
+      "target": "node27",
+      "label": "交易200元",
+      "value": 2
+    },
+    {
+      "source": "node40",
+      "target": "node41",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node48",
+      "target": "node37",
+      "label": "交易400元",
+      "value": 4
+    },
+    {
+      "source": "node5",
+      "target": "node8",
+      "label": "交易800元",
+      "value": 8
+    },
+    {
+      "source": "node49",
+      "target": "node29",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node43",
+      "target": "node10",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node18",
+      "target": "node24",
+      "label": "交易800元",
+      "value": 8
+    },
+    {
+      "source": "node35",
+      "target": "node43",
+      "label": "交易800元",
+      "value": 8
+    },
+    {
+      "source": "node18",
+      "target": "node19",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node14",
+      "target": "node16",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node37",
+      "target": "node45",
+      "label": "交易800元",
+      "value": 8
+    },
+    {
+      "source": "node37",
+      "target": "node43",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node0",
+      "target": "node8",
+      "label": "交易200元",
+      "value": 2
+    },
+    {
+      "source": "node38",
+      "target": "node42",
+      "label": "交易200元",
+      "value": 2
+    },
+    {
+      "source": "node9",
+      "target": "node16",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node14",
+      "target": "node49",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node41",
+      "target": "node4",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node32",
+      "target": "node38",
+      "label": "交易100元",
+      "value": 1
+    },
+    {
+      "source": "node6",
+      "target": "node13",
+      "label": "交易100元",
+      "value": 1
+    },
+    {
+      "source": "node48",
+      "target": "node48",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node24",
+      "target": "node25",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node38",
+      "target": "node41",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node43",
+      "target": "node26",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node25",
+      "target": "node30",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node41",
+      "target": "node37",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node0",
+      "target": "node8",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node13",
+      "target": "node6",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node20",
+      "target": "node25",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node29",
+      "target": "node33",
+      "label": "交易400元",
+      "value": 4
+    },
+    {
+      "source": "node33",
+      "target": "node2",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node44",
+      "target": "node49",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node13",
+      "target": "node19",
+      "label": "交易800元",
+      "value": 8
+    },
+    {
+      "source": "node2",
+      "target": "node10",
+      "label": "交易100元",
+      "value": 1
+    },
+    {
+      "source": "node10",
+      "target": "node18",
+      "label": "交易200元",
+      "value": 2
+    },
+    {
+      "source": "node35",
+      "target": "node35",
+      "label": "交易200元",
+      "value": 2
+    },
+    {
+      "source": "node26",
+      "target": "node33",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node2",
+      "target": "node4",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node32",
+      "target": "node40",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node24",
+      "target": "node28",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node46",
+      "target": "node47",
+      "label": "交易200元",
+      "value": 2
+    },
+    {
+      "source": "node24",
+      "target": "node31",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node34",
+      "target": "node3",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node3",
+      "target": "node20",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node41",
+      "target": "node47",
+      "label": "交易800元",
+      "value": 8
+    },
+    {
+      "source": "node34",
+      "target": "node23",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node36",
+      "target": "node26",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node36",
+      "target": "node5",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node40",
+      "target": "node43",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node22",
+      "target": "node30",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node11",
+      "target": "node19",
+      "label": "交易400元",
+      "value": 4
+    },
+    {
+      "source": "node39",
+      "target": "node43",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node21",
+      "target": "node27",
+      "label": "交易400元",
+      "value": 4
+    },
+    {
+      "source": "node32",
+      "target": "node41",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node46",
+      "target": "node9",
+      "label": "交易200元",
+      "value": 2
+    },
+    {
+      "source": "node23",
+      "target": "node42",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node49",
+      "target": "node49",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node11",
+      "target": "node17",
+      "label": "交易400元",
+      "value": 4
+    },
+    {
+      "source": "node19",
+      "target": "node18",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node21",
+      "target": "node10",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node26",
+      "target": "node12",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node2",
+      "target": "node4",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node39",
+      "target": "node37",
+      "label": "交易600元",
+      "value": 6
+    },
+    {
+      "source": "node35",
+      "target": "node37",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node10",
+      "target": "node7",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node29",
+      "target": "node30",
+      "label": "交易700元",
+      "value": 7
+    },
+    {
+      "source": "node34",
+      "target": "node19",
+      "label": "交易400元",
+      "value": 4
+    },
+    {
+      "source": "node30",
+      "target": "node11",
+      "label": "交易500元",
+      "value": 5
+    },
+    {
+      "source": "node46",
+      "target": "node49",
+      "label": "交易400元",
+      "value": 4
+    },
+    {
+      "source": "node21",
+      "target": "node21",
+      "label": "交易900元",
+      "value": 9
+    },
+    {
+      "source": "node3",
+      "target": "node4",
+      "label": "交易100元",
+      "value": 1
+    },
+    {
+      "source": "node9",
+      "target": "node11",
+      "label": "交易300元",
+      "value": 3
+    },
+    {
+      "source": "node1",
+      "target": "node47",
+      "label": "交易100元",
+      "value": 1
+    }
+  ]
+}

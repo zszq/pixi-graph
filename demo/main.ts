@@ -13,8 +13,42 @@ interface RawData {
 type NodeAttrs = { x: number; y: number; id: string; label?: string; icon?: string };
 type EdgeAttrs = { source: string; target: string; label?: string; value?: number };
 
+// 不同规模的测试数据集，对应右上角切换按钮。
+const DATASETS = [
+  { key: 'data-50-100', label: '50点100边' },
+  { key: 'data-1000-2000', label: '1000点2000边' },
+  { key: 'data-10000-20000', label: '10000点20000边' },
+  { key: 'data-50000-100000', label: '50000点100000边' },
+  { key: 'data-50000-100000-noicon', label: '50000点100000边(无图)' }
+];
+
+// 渲染数据集切换按钮，点击后带 ?data= 参数重载页面（切换数据需重建实例，重载最稳妥）。
+function renderDatasetButtons(activeKey: string) {
+  const panel = document.getElementById('datasets')!;
+  const title = document.createElement('div');
+  title.className = 'title';
+  title.textContent = '测试数据';
+  panel.appendChild(title);
+  DATASETS.forEach(({ key, label }) => {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    if (key === activeKey) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      const url = new URL(location.href);
+      url.searchParams.set('data', key);
+      location.href = url.toString();
+    });
+    panel.appendChild(btn);
+  });
+}
+
 async function main() {
-  const dataPath = '/demo/data/data6-5.json';
+  // 从 URL ?data= 读取数据集，缺省用最小图；非法值回退到第一个。
+  const requested = new URLSearchParams(location.search).get('data');
+  const activeKey = DATASETS.some(d => d.key === requested) ? requested! : DATASETS[0].key;
+  renderDatasetButtons(activeKey);
+
+  const dataPath = `/demo/data/${activeKey}.json`;
   const { nodes, links } = (await (await fetch(dataPath)).json()) as RawData;
 
   const graph = new Graph<NodeAttrs, EdgeAttrs>({ multi: true, type: 'undirected' });
@@ -34,7 +68,10 @@ async function main() {
     graph.setNodeAttribute(node, 'x', Math.random());
     graph.setNodeAttribute(node, 'y', Math.random());
   });
-  forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 500 } });
+  // 迭代次数按规模自适应：大图跑 300 次 forceAtlas2 会卡死浏览器。
+  const order = graph.order;
+  const iterations = order > 50000 ? 15 : order > 10000 ? 40 : order > 1000 ? 120 : 300;
+  forceAtlas2.assign(graph, { iterations, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 500 } });
 
   const style: GraphStyleDefinition<NodeAttrs, EdgeAttrs> = {
     node: {

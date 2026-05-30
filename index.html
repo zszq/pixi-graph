@@ -34,10 +34,47 @@
       #controls button:hover {
         background: #f3f4f6;
       }
+      #datasets {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 160px;
+      }
+      #datasets .title {
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 2px;
+      }
+      #datasets button {
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 6px 10px;
+        cursor: pointer;
+        font-size: 13px;
+        text-align: left;
+      }
+      #datasets button:hover {
+        background: #f3f4f6;
+      }
+      #datasets button.active {
+        background: #4a5fe2;
+        border-color: #4a5fe2;
+        color: #fff;
+      }
+      /* 控制按钮挪到数据面板下方，避免重叠 */
+      #controls {
+        top: auto;
+        bottom: 12px;
+      }
     </style>
   </head>
   <body>
     <div id="graph"></div>
+    <div id="datasets"></div>
     <div id="controls">
       <button id="zoom-in">Zoom In</button>
       <button id="zoom-out">Zoom Out</button>
