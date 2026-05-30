@@ -4,35 +4,33 @@
 [![](https://img.shields.io/david/zakjan/pixi-graph)](https://www.npmjs.com/package/pixi-graph)
 [![](https://img.shields.io/bundlephobia/min/pixi-graph)](https://www.npmjs.com/package/pixi-graph)
 
-Graph visualization library using [PIXI.js](https://www.pixijs.com/) and [Graphology](https://graphology.github.io/).
+基于 [PIXI.js](https://www.pixijs.com/) 和 [Graphology](https://graphology.github.io/) 的图可视化库。
 
-⚠️ **This is a pre-release, use at your own risk!** Upcoming features can introduce breaking changes in the API.
+> ⚠️ 本仓库是 [`zakjan/pixi-graph`](https://github.com/zakjan/pixi-graph) 的深度定制分支，在上游基础上新增了水印、框选、箭头/边标签、高性能模式、空格拖拽、双击等特性，API 与上游已有较大差异。仍处于演进中，后续可能引入破坏性变更，请自行评估风险后使用。
 
-Developing a full-featured graph visualization library is a significant effort. I'd appreciate your feedback to prioritize new features by filling in a [survey](https://link.zakjan.cz/pixi-graph-survey).
-
-[Demo](https://zakjan.github.io/pixi-graph/)
+[在线演示](https://zakjan.github.io/pixi-graph/)
 
 <img src="demo/screenshot@2x.jpg" alt="Screenshot" width="640" height="320">
 
-> **v2** is built on **PIXI.js v8** and ships as ESM (with a UMD bundle). `pixi.js`, `pixi-viewport`, and `graphology` are peer/runtime dependencies that your bundler dedupes. The renderer initializes asynchronously, so construct with the `PixiGraph.create()` factory.
+> **v2** 基于 **PIXI.js v8**，以 ESM 形式发布（同时提供 UMD 包）。`pixi.js`、`pixi-viewport`、`graphology` 是 peer/运行时依赖，由你的打包器统一去重。由于渲染器是异步初始化的，请使用 `PixiGraph.create()` 工厂方法来构造。
 
-## Install
+## 安装
 
 ```
 npm install pixi-graph pixi.js pixi-viewport graphology
 ```
 
-## Usage
+## 使用
 
-### Basic
+### 基础
 
 ```ts
 import Graph from 'graphology';
 import { PixiGraph } from 'pixi-graph';
 
 const graph = new Graph();
-// populate the Graphology graph with data
-// assign layout positions as `x`, `y` node attributes
+// 向 Graphology 图中填充数据
+// 把布局坐标写入节点的 `x`、`y` 属性
 
 const pixiGraph = await PixiGraph.create({
   container: document.getElementById('graph'),
@@ -42,17 +40,17 @@ const pixiGraph = await PixiGraph.create({
 });
 ```
 
-`PixiGraph.create(options)` resolves once the WebGL/WebGPU renderer is ready. (`new PixiGraph(options)` also works and exposes a `ready` promise.)
+`PixiGraph.create(options)` 会在 WebGL/WebGPU 渲染器就绪后 resolve。（`new PixiGraph(options)` 也可用，并暴露一个 `ready` Promise。）
 
-### Layouts
+### 布局
 
-In its simplicity, a graph layout is a function `nodes => positions`. Therefore a layout from any other library can be used. Run the layout separately, and assign layout positions as `x`, `y` node attributes.
+本质上，图布局就是一个 `nodes => positions` 的函数。因此可以使用任意其他库的布局。单独运行布局，再把坐标写入节点的 `x`、`y` 属性即可。
 
-[graphology-layout-forceatlas2](https://github.com/graphology/graphology-layout-forceatlas2) example:
+[graphology-layout-forceatlas2](https://github.com/graphology/graphology-layout-forceatlas2) 示例：
 
 ```ts
 const graph = new graphology.Graph();
-// populate Graphology graph with data
+// 向 Graphology 图中填充数据
 
 graph.forEachNode(node => {
   graph.setNodeAttribute(node, 'x', Math.random());
@@ -63,7 +61,7 @@ forceAtlas2.assign(graph, { iterations: 300, settings: { ...forceAtlas2.inferSet
 const pixiGraph = await PixiGraph.create({ ..., graph });
 ```
 
-### Style
+### 样式
 
 ```ts
 const style = {
@@ -75,18 +73,18 @@ const style = {
   },
 };
 
-const pixiGraph = new PixiGraph.PixiGraph({ ..., style });
+const pixiGraph = await PixiGraph.create({ ..., style });
 ```
 
-#### Colors
+#### 颜色
 
-Colors are resolved with [color-rgba](https://github.com/colorjs/color-rgba). The following CSS colors strings are supported: named colors, hex, short-hand hex, RGB, RGBA, HSL, HSLA.
+颜色通过 [color-rgba](https://github.com/colorjs/color-rgba) 解析。支持以下 CSS 颜色字符串：具名颜色、hex、简写 hex、RGB、RGBA、HSL、HSLA。
 
-#### Webfonts
+#### Web 字体
 
-Preload fonts before creating PixiGraph with [FontFaceObserver](https://github.com/bramstein/fontfaceobserver).
+在创建 PixiGraph 之前，用 [FontFaceObserver](https://github.com/bramstein/fontfaceobserver) 预加载字体。
 
-[Material Icons](https://google.github.io/material-design-icons/) example:
+[Material Icons](https://google.github.io/material-design-icons/) 示例：
 
 ```html
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -104,19 +102,19 @@ const style = {
 
 await new FontFaceObserver('Material Icons').load();
 
-const pixiGraph = new PixiGraph.PixiGraph({ ..., style });
+const pixiGraph = await PixiGraph.create({ ..., style });
 ```
 
-#### Bitmap fonts
+#### 位图字体
 
-Register bitmap fonts as [resource-loader](https://github.com/englercj/resource-loader) external resource.
+将位图字体注册为外部资源。
 
 ```ts
 const style = {
   node: {
     label: {
       content: node => node.id,
-      type: PixiGraph.TextType.BITMAP_TEXT,
+      type: TextType.BITMAP_TEXT,
       fontFamily: 'HelveticaRegular',
     },
   },
@@ -126,12 +124,12 @@ const resources = [
   { name: 'HelveticaRegular', url: 'https://gist.githubusercontent.com/zakjan/b61c0a26d297edf0c09a066712680f37/raw/8cdda3c21ba3668c3dd022efac6d7f740c9f1e18/HelveticaRegular.fnt' },
 ];
 
-const pixiGraph = new PixiGraph.PixiGraph({ ..., style, resources });
+const pixiGraph = await PixiGraph.create({ ..., style, resources });
 ```
 
-#### Hover style
+#### 悬停样式
 
-Hover style values override style values when node/edge is hovered.
+节点/边被悬停时，hover 样式中的值会覆盖基础样式中的值。
 
 ```ts
 const style = {
@@ -151,10 +149,10 @@ const hoverStyle = {
   },
 };
 
-const pixiGraph = new PixiGraph.PixiGraph({ ..., style, hoverStyle });
+const pixiGraph = await PixiGraph.create({ ..., style, hoverStyle });
 ```
 
-⚠️ subject to change with the implementation of other states
+⚠️ 随着其他状态的实现，此处可能变化
 
 ## API
 
@@ -164,28 +162,37 @@ export interface GraphOptions<NodeAttributes extends BaseNodeAttributes = BaseNo
   graph: Graphology.AbstractGraph<NodeAttributes, EdgeAttributes>;
   style: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   hoverStyle: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
-  resources?: ResourceLoader.IAddOptions[];
+  spaceDrag?: boolean;
+  dragOffset?: boolean;
+  highPerformance?: { nodeNumber: number; edgeNumber: number };
+  minScale?: number;
+  maxScale?: number;
+  resources?: any[];
 }
 
 export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> {
+  static create(options: GraphOptions): Promise<PixiGraph>;
   constructor(options: GraphOptions<NodeAttributes, EdgeAttributes>);
+  readonly ready: Promise<this>;
 }
 ```
 
-- `container` - HTML element to use as a container
-- `graph` - [Graphology](https://graphology.github.io/) graph
-- `style` - style definition
-- `hoverStyle` - additional style definition for hover state
-  - ⚠️ subject to change with the implementation of other states
-- `resources` - [resource-loader](https://github.com/englercj/resource-loader) external resource definitions
-  - resources are passed to loader.add function
-  - currently used only for external bitmap fonts
+- `container` - 用作容器的 HTML 元素
+- `graph` - [Graphology](https://graphology.github.io/) 图
+- `style` - 样式定义
+- `hoverStyle` - 悬停状态的附加样式定义
+  - ⚠️ 随着其他状态的实现，此处可能变化
+- `spaceDrag` - 仅在按住空格时平移（让普通拖拽可用于框选）
+- `dragOffset` - 拖拽时保持光标与节点的偏移，而非吸附到节点中心
+- `highPerformance` - 节点/边数量超过阈值时，交互期间隐藏边/标签以提升性能
+- `minScale` / `maxScale` - 最小/最大缩放比例（默认 `0.1` / `2`）
+- `resources` - 外部资源定义（目前仅用于外部位图字体）
 
-### Style definition
+### 样式定义
 
-`GraphStyle` interface represents a resolved style, all values are mandatory.
+`GraphStyle` 接口表示已解析的样式，所有值都是必填的。
 
-`GraphStyleDefinition` interface allows functions or missing values at any key. Functions are resolved, missing values fall back to a previous definition, or default values.
+`GraphStyleDefinition` 接口允许在任意 key 上使用函数或省略值。函数会被解析，省略的值回退到上一层定义或默认值。
 
 ```ts
 export interface GraphStyle {
@@ -233,7 +240,7 @@ export interface GraphStyleDefinition<NodeAttributes extends BaseNodeAttributes 
 }
 ```
 
-This allows either static styles, or data-driven styles at any style definition level. Each function is resolved only once.
+这允许在任意样式层级使用静态样式或数据驱动样式。每个函数只解析一次。
 
 ```ts
 const style = {
@@ -243,7 +250,7 @@ const style = {
 };
 ```
 
-or
+或
 
 ```ts
 const style = {
@@ -253,7 +260,7 @@ const style = {
 };
 ```
 
-or
+或
 
 ```ts
 const style = {
@@ -264,24 +271,29 @@ const style = {
 };
 ```
 
-### Events
+### 事件
 
-Node events:
+节点事件：
 
 - nodeClick
+- nodeDbclick
+- nodeRightclick
 - nodeMousemove
 - nodeMouseover
 - nodeMouseout
 - nodeMousedown
 - nodeMouseup
+- nodeMoveStart / nodeMove / nodeMoveEnd
 
 ```ts
 pixiGraph.on('nodeClick', (event, nodeKey) => ...);
 ```
 
-Edge events:
+边事件：
 
 - edgeClick
+- edgeDbclick
+- edgeRightclick
 - edgeMousemove
 - edgeMouseover
 - edgeMouseout
@@ -292,21 +304,25 @@ Edge events:
 pixiGraph.on('edgeClick', (event, edgeKey) => ...);
 ```
 
-## Development
+视口事件：`viewportClick`、`viewportRightClick`。
 
-Built with [Vite](https://vitejs.dev/) (dev server + library build) and [Vitest](https://vitest.dev/).
+## 开发
+
+使用 [Vite](https://vitejs.dev/)（开发服务器 + 库构建）和 [Vitest](https://vitest.dev/) 构建。
 
 ```
-npm run dev        # start the demo at localhost:5173 with hot module reload
-npm run build      # typecheck + build dist/ (ESM + UMD + .d.ts)
-npm test           # run unit tests
-npm run test:watch # watch mode
-npm run lint       # eslint + prettier check
-npm run format     # prettier write
+npm run dev        # 在 localhost:5173 启动演示，带热模块替换（HMR）
+npm run build      # 类型检查 + 构建 dist/（ESM + UMD + .d.ts）
+npm test           # 运行单元测试
+npm run test:watch # 监听模式
+npm run lint       # eslint + prettier 检查
+npm run format     # prettier 写回
 ```
 
-The source is organized as: `PixiGraph.ts` (orchestrator) · `elements/` (PixiNode / PixiEdge) · `renderers/` (stateless draw functions) · `textures/` (texture cache) · `style/` (style resolution) · `features/` (box selection, watermark) · `core/` (constants & types) · `utils/`.
+演示页（`demo/main.ts`）通过 `pixi-graph` 别名直接引用 `src/` 源码，因此改动源码会经 HMR 立即生效，无需先构建。
 
-## Sponsors
+源码组织结构：`PixiGraph.ts`（编排核心）· `elements/`（PixiNode / PixiEdge 包装类）· `renderers/`（无状态绘制函数）· `textures/`（纹理缓存）· `style/`（样式解析）· `features/`（框选、水印）· `core/`（常量与类型）· `utils/`（颜色、文本、节流等工具）。
+
+## 赞助
 
 <a href="https://reflect.app/"><img src="https://reflect.app/static/icons/icon-bare.svg" alt="Reflect" width="48" height="48"></a>
