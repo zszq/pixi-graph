@@ -19,8 +19,57 @@ const DATASETS = [
   { key: 'data-1000-2000', label: '1000点2000边' },
   { key: 'data-10000-20000', label: '10000点20000边' },
   { key: 'data-50000-100000', label: '50000点100000边' },
-  { key: 'data-50000-100000-noicon', label: '50000点100000边(无图)' }
+  { key: 'data-50000-100000-noicon', label: '50000点100000边(无图)' },
+  { key: 'data-star-1-5000', label: '星形1中心5000边' }
 ];
+
+// —— 加载进度条 —— 大数据加载分多个阶段，逐段更新遮罩里的进度条，避免长时间白屏。
+const $loading = document.getElementById('loading')!;
+const $bar = document.getElementById('loading-bar')!;
+const $text = document.getElementById('loading-text')!;
+const $pct = document.getElementById('loading-pct')!;
+
+function setProgress(ratio: number, text?: string) {
+  const pct = Math.max(0, Math.min(1, ratio));
+  $bar.style.width = `${Math.round(pct * 100)}%`;
+  $pct.textContent = `${Math.round(pct * 100)}%`;
+  if (text) $text.textContent = text;
+}
+
+function hideLoading() {
+  $loading.classList.add('hidden');
+}
+
+// 让出一帧给浏览器，使进度条/文案能真正绘制出来（同步循环会一直占着主线程）。
+const nextFrame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+
+// 流式读取 JSON，借 Content-Length 给出真实的下载百分比；拿不到长度时退化为普通 fetch。
+async function fetchJsonWithProgress(url: string, onProgress: (ratio: number) => void): Promise<RawData> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`加载数据失败：${res.status} ${res.statusText}`);
+  const total = Number(res.headers.get('Content-Length')) || 0;
+  const reader = res.body?.getReader();
+  if (!reader || !total) {
+    onProgress(1);
+    return (await res.json()) as RawData;
+  }
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    onProgress(Math.min(1, received / total));
+  }
+  const buf = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) {
+    buf.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return JSON.parse(new TextDecoder().decode(buf)) as RawData;
+}
 
 // 渲染数据集切换按钮，点击后带 ?data= 参数重载页面（切换数据需重建实例，重载最稳妥）。
 function renderDatasetButtons(activeKey: string) {
@@ -48,9 +97,13 @@ async function main() {
   const activeKey = DATASETS.some(d => d.key === requested) ? requested! : DATASETS[0].key;
   renderDatasetButtons(activeKey);
 
+  // 下载数据占进度条 0~40%，用流式读取给出真实百分比。
   const dataPath = `/demo/data/${activeKey}.json`;
-  const { nodes, links } = (await (await fetch(dataPath)).json()) as RawData;
+  setProgress(0, '下载数据…');
+  const { nodes, links } = await fetchJsonWithProgress(dataPath, r => setProgress(r * 0.4, '下载数据…'));
 
+  setProgress(0.42, '构建图…');
+  await nextFrame();
   const graph = new Graph<NodeAttrs, EdgeAttrs>({ multi: true, type: 'undirected' });
   // 数据里的图标用相对路径 ./images/...，但页面根是 /，图片实际由 /demo/ 提供，
   // 这里归一化到实际可访问的地址，避免 Assets.load 命中 SPA 回退的 index.html。
@@ -71,7 +124,17 @@ async function main() {
   // 迭代次数按规模自适应：大图跑 300 次 forceAtlas2 会卡死浏览器。
   const order = graph.order;
   const iterations = order > 50000 ? 15 : order > 10000 ? 40 : order > 1000 ? 120 : 300;
-  forceAtlas2.assign(graph, { iterations, settings: { ...forceAtlas2.inferSettings(graph), scalingRatio: 500 } });
+  // 布局占进度条 55~90%：把迭代分成若干批，每批后让出一帧，既能推进进度条又不冻结页面。
+  setProgress(0.55, '布局计算…');
+  await nextFrame();
+  const settings = { ...forceAtlas2.inferSettings(graph), scalingRatio: 500 };
+  const chunk = Math.max(1, Math.ceil(iterations / 20));
+  for (let done = 0; done < iterations; done += chunk) {
+    const n = Math.min(chunk, iterations - done);
+    forceAtlas2.assign(graph, { iterations: n, settings });
+    setProgress(0.55 + 0.35 * ((done + n) / iterations), '布局计算…');
+    await nextFrame();
+  }
 
   const style: GraphStyleDefinition<NodeAttrs, EdgeAttrs> = {
     node: {
@@ -119,6 +182,8 @@ async function main() {
     edge: { color: COLOR_SELECTED, label: { backgroundColor: 'rgba(255, 255, 255, 0.6)' } }
   };
 
+  setProgress(0.92, '渲染…');
+  await nextFrame();
   const container = document.getElementById('graph')!;
   const pixiGraph = await PixiGraph.create({
     container,
@@ -127,6 +192,8 @@ async function main() {
     hoverStyle,
     highPerformance: { nodeNumber: 5000, edgeNumber: 5000 }
   });
+  setProgress(1, '完成');
+  hideLoading();
 
   pixiGraph.enableSelect(selection => console.log('selection', selection), true);
   pixiGraph.on('nodeClick', (_event, nodeKey) => console.log('nodeClick', nodeKey));
@@ -166,4 +233,9 @@ async function main() {
   (window as unknown as Record<string, unknown>).pixiGraph = pixiGraph;
 }
 
-main().catch(console.error);
+main().catch(err => {
+  console.error(err);
+  // 出错时别让进度遮罩一直盖着，把错误显示出来。
+  $text.textContent = `加载失败：${err?.message ?? err}`;
+  $text.style.color = '#dc2626';
+});

@@ -70,10 +70,54 @@
         top: auto;
         bottom: 12px;
       }
+      /* 加载进度遮罩：盖住画布，避免大数据加载时长时间白屏 */
+      #loading {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: #fff;
+        transition: opacity 0.3s ease;
+      }
+      #loading.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #loading .track {
+        width: 280px;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      #loading .bar {
+        height: 100%;
+        width: 0;
+        background: #4a5fe2;
+        border-radius: 999px;
+        transition: width 0.15s ease;
+      }
+      #loading .text {
+        font-size: 13px;
+        color: #374151;
+      }
+      #loading .pct {
+        font-size: 12px;
+        color: #9ca3af;
+      }
     </style>
   </head>
   <body>
     <div id="graph"></div>
+    <div id="loading">
+      <div class="text" id="loading-text">准备中…</div>
+      <div class="track"><div class="bar" id="loading-bar"></div></div>
+      <div class="pct" id="loading-pct">0%</div>
+    </div>
     <div id="datasets"></div>
     <div id="controls">
       <button id="zoom-in">Zoom In</button>
