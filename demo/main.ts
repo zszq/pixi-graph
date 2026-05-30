@@ -1,186 +1,23 @@
-import Graph from 'graphology';
-import forceAtlas2 from 'graphology-layout-forceatlas2';
-import { PixiGraph, TextType, type GraphStyleDefinition } from 'pixi-graph';
-
-const NODE_COLOR = '#C6CCF5';
-const COLOR_SELECTED = '#ff7f0e';
-
-interface RawData {
-  nodes: { id: string; label?: string; icon?: string }[];
-  links: { source: string; target: string; label?: string; value?: number }[];
-}
-
-type NodeAttrs = { x: number; y: number; id: string; label?: string; icon?: string };
-type EdgeAttrs = { source: string; target: string; label?: string; value?: number };
-
-// 不同规模的测试数据集，对应右上角切换按钮。
-const DATASETS = [
-  { key: 'data-50-100', label: '50点100边' },
-  { key: 'data-1000-2000', label: '1000点2000边' },
-  { key: 'data-10000-20000', label: '10000点20000边' },
-  { key: 'data-50000-100000', label: '50000点100000边' },
-  { key: 'data-50000-100000-noicon', label: '50000点100000边(无图)' },
-  { key: 'data-star-1-5000', label: '星形1中心5000边' }
-];
-
-// —— 加载进度条 —— 大数据加载分多个阶段，逐段更新遮罩里的进度条，避免长时间白屏。
-const $loading = document.getElementById('loading')!;
-const $bar = document.getElementById('loading-bar')!;
-const $text = document.getElementById('loading-text')!;
-const $pct = document.getElementById('loading-pct')!;
-
-function setProgress(ratio: number, text?: string) {
-  const pct = Math.max(0, Math.min(1, ratio));
-  $bar.style.width = `${Math.round(pct * 100)}%`;
-  $pct.textContent = `${Math.round(pct * 100)}%`;
-  if (text) $text.textContent = text;
-}
-
-function hideLoading() {
-  $loading.classList.add('hidden');
-}
-
-// 让出一帧给浏览器，使进度条/文案能真正绘制出来（同步循环会一直占着主线程）。
-const nextFrame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-
-// 流式读取 JSON，借 Content-Length 给出真实的下载百分比；拿不到长度时退化为普通 fetch。
-async function fetchJsonWithProgress(url: string, onProgress: (ratio: number) => void): Promise<RawData> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`加载数据失败：${res.status} ${res.statusText}`);
-  const total = Number(res.headers.get('Content-Length')) || 0;
-  const reader = res.body?.getReader();
-  if (!reader || !total) {
-    onProgress(1);
-    return (await res.json()) as RawData;
-  }
-  const chunks: Uint8Array[] = [];
-  let received = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    received += value.length;
-    onProgress(Math.min(1, received / total));
-  }
-  const buf = new Uint8Array(received);
-  let offset = 0;
-  for (const chunk of chunks) {
-    buf.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return JSON.parse(new TextDecoder().decode(buf)) as RawData;
-}
-
-// 渲染数据集切换按钮，点击后带 ?data= 参数重载页面（切换数据需重建实例，重载最稳妥）。
-function renderDatasetButtons(activeKey: string) {
-  const panel = document.getElementById('datasets')!;
-  const title = document.createElement('div');
-  title.className = 'title';
-  title.textContent = '测试数据';
-  panel.appendChild(title);
-  DATASETS.forEach(({ key, label }) => {
-    const btn = document.createElement('button');
-    btn.textContent = label;
-    if (key === activeKey) btn.classList.add('active');
-    btn.addEventListener('click', () => {
-      const url = new URL(location.href);
-      url.searchParams.set('data', key);
-      location.href = url.toString();
-    });
-    panel.appendChild(btn);
-  });
-}
+import { PixiGraph } from 'pixi-graph';
+import { bindControls } from './controls';
+import { buildGraph, fetchJsonWithProgress, runLayout } from './data';
+import { renderDatasetButtons, resolveActiveKey } from './datasets';
+import { hideLoading, nextFrame, setProgress, showError, stage } from './loading';
+import { hoverStyle, style } from './style';
 
 async function main() {
-  // 从 URL ?data= 读取数据集，缺省用最小图；非法值回退到第一个。
-  const requested = new URLSearchParams(location.search).get('data');
-  const activeKey = DATASETS.some(d => d.key === requested) ? requested! : DATASETS[0].key;
+  const activeKey = resolveActiveKey();
   renderDatasetButtons(activeKey);
 
-  // 下载数据占进度条 0~40%，用流式读取给出真实百分比。
+  // 各阶段在进度条上的区间：下载 0~40%、建图 ~50%、布局 55~90%、渲染 92~100%。
   const dataPath = `/demo/data/${activeKey}.json`;
-  setProgress(0, '下载数据…');
-  const { nodes, links } = await fetchJsonWithProgress(dataPath, r => setProgress(r * 0.4, '下载数据…'));
+  const raw = await fetchJsonWithProgress(dataPath, stage(0, 0.4, '下载数据…'));
 
   setProgress(0.42, '构建图…');
   await nextFrame();
-  const graph = new Graph<NodeAttrs, EdgeAttrs>({ multi: true, type: 'undirected' });
-  // 数据里的图标用相对路径 ./images/...，但页面根是 /，图片实际由 /demo/ 提供，
-  // 这里归一化到实际可访问的地址，避免 Assets.load 命中 SPA 回退的 index.html。
-  nodes.forEach(node => {
-    const icon = node.icon ? node.icon.replace(/^\.\//, '/demo/') : node.icon;
-    graph.addNode(node.id, { x: 0, y: 0, ...node, icon });
-  });
-  links.forEach(link => {
-    const key = `${link.source}->${link.target}`;
-    if (!graph.hasEdge(key)) graph.addEdgeWithKey(key, link.source, link.target, { ...link });
-  });
+  const graph = buildGraph(raw);
 
-  // random seed positions, then a force-directed layout
-  graph.forEachNode(node => {
-    graph.setNodeAttribute(node, 'x', Math.random());
-    graph.setNodeAttribute(node, 'y', Math.random());
-  });
-  // 迭代次数按规模自适应：大图跑 300 次 forceAtlas2 会卡死浏览器。
-  const order = graph.order;
-  const iterations = order > 50000 ? 15 : order > 10000 ? 40 : order > 1000 ? 120 : 300;
-  // 布局占进度条 55~90%：把迭代分成若干批，每批后让出一帧，既能推进进度条又不冻结页面。
-  setProgress(0.55, '布局计算…');
-  await nextFrame();
-  const settings = { ...forceAtlas2.inferSettings(graph), scalingRatio: 500 };
-  const chunk = Math.max(1, Math.ceil(iterations / 20));
-  for (let done = 0; done < iterations; done += chunk) {
-    const n = Math.min(chunk, iterations - done);
-    forceAtlas2.assign(graph, { iterations: n, settings });
-    setProgress(0.55 + 0.35 * ((done + n) / iterations), '布局计算…');
-    await nextFrame();
-  }
-
-  const style: GraphStyleDefinition<NodeAttrs, EdgeAttrs> = {
-    node: {
-      size: () => 15,
-      color: () => NODE_COLOR,
-      border: { width: 2, color: '#4A5FE2' },
-      icon: {
-        type: node => (node.icon ? TextType.IMAGE : TextType.TEXT),
-        content: node => node.icon ?? '',
-        fontFamily: 'iconfont',
-        fontSize: () => 50,
-        color: '#ffffff'
-      },
-      label: {
-        content: node => node.label ?? node.id,
-        type: TextType.TEXT,
-        align: 'center',
-        fontSize: 12,
-        color: '#000',
-        stroke: '#fff',
-        strokeThickness: 2,
-        padding: 2
-      }
-    },
-    edge: {
-      width: () => 1,
-      color: () => '#999',
-      arrow: { show: true, size: edge => (Math.log((edge.value ?? 0) + 1) + 2) * 2 },
-      label: {
-        content: edge => edge.label ?? edge.target ?? '',
-        type: TextType.TEXT,
-        fontSize: 12,
-        fontWeight: '500',
-        color: '#000',
-        stroke: '#fff',
-        strokeThickness: 2,
-        padding: 2,
-        parallel: true
-      }
-    }
-  };
-
-  const hoverStyle: GraphStyleDefinition<NodeAttrs, EdgeAttrs> = {
-    node: { border: { color: COLOR_SELECTED }, label: { backgroundColor: 'rgba(255, 255, 255, 0.6)' } },
-    edge: { color: COLOR_SELECTED, label: { backgroundColor: 'rgba(255, 255, 255, 0.6)' } }
-  };
+  await runLayout(graph, stage(0.55, 0.9, '布局计算…'));
 
   setProgress(0.92, '渲染…');
   await nextFrame();
@@ -199,43 +36,10 @@ async function main() {
   pixiGraph.on('nodeClick', (_event, nodeKey) => console.log('nodeClick', nodeKey));
   pixiGraph.on('viewportClick', () => console.log('viewportClick'));
 
-  document.getElementById('zoom-in')!.addEventListener('click', () => pixiGraph.zoomIn());
-  document.getElementById('zoom-out')!.addEventListener('click', () => pixiGraph.zoomOut());
-
-  let watermarkName: string | undefined;
-  document.getElementById('watermark')!.addEventListener('click', () => {
-    if (watermarkName) {
-      pixiGraph.clearWatermark();
-      watermarkName = undefined;
-    } else {
-      watermarkName = pixiGraph.createWatermark({
-        type: 'TEXT',
-        content: 'pixi-graph',
-        cover: true,
-        row: 5,
-        column: 6,
-        position: { x: 0, y: 0 },
-        rotation: -Math.PI / 8,
-        style: { fontFamily: 'Arial', fontSize: 24, fontWeight: 'normal', color: 'rgba(0,0,0,0.12)' }
-      });
-    }
-  });
-
-  document.getElementById('extract')!.addEventListener('click', async () => {
-    const dataUrl = await pixiGraph.extract();
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = 'pixi-graph.png';
-    link.click();
-  });
+  bindControls(pixiGraph);
 
   // expose for console tinkering
   (window as unknown as Record<string, unknown>).pixiGraph = pixiGraph;
 }
 
-main().catch(err => {
-  console.error(err);
-  // 出错时别让进度遮罩一直盖着，把错误显示出来。
-  $text.textContent = `加载失败：${err?.message ?? err}`;
-  $text.style.color = '#dc2626';
-});
+main().catch(showError);
