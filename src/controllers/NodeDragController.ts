@@ -10,8 +10,7 @@ type GraphEmit = import('eventemitter3').EventEmitter<PixiGraphEvents>['emit'];
 
 interface NodeDragMutations {
   updateNodePositionByKey(nodeKey: string, position: PointData): void;
-  updateConnectedEdgesByNodeKey(nodeKey: string, refreshStyle: boolean): void;
-  updateNodeStyleByKey(nodeKey: string): void;
+  updateConnectedEdgesByNodeKey(nodeKey: string): void;
   endNodeDrag(nodeKey: string): void;
 }
 
@@ -89,23 +88,25 @@ export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeA
 
     this.suppressedNodeAttributeUpdates.add(nodeKey);
     try {
-      this.graph.setNodeAttribute(nodeKey, 'x', newPosition.x);
-      this.graph.setNodeAttribute(nodeKey, 'y', newPosition.y);
+      this.graph.updateNodeAttributes(nodeKey, attributes => ({
+        ...attributes,
+        x: newPosition.x,
+        y: newPosition.y
+      }));
     } finally {
       this.suppressedNodeAttributeUpdates.delete(nodeKey);
     }
 
     this.mutationController.updateNodePositionByKey(nodeKey, newPosition);
     this.hidePerformanceLayers();
-    if (!this.isHighMode()) this.mutationController.updateConnectedEdgesByNodeKey(nodeKey, false);
+    if (!this.isHighMode()) this.mutationController.updateConnectedEdgesByNodeKey(nodeKey);
     this.emit('nodeMove', event, nodeKey, newPosition);
   }
 
   private handleDocumentMouseUp(event: MouseEvent, nodeKey: string): void {
     this.viewport.pause = false;
     this.showPerformanceLayers();
-    this.mutationController.updateNodeStyleByKey(nodeKey);
-    this.mutationController.updateConnectedEdgesByNodeKey(nodeKey, true);
+    this.mutationController.updateConnectedEdgesByNodeKey(nodeKey);
 
     document.removeEventListener('mousemove', this.onDocumentMouseMoveBound);
     this.mousedownNodeKey = null;

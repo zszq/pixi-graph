@@ -60,6 +60,6 @@ describe('NodeDragController', () => {
 
     expect(controller.isDragging()).toBe(false);
     expect(mutationController.endNodeDrag).toHaveBeenCalledWith('A');
-    expect(mutationController.updateNodeStyleByKey).toHaveBeenCalledWith('A');
+    expect(mutationController.updateConnectedEdgesByNodeKey).toHaveBeenCalledWith('A');
   });
 });

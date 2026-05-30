@@ -1,6 +1,6 @@
 import { type PointData } from 'pixi.js';
 import type { AbstractGraph } from 'graphology-types';
-import type { GraphStyleDefinition } from '../style/style';
+import type { EdgeStyle, GraphStyleDefinition, NodeStyle } from '../style/style';
 import { DEFAULT_STYLE } from '../core/constants';
 import { resolveStyleDefinitions } from '../style/style';
 import { isSamePoint } from '../utils/pointer';
@@ -107,7 +107,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   handleGraphNodeAttributesUpdated(data: { key: string }): void {
     if (this.shouldIgnoreNodeAttributeUpdate(data.key)) return;
     this.updateNodeStyleByKey(data.key);
-    this.updateConnectedEdgesByNodeKey(data.key, true);
+    this.updateConnectedEdgesByNodeKey(data.key);
   }
 
   handleGraphEdgeAttributesUpdated(data: { key: string }): void {
@@ -146,7 +146,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   setNodeEdgesRenderable(nodeKey: string, renderable: boolean): void {
     this.graph.forEachEdge(nodeKey, edgeKey => {
       const edge = this.edgeKeyToEdgeObject.get(edgeKey);
-      if (edge) edge.setRenderable(renderable);
+      if (!edge) return;
+      edge.setRenderable(renderable);
       if (renderable) this.updateEdgeStyleByKey(edgeKey);
     });
   }
@@ -162,11 +163,10 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.updateEdgeStyle(edgeKey, edgeAttributes, sourceNodeKey, targetNodeKey, this.graph.getNodeAttributes(sourceNodeKey), this.graph.getNodeAttributes(targetNodeKey));
   }
 
-  updateConnectedEdgesByNodeKey(nodeKey: string, refreshStyle: boolean): void {
+  updateConnectedEdgesByNodeKey(nodeKey: string): void {
     this.graph.forEachEdge(nodeKey, edgeKey => {
       if (!this.edgeKeyToEdgeObject.has(edgeKey)) return;
-      if (refreshStyle) this.updateEdgeStyleByKey(edgeKey);
-      else this.updateEdgePositionByKey(edgeKey);
+      this.updateEdgePositionByKey(edgeKey);
     });
   }
 
@@ -185,23 +185,19 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
 
   updateEdgePositionByKey(edgeKey: string): void {
     const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
-    const edgeAttributes = this.graph.getEdgeAttributes(edgeKey);
     const sourceNodeKey = this.graph.source(edgeKey);
     const targetNodeKey = this.graph.target(edgeKey);
     const sourceNodeAttributes = this.graph.getNodeAttributes(sourceNodeKey);
     const targetNodeAttributes = this.graph.getNodeAttributes(targetNodeKey);
     const sourceNode = this.nodeKeyToNodeObject.get(sourceNodeKey)!;
     const targetNode = this.nodeKeyToNodeObject.get(targetNodeKey)!;
-    const edgeStyle = resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, edge.hovered ? this.hoverStyle.edge : undefined], edgeAttributes);
-    const sourceNodeStyle = resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, sourceNode.hovered ? this.hoverStyle.node : undefined], sourceNodeAttributes);
-    const targetNodeStyle = resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, targetNode.hovered ? this.hoverStyle.node : undefined], targetNodeAttributes);
 
     edge.updatePosition(
       { x: sourceNodeAttributes.x, y: sourceNodeAttributes.y },
       { x: targetNodeAttributes.x, y: targetNodeAttributes.y },
-      edgeStyle,
-      sourceNodeStyle,
-      targetNodeStyle
+      edge.edgeStyle ?? this.resolveEdgeStyle(edge, this.graph.getEdgeAttributes(edgeKey)),
+      sourceNode.nodeStyle,
+      targetNode.nodeStyle
     );
   }
 
@@ -335,7 +331,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     const node = this.nodeKeyToNodeObject.get(nodeKey)!;
     node.updatePosition({ x: nodeAttributes.x, y: nodeAttributes.y });
 
-    const nodeStyle = resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, node.hovered ? this.hoverStyle.node : undefined], nodeAttributes);
+    const nodeStyle = this.resolveNodeStyle(node, nodeAttributes);
     node.updateStyle(nodeStyle, this.textureCache);
     node.updateAlpha(nodeStyle);
   }
@@ -352,20 +348,25 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     const sourceNode = this.nodeKeyToNodeObject.get(sourceNodeKey)!;
     const targetNode = this.nodeKeyToNodeObject.get(targetNodeKey)!;
 
-    const edgeStyle = resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, edge.hovered ? this.hoverStyle.edge : undefined], edgeAttributes);
+    const edgeStyle = this.resolveEdgeStyle(edge, edgeAttributes);
     edge.updateStyle(edgeStyle, this.textureCache);
-
-    const sourceNodeStyle = resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, sourceNode.hovered ? this.hoverStyle.node : undefined], sourceNodeAttributes);
-    const targetNodeStyle = resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, targetNode.hovered ? this.hoverStyle.node : undefined], targetNodeAttributes);
 
     edge.updatePosition(
       { x: sourceNodeAttributes.x, y: sourceNodeAttributes.y },
       { x: targetNodeAttributes.x, y: targetNodeAttributes.y },
       edgeStyle,
-      sourceNodeStyle,
-      targetNodeStyle
+      sourceNode.nodeStyle,
+      targetNode.nodeStyle
     );
     edge.updateAlpha(edgeStyle);
+  }
+
+  private resolveNodeStyle(node: PixiNode, nodeAttributes: NodeAttributes): NodeStyle {
+    return resolveStyleDefinitions([DEFAULT_STYLE.node, this.style.node, node.hovered ? this.hoverStyle.node : undefined], nodeAttributes);
+  }
+
+  private resolveEdgeStyle(edge: PixiEdge, edgeAttributes: EdgeAttributes): EdgeStyle {
+    return resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, edge.hovered ? this.hoverStyle.edge : undefined], edgeAttributes);
   }
 
   private updateParallelEdgeGroup(edgeKey: string, sourceNodeKey: string, targetNodeKey: string): void {
