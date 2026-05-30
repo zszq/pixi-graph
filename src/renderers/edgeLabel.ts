@@ -31,20 +31,20 @@ export function updateEdgeLabelStyle(edgeLabelGfx: Container, edgeStyle: EdgeSty
     textToPixi(type, content, { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness })
   );
 
-  const edgeLabelBackground = edgeLabelGfx.getChildByLabel(EDGE_LABEL_BACKGROUND) as Sprite;
+  const edgeLabelBackground = edgeLabelGfx.children[0] as Sprite;
   edgeLabelBackground.width = edgeLabelTextTexture.width + padding * 2;
   edgeLabelBackground.height = edgeLabelTextTexture.height + padding * 2;
   [edgeLabelBackground.tint, edgeLabelBackground.alpha] = colorToPixi(backgroundColor);
 
-  const edgeLabelText = edgeLabelGfx.getChildByLabel(EDGE_LABEL_TEXT) as Sprite;
+  const edgeLabelText = edgeLabelGfx.children[1] as Sprite;
   edgeLabelText.texture = edgeLabelTextTexture;
 }
 
 // LOD：与节点标签一致——文本 zoomStep>=2 出现，背景框 zoomStep>=3 才出现。
 export function updateEdgeLabelVisibility(edgeLabelGfx: Container, zoomStep: number): void {
-  const edgeLabelBackground = edgeLabelGfx.getChildByLabel(EDGE_LABEL_BACKGROUND) as Sprite;
+  const edgeLabelBackground = edgeLabelGfx.children[0] as Sprite;
   edgeLabelBackground.renderable = zoomStep >= 3;
 
-  const edgeLabelText = edgeLabelGfx.getChildByLabel(EDGE_LABEL_TEXT) as Sprite;
+  const edgeLabelText = edgeLabelGfx.children[1] as Sprite;
   edgeLabelText.renderable = zoomStep >= 2;
 }

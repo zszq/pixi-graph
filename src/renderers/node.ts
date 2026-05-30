@@ -98,7 +98,7 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
 
   function applyNodeIcon(nodeIconTexture: Texture): void {
     // 图片为异步加载，回调到达时节点可能已被移除/销毁，需防御性判空。
-    const nodeIcon = nodeGfx.getChildByLabel(NODE_ICON) as Sprite | null;
+    const nodeIcon = nodeGfx.children[2] as Sprite | undefined;
     if (!nodeIcon) return;
     nodeIcon.texture = nodeIconTexture;
     [nodeIcon.tint, nodeIcon.alpha] = colorToPixi(color);
@@ -108,11 +108,11 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
 
   (nodeGfx.hitArea as Circle).radius = nodeOuterSize;
 
-  const nodeCircle = nodeGfx.getChildByLabel(NODE_CIRCLE) as Sprite;
+  const nodeCircle = nodeGfx.children[0] as Sprite;
   nodeCircle.texture = nodeCircleTexture;
   [nodeCircle.tint, nodeCircle.alpha] = colorToPixi(nodeStyle.color);
 
-  const nodeCircleBorder = nodeGfx.getChildByLabel(NODE_CIRCLE_BORDER) as Sprite;
+  const nodeCircleBorder = nodeGfx.children[1] as Sprite;
   nodeCircleBorder.texture = nodeCircleBorderTexture;
   [nodeCircleBorder.tint, nodeCircleBorder.alpha] = colorToPixi(nodeStyle.border.color);
 }
@@ -120,9 +120,9 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
 // LOD：缩放档位越高显示越多细节。圆形主体始终绘制（剔除由 Culler 负责），
 // 描边在 zoomStep>=1 出现、图标在 zoomStep>=2 才出现，远观时省去细碎绘制。
 export function updateNodeVisibility(nodeGfx: Container, zoomStep: number): void {
-  const nodeCircleBorder = nodeGfx.getChildByLabel(NODE_CIRCLE_BORDER) as Sprite;
+  const nodeCircleBorder = nodeGfx.children[1] as Sprite;
   nodeCircleBorder.renderable = zoomStep >= 1;
 
-  const nodeIcon = nodeGfx.getChildByLabel(NODE_ICON) as Sprite;
+  const nodeIcon = nodeGfx.children[2] as Sprite;
   nodeIcon.renderable = zoomStep >= 2;
 }

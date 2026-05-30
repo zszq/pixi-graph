@@ -106,8 +106,9 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
 
   handleGraphNodeAttributesUpdated(data: { key: string }): void {
     if (this.shouldIgnoreNodeAttributeUpdate(data.key)) return;
-    this.updateNodeStyleByKey(data.key);
-    this.updateConnectedEdgesByNodeKey(data.key);
+    if (this.syncNodeByKey(data.key)) {
+      this.updateConnectedEdgesByNodeKey(data.key);
+    }
   }
 
   handleGraphEdgeAttributesUpdated(data: { key: string }): void {
@@ -115,8 +116,12 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   }
 
   handleGraphEachNodeAttributesUpdated(): void {
-    this.graph.forEachNode(this.updateNodeStyle.bind(this));
-    this.graph.forEachEdge(this.updateEdgeStyleByKey.bind(this));
+    const affectedEdges = new Set<string>();
+    this.graph.forEachNode(nodeKey => {
+      if (!this.syncNodeByKey(nodeKey)) return;
+      this.graph.forEachEdge(nodeKey, edgeKey => affectedEdges.add(edgeKey));
+    });
+    for (const edgeKey of affectedEdges) this.updateEdgePositionByKey(edgeKey);
   }
 
   handleGraphEachEdgeAttributesUpdated(): void {
@@ -153,7 +158,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   }
 
   updateNodeStyleByKey(nodeKey: string): void {
-    this.updateNodeStyle(nodeKey, this.graph.getNodeAttributes(nodeKey));
+    this.syncNodeByKey(nodeKey);
   }
 
   updateEdgeStyleByKey(edgeKey: string): void {
@@ -247,7 +252,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.layers.nodeLabelLayer.addChild(node.nodeLabelGfx);
     this.nodeKeyToNodeObject.set(nodeKey, node);
 
-    this.updateNodeStyle(nodeKey, nodeAttributes);
+    this.syncNodeByKey(nodeKey, nodeAttributes);
   }
 
   private createEdge(edgeKey: string, edgeAttributes: EdgeAttributes, sourceNodeKey: string, targetNodeKey: string): void {
@@ -298,7 +303,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     const node = this.nodeKeyToNodeObject.get(nodeKey)!;
     if (node.hovered) return;
     node.hovered = true;
-    this.updateNodeStyleByKey(nodeKey);
+    if (this.syncNodeByKey(nodeKey)) this.updateConnectedEdgesByNodeKey(nodeKey);
     this.layers.nodeLayer.setChildIndex(node.nodeGfx, this.layers.nodeLayer.children.length - 1);
     this.layers.nodeLabelLayer.setChildIndex(node.nodeLabelGfx, this.layers.nodeLabelLayer.children.length - 1);
   }
@@ -307,7 +312,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     const node = this.nodeKeyToNodeObject.get(nodeKey)!;
     if (!node.hovered) return;
     node.hovered = false;
-    this.updateNodeStyleByKey(nodeKey);
+    if (this.syncNodeByKey(nodeKey)) this.updateConnectedEdgesByNodeKey(nodeKey);
   }
 
   private hoverEdge(edgeKey: string): void {
@@ -327,13 +332,17 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.updateEdgeStyleByKey(edgeKey);
   }
 
-  private updateNodeStyle(nodeKey: string, nodeAttributes: NodeAttributes): void {
+  private syncNodeByKey(nodeKey: string, nodeAttributes?: NodeAttributes): boolean {
     const node = this.nodeKeyToNodeObject.get(nodeKey)!;
-    node.updatePosition({ x: nodeAttributes.x, y: nodeAttributes.y });
+    const attributes = nodeAttributes ?? this.graph.getNodeAttributes(nodeKey);
+    const nodeStyle = this.resolveNodeStyle(node, attributes);
+    const geometryChanged =
+      node.nodeGfx.x !== attributes.x || node.nodeGfx.y !== attributes.y || node.nodeStyle.size !== nodeStyle.size || node.nodeStyle.border.width !== nodeStyle.border.width;
 
-    const nodeStyle = this.resolveNodeStyle(node, nodeAttributes);
+    node.updatePosition({ x: attributes.x, y: attributes.y });
     node.updateStyle(nodeStyle, this.textureCache);
     node.updateAlpha(nodeStyle);
+    return geometryChanged;
   }
 
   private updateEdgeStyle(

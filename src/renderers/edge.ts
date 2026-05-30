@@ -53,16 +53,16 @@ export function updateEdgeStyle(edgeGfx: Container, edgeStyle: EdgeStyle, textur
 
     (edgeGfx.hitArea as Circle).radius = edgeOuterSize;
 
-    const edgeCircle = edgeGfx.getChildByLabel(EDGE_LINE) as Sprite;
+    const edgeCircle = edgeGfx.children[0] as Sprite;
     edgeCircle.texture = edgeCircleTexture;
     edgeCircle.alpha = 0;
 
-    const edgeCircleBorder = edgeGfx.getChildByLabel(EDGE_LINE_BORDER) as Sprite;
+    const edgeCircleBorder = edgeGfx.children[1] as Sprite;
     edgeCircleBorder.texture = edgeCircleBorderTexture;
     [edgeCircleBorder.tint, edgeCircleBorder.alpha] = colorToPixi(edgeStyle.color);
   } else {
     // 普通边：白色矩形只需设线宽与着色，长度/角度由 PixiEdge.updatePosition 控制。
-    const edgeLine = edgeGfx.getChildByLabel(EDGE_LINE) as Sprite;
+    const edgeLine = edgeGfx.children[0] as Sprite;
     edgeLine.width = edgeStyle.width;
     [edgeLine.tint, edgeLine.alpha] = colorToPixi(edgeStyle.color);
   }
@@ -70,7 +70,6 @@ export function updateEdgeStyle(edgeGfx: Container, edgeStyle: EdgeStyle, textur
 
 // LOD：缩放过小（zoomStep<1）时整条边不绘制；自环取描边层、普通边取线段层。
 export function updateEdgeVisibility(edgeGfx: Container, zoomStep: number, isSelfLoop: boolean): void {
-  const label = isSelfLoop ? EDGE_LINE_BORDER : EDGE_LINE;
-  const edgeLine = edgeGfx.getChildByLabel(label) as Sprite;
+  const edgeLine = edgeGfx.children[isSelfLoop ? 1 : 0] as Sprite;
   edgeLine.renderable = zoomStep >= 1;
 }

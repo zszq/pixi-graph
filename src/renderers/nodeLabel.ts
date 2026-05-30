@@ -35,22 +35,22 @@ export function updateNodeLabelStyle(nodeLabelGfx: Container, nodeStyle: NodeSty
 
   const labelOffsetY = nodeOuterSize + (nodeLabelTextTexture.height + padding * 2) / 2;
 
-  const nodeLabelBackground = nodeLabelGfx.getChildByLabel(NODE_LABEL_BACKGROUND) as Sprite;
+  const nodeLabelBackground = nodeLabelGfx.children[0] as Sprite;
   nodeLabelBackground.y = labelOffsetY;
   nodeLabelBackground.width = nodeLabelTextTexture.width + padding * 2;
   nodeLabelBackground.height = nodeLabelTextTexture.height + padding * 2;
   [nodeLabelBackground.tint, nodeLabelBackground.alpha] = colorToPixi(backgroundColor);
 
-  const nodeLabelText = nodeLabelGfx.getChildByLabel(NODE_LABEL_TEXT) as Sprite;
+  const nodeLabelText = nodeLabelGfx.children[1] as Sprite;
   nodeLabelText.texture = nodeLabelTextTexture;
   nodeLabelText.y = labelOffsetY;
 }
 
 // LOD：文本在 zoomStep>=2 出现，背景框更晚（zoomStep>=3）才出现，避免远观时一片色块。
 export function updateNodeLabelVisibility(nodeLabelGfx: Container, zoomStep: number): void {
-  const nodeLabelBackground = nodeLabelGfx.getChildByLabel(NODE_LABEL_BACKGROUND) as Sprite;
+  const nodeLabelBackground = nodeLabelGfx.children[0] as Sprite;
   nodeLabelBackground.renderable = zoomStep >= 3;
 
-  const nodeLabelText = nodeLabelGfx.getChildByLabel(NODE_LABEL_TEXT) as Sprite;
+  const nodeLabelText = nodeLabelGfx.children[1] as Sprite;
   nodeLabelText.renderable = zoomStep >= 2;
 }

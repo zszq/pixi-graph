@@ -37,13 +37,13 @@ export function updateEdgeArrowStyle(edgeArrowGfx: Container, edgeStyle: EdgeSty
     return graphics;
   });
 
-  const edgeArrow = edgeArrowGfx.getChildByLabel(EDGE_ARROW) as Sprite;
+  const edgeArrow = edgeArrowGfx.children[0] as Sprite;
   edgeArrow.texture = edgeArrowTexture;
   [edgeArrow.tint, edgeArrow.alpha] = colorToPixi(edgeStyle.color);
 }
 
 export function updateEdgeArrowVisibility(edgeArrowGfx: Container, zoomStep: number, isSelfLoop: boolean): void {
   if (isSelfLoop) return;
-  const edgeArrow = edgeArrowGfx.getChildByLabel(EDGE_ARROW) as Sprite;
+  const edgeArrow = edgeArrowGfx.children[0] as Sprite;
   edgeArrow.renderable = edgeArrowGfx.visible && zoomStep >= 1;
 }
