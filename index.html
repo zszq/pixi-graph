@@ -17,7 +17,7 @@
       }
       #controls {
         position: absolute;
-        top: 12px;
+        bottom: 12px;
         right: 12px;
         display: flex;
         flex-direction: column;
@@ -36,7 +36,7 @@
       }
       #tools {
         position: absolute;
-        left: 12px;
+        right: 12px;
         top: 12px;
         display: flex;
         flex-direction: column;
@@ -64,7 +64,7 @@
       #datasets {
         position: absolute;
         top: 12px;
-        right: 12px;
+        left: 12px;
         display: flex;
         flex-direction: column;
         gap: 6px;
@@ -91,11 +91,6 @@
         background: #4a5fe2;
         border-color: #4a5fe2;
         color: #fff;
-      }
-      /* 控制按钮挪到数据面板下方，避免重叠 */
-      #controls {
-        top: auto;
-        bottom: 12px;
       }
       /* 加载进度遮罩：盖住画布，避免大数据加载时长时间白屏 */
       #loading {
