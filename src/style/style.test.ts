@@ -28,4 +28,15 @@ describe('resolveStyleDefinitions', () => {
     const merged = resolveStyleDefinitions([{ color: 'black' }, { color: (attrs: { hot: boolean }) => (attrs.hot ? 'orange' : 'gray') }], { hot: true });
     expect(merged).toEqual({ color: 'orange' });
   });
+
+  it('replaces arrays instead of concatenating them', () => {
+    const merged = resolveStyleDefinitions(
+      [
+        { dash: [1, 2], border: { color: 'black', stops: [0, 1] } },
+        { dash: [3], border: { stops: [2] } }
+      ],
+      {}
+    );
+    expect(merged).toEqual({ dash: [3], border: { color: 'black', stops: [2] } });
+  });
 });

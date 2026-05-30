@@ -1,7 +1,7 @@
-import { Point, type PointData } from 'pixi.js';
+import { type PointData } from 'pixi.js';
 import type { AbstractGraph } from 'graphology-types';
 import type { Viewport } from 'pixi-viewport';
-import { getElementPoint } from '../utils/pointer';
+import { getElementBounds, getElementPointFromBounds, type ElementBounds } from '../utils/pointer';
 import type { PixiNode } from '../elements/PixiNode';
 import type { PixiGraphEvents } from '../core/types';
 import type { BaseEdgeAttributes, BaseNodeAttributes } from '../types/attributes';
@@ -43,6 +43,7 @@ export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeA
   private nodeMouseOffsetX = 0;
   private nodeMouseOffsetY = 0;
   private documentMouseUpHandler: ((event: MouseEvent) => void) | undefined;
+  private dragBounds: ElementBounds | null = null;
 
   private readonly onDocumentMouseMoveBound = (event: MouseEvent) => this.handleDocumentMouseMove(event);
 
@@ -64,7 +65,8 @@ export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeA
   }
 
   start(event: MouseEvent, nodeKey: string, node: PixiNode): void {
-    const worldPosition = this.viewport.toWorld(new Point(event.offsetX, event.offsetY));
+    this.dragBounds = getElementBounds(this.container);
+    const worldPosition = this.viewport.toWorld(getElementPointFromBounds(event, this.dragBounds));
     this.nodeMouseOffsetX = Math.abs(node.nodeGfx.x - worldPosition.x);
     this.nodeMouseOffsetY = Math.abs(node.nodeGfx.y - worldPosition.y);
     this.mousedownNodeKey = nodeKey;
@@ -78,11 +80,13 @@ export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeA
     document.removeEventListener('mousemove', this.onDocumentMouseMoveBound);
     this.removeDocumentMouseUpHandler();
     this.mousedownNodeKey = null;
+    this.dragBounds = null;
   }
 
   private handleDocumentMouseMove(event: MouseEvent): void {
     if (!this.mousedownNodeKey) return;
-    const worldPosition = this.viewport.toWorld(getElementPoint(event, this.container));
+    const bounds = this.dragBounds ?? getElementBounds(this.container);
+    const worldPosition = this.viewport.toWorld(getElementPointFromBounds(event, bounds));
     const nodeKey = this.mousedownNodeKey;
     const newPosition = this.dragOffset ? this.offsetPosition(nodeKey, worldPosition) : worldPosition;
 
@@ -110,9 +114,10 @@ export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeA
 
     document.removeEventListener('mousemove', this.onDocumentMouseMoveBound);
     this.mousedownNodeKey = null;
+    this.dragBounds = null;
     this.mutationController.endNodeDrag(nodeKey);
 
-    const point = this.viewport.toWorld(getElementPoint(event, this.container));
+    const point = this.viewport.toWorld(getElementPointFromBounds(event, getElementBounds(this.container)));
     this.emit('nodeMoveEnd', event, nodeKey, point);
   }
 

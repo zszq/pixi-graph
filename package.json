@@ -43,7 +43,6 @@
   },
   "dependencies": {
     "color-rgba": "^3.0.0",
-    "deepmerge": "^4.3.1",
     "eventemitter3": "^5.0.1",
     "pixi-viewport": "^6.0.3",
     "pixi.js": "^8.6.0"

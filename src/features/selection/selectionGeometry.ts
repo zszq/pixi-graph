@@ -67,8 +67,6 @@ function segmentIntersectsRect(a: PointData, b: PointData, rect: RectBounds): bo
 export function selectInRectangle(graph: AbstractGraph, viewport: Viewport, startPoint: PointData, endPoint: PointData, lazy?: boolean): SelectionResult {
   const nodes = new Set<string>();
   const edges = new Set<string>();
-  const nodeScreenPositions = new Map<string, PointData>();
-
   const rect = {
     left: Math.min(startPoint.x, endPoint.x),
     top: Math.min(startPoint.y, endPoint.y),
@@ -76,30 +74,37 @@ export function selectInRectangle(graph: AbstractGraph, viewport: Viewport, star
     bottom: Math.max(startPoint.y, endPoint.y)
   };
 
+  if (lazy) {
+    graph.forEachNode((nodeKey, attributes) => {
+      const screenPosition = viewport.toScreen(attributes.x, attributes.y);
+      if (!pointInRect(screenPosition, rect)) return;
+      nodes.add(nodeKey);
+      graph.forEachEdge(nodeKey, edgeKey => edges.add(edgeKey));
+    });
+    return { nodes: Array.from(nodes), edges: Array.from(edges) };
+  }
+
+  const nodeScreenPositions = new Map<string, PointData>();
+
   graph.forEachNode((nodeKey, attributes) => {
     const screenPosition = viewport.toScreen(attributes.x, attributes.y);
     nodeScreenPositions.set(nodeKey, screenPosition);
 
     if (pointInRect(screenPosition, rect)) {
       nodes.add(nodeKey);
-      if (lazy) {
-        graph.forEachEdge(nodeKey, edgeKey => edges.add(edgeKey));
-      }
     }
   });
 
-  if (!lazy) {
-    // 非 lazy：逐条做稳健的「线段 vs 矩形」相交判定，避免斜率法在水平/竖直边上出现
-    // Infinity/NaN 分支，也让完全包含、穿过边界、端点接触都走同一套逻辑。
-    graph.forEachEdge((edgeKey, _attributes, sourceKey, targetKey, sourceAttributes, targetAttributes) => {
-      const source = nodeScreenPositions.get(sourceKey) ?? viewport.toScreen(sourceAttributes.x, sourceAttributes.y);
-      const target = nodeScreenPositions.get(targetKey) ?? viewport.toScreen(targetAttributes.x, targetAttributes.y);
+  // 非 lazy：逐条做稳健的「线段 vs 矩形」相交判定，避免斜率法在水平/竖直边上出现
+  // Infinity/NaN 分支，也让完全包含、穿过边界、端点接触都走同一套逻辑。
+  graph.forEachEdge((edgeKey, _attributes, sourceKey, targetKey, sourceAttributes, targetAttributes) => {
+    const source = nodeScreenPositions.get(sourceKey) ?? viewport.toScreen(sourceAttributes.x, sourceAttributes.y);
+    const target = nodeScreenPositions.get(targetKey) ?? viewport.toScreen(targetAttributes.x, targetAttributes.y);
 
-      if (segmentIntersectsRect(source, target, rect)) {
-        edges.add(edgeKey);
-      }
-    });
-  }
+    if (segmentIntersectsRect(source, target, rect)) {
+      edges.add(edgeKey);
+    }
+  });
 
   return { nodes: Array.from(nodes), edges: Array.from(edges) };
 }

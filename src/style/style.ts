@@ -1,4 +1,3 @@
-import deepmerge from 'deepmerge';
 import type { BaseNodeAttributes, BaseEdgeAttributes } from '../types/attributes';
 import type { TextType, TextStyle } from '../utils/text';
 
@@ -88,11 +87,11 @@ export function resolveStyleDefinition<Style, Attributes>(styleDefinition: Style
     if (Array.isArray(styleDefinition)) {
       style = styleDefinition as Style;
     } else {
-      style = Object.fromEntries(
-        Object.entries(styleDefinition).map(([key, value]) => {
-          return [key, resolveStyleDefinition(value as StyleDefinition<unknown, Attributes>, attributes)];
-        })
-      ) as Style;
+      const resolved: Record<string, unknown> = {};
+      for (const key in styleDefinition) {
+        resolved[key] = resolveStyleDefinition((styleDefinition as Record<string, StyleDefinition<unknown, Attributes>>)[key], attributes);
+      }
+      style = resolved as Style;
     }
   } else {
     style = styleDefinition;
@@ -100,8 +99,29 @@ export function resolveStyleDefinition<Style, Attributes>(styleDefinition: Style
   return style;
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function mergeStyleValues<Style>(base: Style, next: Style): Style {
+  if (isPlainObject(base) && isPlainObject(next)) {
+    const merged: Record<string, unknown> = { ...base };
+    for (const key in next) {
+      const nextValue = next[key];
+      merged[key] = key in merged ? mergeStyleValues(merged[key] as never, nextValue as never) : nextValue;
+    }
+    return merged as Style;
+  }
+  return next;
+}
+
 /** Resolve a chain of style definitions (defaults → base → state) and deep-merge them into a full style. */
 export function resolveStyleDefinitions<Style, Attributes>(styleDefinitions: (StyleDefinition<Style, Attributes> | undefined)[], attributes: Attributes): Style {
   const styles = styleDefinitions.filter((x): x is StyleDefinition<Style, Attributes> => !!x).map(styleDefinition => resolveStyleDefinition(styleDefinition, attributes));
-  return deepmerge.all<Style>(styles as object[]);
+  if (styles.length === 0) return {} as Style;
+  let merged = styles[0];
+  for (let i = 1; i < styles.length; i++) {
+    merged = mergeStyleValues(merged, styles[i]);
+  }
+  return merged;
 }

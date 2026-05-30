@@ -304,8 +304,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     if (node.hovered) return;
     node.hovered = true;
     if (this.syncNodeByKey(nodeKey)) this.updateConnectedEdgesByNodeKey(nodeKey);
-    this.layers.nodeLayer.setChildIndex(node.nodeGfx, this.layers.nodeLayer.children.length - 1);
-    this.layers.nodeLabelLayer.setChildIndex(node.nodeLabelGfx, this.layers.nodeLabelLayer.children.length - 1);
+    this.moveToFront(this.layers.nodeLayer, node.nodeGfx);
+    this.moveToFront(this.layers.nodeLabelLayer, node.nodeLabelGfx);
   }
 
   private unhoverNode(nodeKey: string): void {
@@ -320,9 +320,9 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     if (edge.hovered) return;
     edge.hovered = true;
     this.updateEdgeStyleByKey(edgeKey);
-    this.layers.edgeLayer.setChildIndex(edge.edgeGfx, this.layers.edgeLayer.children.length - 1);
-    this.layers.edgeLayer.setChildIndex(edge.edgeArrowGfx, this.layers.edgeLayer.children.length - 1);
-    this.layers.edgeLabelLayer.setChildIndex(edge.edgeLabelGfx, this.layers.edgeLabelLayer.children.length - 1);
+    this.moveToFront(this.layers.edgeLayer, edge.edgeGfx);
+    this.moveToFront(this.layers.edgeLayer, edge.edgeArrowGfx);
+    this.moveToFront(this.layers.edgeLabelLayer, edge.edgeLabelGfx);
   }
 
   private unhoverEdge(edgeKey: string): void {
@@ -392,6 +392,12 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
         this.updateEdgePositionByKey(key);
       }
     }
+  }
+
+  private moveToFront(layer: { children: Array<unknown>; setChildIndex(child: any, index: number): void }, child: unknown): void {
+    const lastIndex = layer.children.length - 1;
+    if (lastIndex < 0 || layer.children[lastIndex] === child) return;
+    layer.setChildIndex(child, lastIndex);
   }
 
   private dropNode(nodeKey: string): void {
