@@ -13,12 +13,17 @@ export class TextureCache {
     this.renderer = renderer;
   }
 
-  get(key: string, create: () => Container): Texture {
+  get(key: string, create: () => Container, explicitFrame?: Rectangle): Texture {
     let texture = this.textures.get(key);
     if (!texture) {
       const container = create();
-      const region = container.getLocalBounds();
-      const frame = new Rectangle(Math.floor(region.x), Math.floor(region.y), Math.ceil(region.width), Math.ceil(region.height));
+      // 显式 frame 用于固定裁剪区域（如圆形图标，避免 cover 缩放后长边溢出撑大纹理）；
+      // 缺省时按内容包围盒取整。
+      let frame = explicitFrame;
+      if (!frame) {
+        const region = container.getLocalBounds();
+        frame = new Rectangle(Math.floor(region.x), Math.floor(region.y), Math.ceil(region.width), Math.ceil(region.height));
+      }
       texture = this.renderer.generateTexture({
         target: container,
         frame,

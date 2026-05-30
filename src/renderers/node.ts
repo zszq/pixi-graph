@@ -1,4 +1,4 @@
-import { Container, Circle, Sprite, Graphics, Texture, Assets } from 'pixi.js';
+import { Container, Circle, Rectangle, Sprite, Graphics, Texture, Assets } from 'pixi.js';
 import { colorToPixi } from '../utils/color';
 import type { NodeStyle } from '../style/style';
 import { textToPixi, TextType } from '../utils/text';
@@ -10,7 +10,6 @@ const WHITE = 0xffffff;
 const NODE_CIRCLE = 'NODE_CIRCLE';
 const NODE_CIRCLE_BORDER = 'NODE_CIRCLE_BORDER';
 const NODE_ICON = 'NODE_ICON';
-const NODE_ICON_MASK = 'NODE_ICON_MASK';
 
 export function createNode(nodeGfx: Container): void {
   nodeGfx.hitArea = new Circle(0, 0);
@@ -29,12 +28,6 @@ export function createNode(nodeGfx: Container): void {
   nodeIcon.label = NODE_ICON;
   nodeIcon.anchor.set(0.5);
   nodeGfx.addChild(nodeIcon);
-
-  // 图片图标的圆形遮罩：默认空（不绘制任何内容，故不可见），仅在图片类型时绘制并启用，
-  // 用于把超出圆形的四角裁掉。空 Graphics 作为普通子节点不渲染，作为遮罩时也不会重复绘制。
-  const nodeIconMask = new Graphics();
-  nodeIconMask.label = NODE_ICON_MASK;
-  nodeGfx.addChild(nodeIconMask);
 }
 
 export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textureCache: TextureCache): void {
@@ -60,15 +53,39 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
   if (type !== TextType.IMAGE) {
     const nodeIconTexture = textureCache.get(nodeIconTextureKey, () => textToPixi(type, content, { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness }));
     applyNodeIcon(nodeIconTexture);
-  } else if (textureCache.has(nodeIconTextureKey)) {
-    applyNodeIcon(textureCache.getOnly(nodeIconTextureKey)!);
   } else {
-    // PIXI v8：Texture.from(url) 不再惰性加载远程图片，仅按 id 查缓存；
-    // 字符串图片须先经 Assets 异步加载，加载完成后再写入缓存并应用到精灵。
-    Assets.load<Texture>(content).then(nodeIconTexture => {
-      textureCache.set(nodeIconTextureKey, nodeIconTexture);
-      applyNodeIcon(nodeIconTexture);
-    });
+    // 图片图标的缓存 key 需含尺寸：圆形裁剪半径随节点 size 变化。
+    const diameter = nodeStyle.size * 2;
+    const nodeImageTextureKey = [NODE_ICON, 'IMAGE', content, nodeStyle.size].join(DELIMITER);
+    if (textureCache.has(nodeImageTextureKey)) {
+      applyNodeIcon(textureCache.getOnly(nodeImageTextureKey)!);
+    } else {
+      // PIXI v8：Texture.from(url) 不再惰性加载远程图片，字符串图片须先经 Assets 异步加载。
+      // 加载后把 "cover 缩放 + 圆形裁剪" 一次性烘焙进纹理，图标精灵直接用裁好的圆形纹理、
+      // 不再挂实时遮罩——否则异步回调/剔除期间精灵不在渲染管线，PIXI 不会注册遮罩效果，
+      // 导致放大后图片被失效遮罩挡住、必须 hover 重挂才显示。
+      Assets.load<Texture>(content).then(raw => {
+        const baked = textureCache.get(
+          nodeImageTextureKey,
+          () => {
+            const container = new Container();
+            const sprite = new Sprite(raw);
+            sprite.anchor.set(0.5);
+            // 按原图宽高比做 cover 缩放：较短边铺满直径，长边溢出由遮罩与裁剪 frame 裁掉，避免变形。
+            const minSide = Math.min(raw.width, raw.height) || diameter;
+            sprite.scale.set(diameter / minSide);
+            const mask = new Graphics();
+            mask.circle(0, 0, nodeStyle.size).fill(WHITE);
+            sprite.mask = mask;
+            container.addChild(sprite, mask);
+            return container;
+          },
+          // 固定裁剪区域为节点圆的外接正方形，避免 cover 长边把纹理撑大。
+          new Rectangle(-nodeStyle.size, -nodeStyle.size, diameter, diameter)
+        );
+        applyNodeIcon(baked);
+      });
+    }
   }
 
   function applyNodeIcon(nodeIconTexture: Texture): void {
@@ -77,26 +94,8 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
     if (!nodeIcon) return;
     nodeIcon.texture = nodeIconTexture;
     [nodeIcon.tint, nodeIcon.alpha] = colorToPixi(color);
-
-    const nodeIconMask = nodeGfx.getChildByLabel(NODE_ICON_MASK) as Graphics | null;
-    if (type === TextType.IMAGE) {
-      // 按原图宽高比做 "cover" 缩放：取较短边铺满圆的直径，长边方向溢出由遮罩裁掉，避免拉伸变形。
-      const diameter = nodeStyle.size * 2;
-      const minSide = Math.min(nodeIconTexture.width, nodeIconTexture.height) || diameter;
-      nodeIcon.scale.set(diameter / minSide);
-
-      // 圆形遮罩，半径取节点圆半径，裁掉超出圆形的四角。
-      if (nodeIconMask) {
-        nodeIconMask.clear();
-        nodeIconMask.circle(0, 0, nodeStyle.size).fill(WHITE);
-        nodeIcon.mask = nodeIconMask;
-      }
-    } else {
-      // 非图片（文字/位图字体）图标：恢复默认缩放并移除遮罩，清空遮罩使其不可见。
-      nodeIcon.scale.set(1);
-      nodeIcon.mask = null;
-      if (nodeIconMask) nodeIconMask.clear();
-    }
+    // 图片纹理已烘焙好 cover 缩放与圆形裁剪，文字纹理本就按需生成，统一无需额外缩放/遮罩。
+    nodeIcon.scale.set(1);
   }
 
   (nodeGfx.hitArea as Circle).radius = nodeOuterSize;
