@@ -8,6 +8,7 @@ import { Container, Rectangle, Texture, type Renderer } from 'pixi.js';
 export class TextureCache {
   private readonly renderer: Renderer;
   private readonly textures = new Map<string, Texture>();
+  private readonly pending = new Map<string, Promise<Texture>>();
 
   constructor(renderer: Renderer) {
     this.renderer = renderer;
@@ -40,6 +41,20 @@ export class TextureCache {
     return this.textures.get(key);
   }
 
+  getAsync(key: string, create: () => Promise<Container>, explicitFrame?: Rectangle): Promise<Texture> {
+    const texture = this.textures.get(key);
+    if (texture) return Promise.resolve(texture);
+
+    const pending = this.pending.get(key);
+    if (pending) return pending;
+
+    const promise = create()
+      .then(container => this.get(key, () => container, explicitFrame))
+      .finally(() => this.pending.delete(key));
+    this.pending.set(key, promise);
+    return promise;
+  }
+
   set(key: string, texture: Texture): void {
     this.textures.set(key, texture);
   }
@@ -56,6 +71,7 @@ export class TextureCache {
   }
 
   clear(): void {
+    this.pending.clear();
     for (const key of Array.from(this.textures.keys())) {
       this.delete(key);
     }

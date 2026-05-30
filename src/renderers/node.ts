@@ -72,10 +72,11 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
       // 加载后把 "cover 缩放 + 圆形裁剪" 一次性烘焙进纹理，图标精灵直接用裁好的圆形纹理、
       // 不再挂实时遮罩——否则异步回调/剔除期间精灵不在渲染管线，PIXI 不会注册遮罩效果，
       // 导致放大后图片被失效遮罩挡住、必须 hover 重挂才显示。
-      Assets.load<Texture>(content).then(raw => {
-        const baked = textureCache.get(
+      textureCache
+        .getAsync(
           nodeImageTextureKey,
-          () => {
+          async () => {
+            const raw = await Assets.load<Texture>(content);
             const container = new Container();
             const sprite = new Sprite(raw);
             sprite.anchor.set(0.5);
@@ -90,9 +91,11 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
           },
           // 固定裁剪区域为节点圆的外接正方形，避免 cover 长边把纹理撑大。
           new Rectangle(-nodeStyle.size, -nodeStyle.size, diameter, diameter)
-        );
-        applyNodeIcon(baked);
-      });
+        )
+        .then(baked => {
+          if (!(nodeGfx.children[2] instanceof Sprite)) return;
+          applyNodeIcon(baked);
+        });
     }
   }
 
