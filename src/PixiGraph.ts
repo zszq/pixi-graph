@@ -153,7 +153,6 @@ export class PixiGraph<
       app: this.app,
       container: this.container,
       viewport: this.viewport,
-      graph: this.graph,
       layers: this.layers,
       nodes: this.nodeKeyToNodeObject,
       edges: this.edgeKeyToEdgeObject
@@ -171,7 +170,10 @@ export class PixiGraph<
       isViewportDragging: () => this.isViewportDragging(),
       shouldIgnoreNodeAttributeUpdate: nodeKey => this.suppressedNodeAttributeUpdates.has(nodeKey),
       startNodeDrag: (event, nodeKey, node) => this.nodeDragController.start(event, nodeKey, node),
-      markFastEdgesDirty: () => this.renderController.markFastEdgesDirty(),
+      markSpatialIndexDirty: () => {
+        this.renderController.markSpatialIndexDirty();
+        this.renderController.markFastNodesDirty();
+      },
       shouldDeferConnectedEdgeUpdates: (_nodeKey, degree) => this.highMode && degree > 64
     });
     this.nodeDragController = new NodeDragController({
@@ -302,7 +304,9 @@ export class PixiGraph<
   private hidePerformanceLayers(): void {
     if (!this.highMode || this.performanceLayersHidden) return;
     this.performanceLayersHidden = true;
-    this.renderController.setFastEdgesRenderable(true);
+    this.renderController.setInteractionEnabled(false);
+    this.renderController.setFastNodesRenderable(true);
+    if (this.renderController.nodesRenderable()) this.renderController.setNodesRenderable(false);
     if (this.renderController.edgesRenderable()) this.setEdgesRenderable(false);
     if (this.renderController.nodeLabelsRenderable()) this.setNodeLabelsRenderable(false);
     this.renderController.setNodeDetailsRenderable(false);
@@ -325,10 +329,12 @@ export class PixiGraph<
     // dirty frame will refresh exact culling; until then previously culled
     // off-screen objects remain harmless, while on-screen layers become
     // visible immediately.
-    this.renderController.setFastEdgesRenderable(false);
+    this.renderController.setFastNodesRenderable(false);
+    this.renderController.setNodesRenderable(true);
     this.setEdgesRenderable(true);
     this.setNodeLabelsRenderable(true);
     this.renderController.setNodeDetailsRenderable(true);
+    this.renderController.setInteractionEnabled(true);
   }
 
   private deferPerformanceLayerRestore(): void {

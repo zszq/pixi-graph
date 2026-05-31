@@ -1,6 +1,5 @@
-import { Culler, type Application } from 'pixi.js';
+import { Culler, Particle, Texture, type Application } from 'pixi.js';
 import type { Viewport } from 'pixi-viewport';
-import type { AbstractGraph } from 'graphology-types';
 import { ZOOM_STEPS } from '../core/constants';
 import { makeWatermark, type WatermarkOption } from '../features/watermark/watermark';
 import type { PixiEdge } from '../elements/PixiEdge';
@@ -8,13 +7,11 @@ import type { PixiNode } from '../elements/PixiNode';
 import type { GraphLayers } from '../renderers/GraphLayers';
 import { SpatialNodeIndex } from '../core/SpatialNodeIndex';
 import { colorToPixi } from '../utils/color';
-import type { BaseEdgeAttributes, BaseNodeAttributes } from '../types/attributes';
 
-export interface GraphRenderControllerOptions<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> {
+export interface GraphRenderControllerOptions {
   app: Application;
   container: HTMLElement;
   viewport: Viewport;
-  graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
   layers: GraphLayers;
   nodes: Map<string, PixiNode>;
   edges: Map<string, PixiEdge>;
@@ -24,11 +21,10 @@ export interface GraphRenderControllerOptions<NodeAttributes extends BaseNodeAtt
  * Owns render-only concerns: culling, LOD visibility, layer renderability,
  * watermark lifecycle, and image extraction.
  */
-export class GraphRenderController<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> {
+export class GraphRenderController {
   private readonly app: Application;
   private readonly container: HTMLElement;
   private readonly viewport: Viewport;
-  private readonly graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
   private readonly layers: GraphLayers;
   private readonly nodes: Map<string, PixiNode>;
   private readonly edges: Map<string, PixiEdge>;
@@ -41,13 +37,13 @@ export class GraphRenderController<NodeAttributes extends BaseNodeAttributes = B
   private readonly spatialNodeIndex = new SpatialNodeIndex();
   private readonly fastVisibleNodes = new Set<string>();
   private fastVisibleInitialized = false;
-  private fastEdgesDirty = true;
+  private interactionDisabled = false;
+  private fastNodesDirty = true;
 
-  constructor(options: GraphRenderControllerOptions<NodeAttributes, EdgeAttributes>) {
+  constructor(options: GraphRenderControllerOptions) {
     this.app = options.app;
     this.container = options.container;
     this.viewport = options.viewport;
-    this.graph = options.graph;
     this.layers = options.layers;
     this.nodes = options.nodes;
     this.edges = options.edges;
@@ -114,19 +110,36 @@ export class GraphRenderController<NodeAttributes extends BaseNodeAttributes = B
     this.spatialNodeIndex.clear();
     this.fastVisibleNodes.clear();
     this.fastVisibleInitialized = false;
+    this.fastNodesDirty = true;
   }
 
   setEdgesRenderable(renderable: boolean): void {
     this.layers.setEdgesRenderable(renderable);
   }
 
-  setFastEdgesRenderable(renderable: boolean): void {
-    if (renderable && this.fastEdgesDirty) this.rebuildFastEdges();
-    this.layers.fastEdgeLayer.renderable = renderable;
+  setNodesRenderable(renderable: boolean): void {
+    this.layers.setNodesRenderable(renderable);
   }
 
-  markFastEdgesDirty(): void {
-    this.fastEdgesDirty = true;
+  setFastNodesRenderable(renderable: boolean): void {
+    if (renderable && this.fastNodesDirty) this.rebuildFastNodes();
+    this.layers.fastNodeLayer.renderable = renderable;
+  }
+
+  markFastNodesDirty(): void {
+    this.fastNodesDirty = true;
+  }
+
+  setInteractionEnabled(enabled: boolean): void {
+    if (this.interactionDisabled === !enabled) return;
+    this.interactionDisabled = !enabled;
+    const eventMode = enabled ? 'static' : 'none';
+    for (const node of this.nodes.values()) node.nodeGfx.eventMode = eventMode;
+    for (const edge of this.edges.values()) {
+      edge.edgeGfx.eventMode = eventMode;
+      edge.edgeArrowGfx.eventMode = eventMode;
+      edge.edgeLabelGfx.eventMode = eventMode;
+    }
   }
 
   setEdgeLabelsRenderable(renderable: boolean): void {
@@ -160,19 +173,35 @@ export class GraphRenderController<NodeAttributes extends BaseNodeAttributes = B
     return this.layers.nodeLabelLayer.renderable;
   }
 
-  private rebuildFastEdges(): void {
-    const graphics = this.layers.fastEdgeLayer;
-    graphics.clear();
-    this.graph.forEachEdge((edgeKey, _attributes, _source, _target, sourceAttributes, targetAttributes) => {
-      const edge = this.edges.get(edgeKey);
-      const style = edge?.edgeStyle;
-      if (!style) return;
-      const [color, colorAlpha] = colorToPixi(style.color);
-      const alpha = colorAlpha * style.alpha;
-      if (alpha <= 0 || style.width <= 0) return;
-      graphics.moveTo(sourceAttributes.x, sourceAttributes.y).lineTo(targetAttributes.x, targetAttributes.y).stroke({ width: Math.max(1, style.width), color, alpha });
-    });
-    this.fastEdgesDirty = false;
+  nodesRenderable(): boolean {
+    return this.layers.nodeLayer.renderable;
+  }
+
+  private rebuildFastNodes(): void {
+    const particles = this.layers.fastNodeLayer.particleChildren as Particle[];
+    particles.length = 0;
+    const texture = Texture.WHITE;
+
+    for (const node of this.nodes.values()) {
+      const style = node.nodeStyle;
+      const [tint, colorAlpha] = colorToPixi(style.color);
+      const size = Math.max(1, style.size * 2);
+      const particle = new Particle({
+        texture,
+        x: node.nodeGfx.x,
+        y: node.nodeGfx.y,
+        scaleX: size,
+        scaleY: size,
+        anchorX: 0.5,
+        anchorY: 0.5,
+        tint,
+        alpha: colorAlpha * style.alpha
+      });
+      particles.push(particle);
+    }
+
+    this.layers.fastNodeLayer.update();
+    this.fastNodesDirty = false;
   }
 
   private restoreNodeDetailsChunk(): void {

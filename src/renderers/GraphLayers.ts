@@ -1,7 +1,16 @@
-import { Container, Graphics } from 'pixi.js';
+import { Container, ParticleContainer } from 'pixi.js';
 
 export class GraphLayers {
-  readonly fastEdgeLayer = new Graphics();
+  readonly fastNodeLayer = new ParticleContainer({
+    dynamicProperties: {
+      position: false,
+      rotation: false,
+      vertex: false,
+      uvs: false,
+      color: false
+    },
+    roundPixels: true
+  });
   readonly edgeLayer = this.createCullableLayer();
   readonly edgeLabelLayer = this.createCullableLayer();
   readonly nodeLabelLayer = this.createCullableLayer();
@@ -9,8 +18,9 @@ export class GraphLayers {
   readonly watermarkLayer = new Container();
 
   attachToViewport(viewport: Pick<Container, 'addChild'>): void {
-    this.fastEdgeLayer.renderable = false;
-    viewport.addChild(this.fastEdgeLayer, this.edgeLayer, this.edgeLabelLayer, this.nodeLabelLayer, this.nodeLayer);
+    this.fastNodeLayer.renderable = false;
+    this.fastNodeLayer.eventMode = 'none';
+    viewport.addChild(this.edgeLayer, this.edgeLabelLayer, this.nodeLabelLayer, this.fastNodeLayer, this.nodeLayer);
   }
 
   attachWatermarkLayer(stage: Pick<Container, 'addChildAt'>): void {
@@ -28,6 +38,10 @@ export class GraphLayers {
 
   setNodeLabelsRenderable(renderable: boolean): void {
     this.nodeLabelLayer.renderable = renderable;
+  }
+
+  setNodesRenderable(renderable: boolean): void {
+    this.nodeLayer.renderable = renderable;
   }
 
   destroyWatermarks(): void {
