@@ -33,10 +33,12 @@ export interface GraphMutationControllerOptions<NodeAttributes extends BaseNodeA
   markSpatialIndexDirty?: () => void;
   updateFastNodePosition?: (nodeKey: string, position: PointData) => void;
   markBatchEdgesDirty?: () => void;
+  markBatchEdgeIndexDirty?: () => void;
+  updateBatchEdgeIndex?: (edgeKey: string) => void;
+  updateBatchEdgeIndexMany?: (edgeKeys: Iterable<string>) => void;
   updateBatchEdge?: (edgeKey: string) => void;
   shouldDeferConnectedEdgeUpdates?: (nodeKey: string, degree: number) => boolean;
 }
-
 
 /**
  * Owns graph mutation, hover, and element lifecycle concerns.
@@ -57,6 +59,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   private readonly markSpatialIndexDirty: () => void;
   private readonly updateFastNodePosition: (nodeKey: string, position: PointData) => void;
   private readonly markBatchEdgesDirty: () => void;
+  private readonly markBatchEdgeIndexDirty: () => void;
+  private readonly updateBatchEdgeIndexMany: (edgeKeys: Iterable<string>) => void;
   private readonly updateBatchEdge: (edgeKey: string) => void;
   private readonly shouldDeferConnectedEdgeUpdates: (nodeKey: string, degree: number) => boolean;
   private readonly parallelEdgeIndex = new ParallelEdgeIndex();
@@ -86,6 +90,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.markSpatialIndexDirty = options.markSpatialIndexDirty ?? (() => undefined);
     this.updateFastNodePosition = options.updateFastNodePosition ?? (() => undefined);
     this.markBatchEdgesDirty = options.markBatchEdgesDirty ?? (() => undefined);
+    this.markBatchEdgeIndexDirty = options.markBatchEdgeIndexDirty ?? this.markBatchEdgesDirty;
+    this.updateBatchEdgeIndexMany = options.updateBatchEdgeIndexMany ?? (() => this.markBatchEdgeIndexDirty());
     this.updateBatchEdge = options.updateBatchEdge ?? (() => undefined);
     this.shouldDeferConnectedEdgeUpdates = options.shouldDeferConnectedEdgeUpdates ?? (() => false);
   }
@@ -97,36 +103,36 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
 
   handleGraphNodeAdded(data: { key: string; attributes: NodeAttributes }): void {
     this.markSpatialIndexDirty();
-    this.markBatchEdgesDirty();
+    this.markBatchEdgeIndexDirty();
     this.createNode(data.key, data.attributes);
   }
 
   handleGraphNodeDropped(data: { key: string }): void {
     this.markSpatialIndexDirty();
-    this.markBatchEdgesDirty();
+    this.markBatchEdgeIndexDirty();
     this.dropRenderedNodeEdges(data.key);
     this.dropNode(data.key);
   }
 
   handleGraphEdgeAdded(data: { key: string; attributes: EdgeAttributes; source: string; target: string }): void {
-    this.markBatchEdgesDirty();
+    this.markBatchEdgeIndexDirty();
     this.createEdge(data.key, data.attributes, data.source, data.target);
   }
 
   handleGraphEdgeDropped(data: { key: string }): void {
-    this.markBatchEdgesDirty();
+    this.markBatchEdgeIndexDirty();
     this.dropEdge(data.key);
   }
 
   handleGraphCleared(): void {
-    this.markBatchEdgesDirty();
+    this.markBatchEdgeIndexDirty();
     this.parallelEdgeIndex.clear();
     for (const key of Array.from(this.edgeKeyToEdgeObject.keys())) this.dropEdge(key);
     for (const key of Array.from(this.nodeKeyToNodeObject.keys())) this.dropNode(key);
   }
 
   handleGraphEdgesCleared(): void {
-    this.markBatchEdgesDirty();
+    this.markBatchEdgeIndexDirty();
     this.parallelEdgeIndex.clear();
     for (const key of Array.from(this.edgeKeyToEdgeObject.keys())) this.dropEdge(key);
   }
@@ -137,8 +143,9 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     // 纯颜色/透明度/标签变化不影响边端点，避免在属性热路径里做多余边更新。
     if (this.syncNodeByKey(data.key)) {
       this.markSpatialIndexDirty();
-      this.markBatchEdgesDirty();
-      this.updateConnectedEdgesByNodeKey(data.key);
+      const edgeKeys = this.connectedRenderedEdgeKeys(data.key);
+      this.updateBatchEdgeIndexMany(edgeKeys);
+      this.updateConnectedEdgesByKeys(edgeKeys, data.key);
     }
   }
 
@@ -154,7 +161,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     });
     if (affectedEdges.size > 0) {
       this.markSpatialIndexDirty();
-      this.markBatchEdgesDirty();
+      this.updateBatchEdgeIndexMany(affectedEdges);
     }
     for (const edgeKey of affectedEdges) this.updateEdgePositionByKey(edgeKey);
   }
@@ -208,12 +215,20 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   }
 
   updateConnectedEdgesByNodeKey(nodeKey: string, immediate = false): void {
-    const edgeKeys = this.graph.edges(nodeKey).filter(edgeKey => this.edgeKeyToEdgeObject.has(edgeKey));
+    const edgeKeys = this.connectedRenderedEdgeKeys(nodeKey);
+    this.updateConnectedEdgesByKeys(edgeKeys, nodeKey, immediate);
+  }
+
+  private updateConnectedEdgesByKeys(edgeKeys: string[], nodeKey: string, immediate = false): void {
     if (!immediate && this.shouldDeferConnectedEdgeUpdates(nodeKey, edgeKeys.length)) {
       this.edgeUpdateScheduler.markMany(edgeKeys, false);
       return;
     }
     for (const edgeKey of edgeKeys) this.updateEdgePositionByKey(edgeKey);
+  }
+
+  private connectedRenderedEdgeKeys(nodeKey: string): string[] {
+    return this.graph.edges(nodeKey).filter(edgeKey => this.edgeKeyToEdgeObject.has(edgeKey));
   }
 
   flushScheduledEdgeUpdates(): void {
@@ -224,6 +239,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     const node = this.nodeKeyToNodeObject.get(nodeKey);
     if (node) node.updatePosition(position);
     this.updateFastNodePosition(nodeKey, position);
+    this.markSpatialIndexDirty();
+    this.updateBatchEdgeIndexMany(this.connectedRenderedEdgeKeys(nodeKey));
   }
 
   endNodeDrag(nodeKey: string): void {
@@ -474,7 +491,6 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.nodeKeyToNodeObject.delete(nodeKey);
     node.destroy();
   }
-
 
   private dropRenderedNodeEdges(nodeKey: string): void {
     for (const edgeKey of Array.from(this.edgeKeyToEdgeObject.keys())) {

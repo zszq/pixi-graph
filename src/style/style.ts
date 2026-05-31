@@ -78,7 +78,6 @@ export interface GraphStyleDefinition<NodeAttributes extends BaseNodeAttributes 
   edge?: EdgeStyleDefinition<EdgeAttributes>;
 }
 
-
 const resolvedStaticStyleCache = new WeakMap<object, unknown>();
 
 function containsFunction(value: unknown): boolean {
@@ -150,7 +149,8 @@ export function resolveStyleDefinitions<Style, Attributes>(styleDefinitions: (St
 }
 
 export function sameNodeStyle(a: NodeStyle | undefined, b: NodeStyle): boolean {
-  return !!a &&
+  return (
+    !!a &&
     a.size === b.size &&
     a.color === b.color &&
     a.alpha === b.alpha &&
@@ -175,11 +175,13 @@ export function sameNodeStyle(a: NodeStyle | undefined, b: NodeStyle): boolean {
     a.label.stroke === b.label.stroke &&
     a.label.strokeThickness === b.label.strokeThickness &&
     a.label.backgroundColor === b.label.backgroundColor &&
-    a.label.padding === b.label.padding;
+    a.label.padding === b.label.padding
+  );
 }
 
 export function sameEdgeStyle(a: EdgeStyle | undefined, b: EdgeStyle): boolean {
-  return !!a &&
+  return (
+    !!a &&
     a.width === b.width &&
     a.color === b.color &&
     a.alpha === b.alpha &&
@@ -199,5 +201,6 @@ export function sameEdgeStyle(a: EdgeStyle | undefined, b: EdgeStyle): boolean {
     a.label.strokeThickness === b.label.strokeThickness &&
     a.label.backgroundColor === b.label.backgroundColor &&
     a.label.padding === b.label.padding &&
-    a.label.parallel === b.label.parallel;
+    a.label.parallel === b.label.parallel
+  );
 }
