@@ -17,6 +17,7 @@ import { computeGraphBounds } from './core/graphBounds';
 import { SpaceDragController } from './features/spaceDrag/SpaceDragController';
 import { EventSubscriptions } from './core/EventSubscriptions';
 import { GraphLayers } from './renderers/GraphLayers';
+import { BatchEdgeLayer } from './renderers/BatchEdgeLayer';
 import { ViewportInteractionController } from './controllers/ViewportInteractionController';
 import { GraphRenderController } from './controllers/GraphRenderController';
 import { GraphMutationController } from './controllers/GraphMutationController';
@@ -148,6 +149,14 @@ export class PixiGraph<
     this.app.stage.addChild(this.viewport);
 
     this.layers.attachToViewport(this.viewport);
+    this.layers.setBatchEdgeLayer(
+      new BatchEdgeLayer({
+        graph: this.graph,
+        style: this.style,
+        nodes: this.nodeKeyToNodeObject,
+        edges: this.edgeKeyToEdgeObject
+      }) as unknown as BatchEdgeLayer<BaseNodeAttributes, BaseEdgeAttributes>
+    );
     this.layers.attachWatermarkLayer(this.app.stage);
     this.renderController = new GraphRenderController({
       app: this.app,
@@ -173,8 +182,11 @@ export class PixiGraph<
       markSpatialIndexDirty: () => {
         this.renderController.markSpatialIndexDirty();
         this.renderController.markFastNodesDirty();
+        this.renderController.markBatchEdgesDirty();
       },
       updateFastNodePosition: (nodeKey, position) => this.renderController.updateFastNodePosition(nodeKey, position),
+      markBatchEdgesDirty: () => this.renderController.markBatchEdgesDirty(),
+      updateBatchEdge: edgeKey => this.renderController.updateBatchEdge(edgeKey),
       shouldDeferConnectedEdgeUpdates: (_nodeKey, degree) => this.highMode && degree > 64
     });
     this.nodeDragController = new NodeDragController({
@@ -196,6 +208,7 @@ export class PixiGraph<
       mutationController: this.mutationController,
       updateHighMode: () => {
         this.highMode = this.exceedsHighPerformance();
+        this.renderController.setBatchEdgesEnabled(this.highMode);
       }
     });
 
@@ -238,6 +251,7 @@ export class PixiGraph<
     this.graph.forEachNode((nodeKey, attributes) => this.mutationController.handleGraphNodeAdded({ key: nodeKey, attributes }));
     this.graph.forEachEdge((edgeKey, attributes, source, target) => this.mutationController.handleGraphEdgeAdded({ key: edgeKey, attributes, source, target }));
     this.highMode = this.exceedsHighPerformance();
+    this.renderController.setBatchEdgesEnabled(this.highMode);
     this.renderController.updateVisibility();
   }
 

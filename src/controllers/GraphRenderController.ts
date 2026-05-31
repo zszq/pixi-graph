@@ -58,14 +58,19 @@ export class GraphRenderController {
     else this.cull();
 
     const zoomStep = this.currentZoomStep();
-    if (!options.forceLod && zoomStep === this.lastZoomStep) return;
+    if (!options.forceLod && zoomStep === this.lastZoomStep) {
+      this.rebuildBatchEdges();
+      return;
+    }
     this.lastZoomStep = zoomStep;
+    this.layers.batchEdgeLayer?.setZoomStep(zoomStep);
 
     for (const node of this.nodes.values()) {
       node.updateVisibility(zoomStep);
       if (!this.nodeDetailsRenderable) node.setDetailsRenderable(false);
     }
     for (const edge of this.edges.values()) edge.updateVisibility(zoomStep);
+    this.rebuildBatchEdges();
   }
 
   currentZoomStep(): number {
@@ -118,7 +123,21 @@ export class GraphRenderController {
   }
 
   setEdgesRenderable(renderable: boolean): void {
+    if (renderable) this.rebuildBatchEdges();
     this.layers.setEdgesRenderable(renderable);
+  }
+
+  setBatchEdgesEnabled(enabled: boolean): void {
+    this.layers.setBatchEdgesEnabled(enabled);
+    if (enabled) this.rebuildBatchEdges();
+  }
+
+  markBatchEdgesDirty(): void {
+    this.layers.batchEdgeLayer?.markDirty();
+  }
+
+  updateBatchEdge(edgeKey: string): void {
+    this.layers.batchEdgeLayer?.updateEdge(edgeKey);
   }
 
   setNodesRenderable(renderable: boolean): void {
@@ -180,7 +199,7 @@ export class GraphRenderController {
   }
 
   edgesRenderable(): boolean {
-    return this.layers.edgeLayer.renderable;
+    return this.layers.edgesRenderable();
   }
 
   nodeLabelsRenderable(): boolean {
@@ -189,6 +208,11 @@ export class GraphRenderController {
 
   nodesRenderable(): boolean {
     return this.layers.nodeLayer.renderable;
+  }
+
+  private rebuildBatchEdges(): void {
+    if (!this.layers.isBatchEdgesEnabled()) return;
+    this.layers.batchEdgeLayer?.rebuild(this.app.renderer, this.viewport.getVisibleBounds());
   }
 
   private rebuildFastNodes(): void {
