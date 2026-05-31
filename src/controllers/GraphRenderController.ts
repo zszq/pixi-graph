@@ -277,10 +277,10 @@ export class GraphRenderController {
 
   private buildVisibleNodeDetailsRestoreList(): PixiNode[] {
     this.spatialNodeIndex.ensureFresh(this.nodes);
-    const visibleKeys = new Set(this.spatialNodeIndex.query(this.viewport.getVisibleBounds(), 0));
     const visibleNodes: PixiNode[] = [];
-    for (const [nodeKey, node] of this.nodes) {
-      if (visibleKeys.has(nodeKey)) visibleNodes.push(node);
+    for (const nodeKey of this.spatialNodeIndex.query(this.viewport.getVisibleBounds(), 0)) {
+      const node = this.nodes.get(nodeKey);
+      if (node) visibleNodes.push(node);
     }
     return visibleNodes;
   }
