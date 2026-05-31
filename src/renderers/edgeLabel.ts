@@ -3,7 +3,6 @@
 import { Container, Sprite, Texture } from 'pixi.js';
 import { colorToPixi } from '../utils/color';
 import type { EdgeStyle } from '../style/style';
-import { textToPixi } from '../utils/text';
 import type { TextureCache } from '../textures/TextureCache';
 
 const DELIMITER = '::';
@@ -27,9 +26,7 @@ export function updateEdgeLabelStyle(edgeLabelGfx: Container, edgeStyle: EdgeSty
   const { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness, content, type, padding, backgroundColor } = edgeStyle.label;
 
   const edgeLabelTextTextureKey = [EDGE_LABEL_TEXT, fontFamily, fontSize, fontWeight, color, stroke, strokeThickness, content].join(DELIMITER);
-  const edgeLabelTextTexture = textureCache.get(edgeLabelTextTextureKey, () =>
-    textToPixi(type, content, { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness })
-  );
+  const edgeLabelTextTexture = textureCache.getText(edgeLabelTextTextureKey, type, content, { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness });
 
   const edgeLabelBackground = edgeLabelGfx.children[0] as Sprite;
   edgeLabelBackground.width = edgeLabelTextTexture.width + padding * 2;
