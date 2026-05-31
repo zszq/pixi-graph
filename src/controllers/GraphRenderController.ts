@@ -53,13 +53,13 @@ export class GraphRenderController {
     this.edges = options.edges;
   }
 
-  updateVisibility(options: { fastNodeCull?: boolean; forceLod?: boolean } = {}): void {
+  updateVisibility(options: { fastNodeCull?: boolean; forceLod?: boolean; skipBatchEdges?: boolean } = {}): void {
     if (options.fastNodeCull) this.fastCullNodes();
     else this.cull();
 
     const zoomStep = this.currentZoomStep();
     if (!options.forceLod && zoomStep === this.lastZoomStep) {
-      this.rebuildBatchEdges();
+      if (!options.skipBatchEdges) this.rebuildBatchEdges();
       return;
     }
     this.lastZoomStep = zoomStep;
@@ -70,6 +70,10 @@ export class GraphRenderController {
       if (!this.nodeDetailsRenderable) node.setDetailsRenderable(false);
     }
     for (const edge of this.edges.values()) edge.updateVisibility(zoomStep);
+    if (!options.skipBatchEdges) this.rebuildBatchEdges();
+  }
+
+  refreshBatchEdges(): void {
     this.rebuildBatchEdges();
   }
 

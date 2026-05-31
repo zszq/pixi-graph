@@ -306,7 +306,7 @@ export class PixiGraph<
   // viewport 标记 dirty（平移/缩放/resize）时运行：先剔除屏外元素，再把当前缩放映射到
   // 离散的 zoomStep 桶，逐个让节点/边按档位切换各部分可见性（LOD）。
   private updateGraphVisibility(): void {
-    this.renderController.updateVisibility({ fastNodeCull: this.highMode && this.performanceLayersHidden });
+    this.renderController.updateVisibility({ fastNodeCull: this.highMode && this.performanceLayersHidden, skipBatchEdges: this.highMode && this.performanceLayersHidden });
   }
 
   /** Mark every element on-screen again (used before a full-graph extract). */
@@ -350,6 +350,7 @@ export class PixiGraph<
     // visible immediately.
     this.renderController.setFastNodesRenderable(false);
     this.renderController.setNodesRenderable(true);
+    this.renderController.refreshBatchEdges();
     this.setEdgesRenderable(true);
     this.setNodeLabelsRenderable(true);
     this.renderController.setNodeDetailsRenderable(true);
