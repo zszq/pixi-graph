@@ -29,6 +29,7 @@ export class BatchEdgeLayer<
   private readonly edges: Map<string, PixiEdge>;
   private readonly edgeParticles = new Map<string, EdgeParticlePair>();
   private dirty = true;
+  private lastBoundsKey = '';
   private readonly lineLayer = new ParticleContainer({
     texture: Texture.WHITE,
     dynamicProperties: { position: false, rotation: false, vertex: false, uvs: false, color: false },
@@ -57,6 +58,7 @@ export class BatchEdgeLayer<
 
   markDirty(): void {
     this.dirty = true;
+    this.lastBoundsKey = '';
   }
 
   setZoomStep(zoomStep: number): void {
@@ -66,7 +68,8 @@ export class BatchEdgeLayer<
   }
 
   rebuild(renderer: Renderer, visibleBounds?: { x: number; y: number; width: number; height: number }): void {
-    if (!this.dirty) return;
+    const boundsKey = visibleBounds ? quantizedBoundsKey(visibleBounds, 128) : 'all';
+    if (!this.dirty && boundsKey === this.lastBoundsKey) return;
     const cullBounds = visibleBounds ? padBounds(visibleBounds, 128) : undefined;
     const lines = this.lineLayer.particleChildren as Particle[];
     const arrows = this.arrowLayer.particleChildren as Particle[];
@@ -130,6 +133,7 @@ export class BatchEdgeLayer<
     this.lineLayer.update();
     this.arrowLayer.update();
     this.dirty = false;
+    this.lastBoundsKey = boundsKey;
   }
 
   updateEdge(edgeKey: string): void {
@@ -283,4 +287,12 @@ function segmentIntersectsRect(a: { x: number; y: number }, b: { x: number; y: n
     segmentsIntersect(a, b, bottomRight, bottomLeft) ||
     segmentsIntersect(a, b, bottomLeft, topLeft)
   );
+}
+
+function quantizedBoundsKey(bounds: { x: number; y: number; width: number; height: number }, tileSize: number): string {
+  const left = Math.floor(bounds.x / tileSize);
+  const top = Math.floor(bounds.y / tileSize);
+  const right = Math.ceil((bounds.x + bounds.width) / tileSize);
+  const bottom = Math.ceil((bounds.y + bounds.height) / tileSize);
+  return `${left}:${top}:${right}:${bottom}`;
 }
