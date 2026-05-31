@@ -136,18 +136,6 @@ export class GraphRenderController {
     this.layers.batchEdgeLayer?.markDirty();
   }
 
-  markBatchEdgeIndexDirty(): void {
-    this.layers.batchEdgeLayer?.markIndexDirty();
-  }
-
-  updateBatchEdgeIndex(edgeKey: string): void {
-    this.layers.batchEdgeLayer?.updateIndex(edgeKey);
-  }
-
-  updateBatchEdgeIndexMany(edgeKeys: Iterable<string>): void {
-    this.layers.batchEdgeLayer?.updateIndexMany(edgeKeys);
-  }
-
   updateBatchEdge(edgeKey: string): void {
     this.layers.batchEdgeLayer?.updateEdge(edgeKey);
   }

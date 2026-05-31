@@ -186,9 +186,6 @@ export class PixiGraph<
       },
       updateFastNodePosition: (nodeKey, position) => this.renderController.updateFastNodePosition(nodeKey, position),
       markBatchEdgesDirty: () => this.renderController.markBatchEdgesDirty(),
-      markBatchEdgeIndexDirty: () => this.renderController.markBatchEdgeIndexDirty(),
-      updateBatchEdgeIndex: edgeKey => this.renderController.updateBatchEdgeIndex(edgeKey),
-      updateBatchEdgeIndexMany: edgeKeys => this.renderController.updateBatchEdgeIndexMany(edgeKeys),
       updateBatchEdge: edgeKey => this.renderController.updateBatchEdge(edgeKey),
       shouldDeferConnectedEdgeUpdates: (_nodeKey, degree) => this.highMode && degree > 64
     });

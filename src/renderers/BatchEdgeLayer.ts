@@ -7,7 +7,6 @@ import { resolveStyleDefinitions } from '../style/style';
 import { colorToPixi } from '../utils/color';
 import type { PixiEdge } from '../elements/PixiEdge';
 import type { PixiNode } from '../elements/PixiNode';
-import { SpatialEdgeIndex, type SpatialIndexedEdge } from '../core/SpatialEdgeIndex';
 
 interface EdgeParticlePair {
   line: Particle;
@@ -20,12 +19,14 @@ interface EdgeParticlePair {
  * dense visible edge strokes are collapsed into GPU-friendly contiguous
  * particle buffers.
  */
-export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> extends Container {
+export class BatchEdgeLayer<
+  NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes,
+  EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes
+> extends Container {
   private readonly graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
   private readonly style: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
   private readonly nodes: Map<string, PixiNode>;
   private readonly edges: Map<string, PixiEdge>;
-  private readonly spatialEdgeIndex = new SpatialEdgeIndex<NodeAttributes, EdgeAttributes>();
   private readonly edgeParticles = new Map<string, EdgeParticlePair>();
   private dirty = true;
   private lastBoundsKey = '';
@@ -60,21 +61,6 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
     this.lastBoundsKey = '';
   }
 
-  markIndexDirty(): void {
-    this.spatialEdgeIndex.clear();
-    this.markDirty();
-  }
-
-  updateIndex(edgeKey: string): void {
-    this.spatialEdgeIndex.update(this.graph, edgeKey);
-    this.markDirty();
-  }
-
-  updateIndexMany(edgeKeys: Iterable<string>): void {
-    this.spatialEdgeIndex.updateMany(this.graph, edgeKeys);
-    this.markDirty();
-  }
-
   setZoomStep(zoomStep: number): void {
     const renderable = zoomStep >= 1;
     this.lineLayer.renderable = renderable;
@@ -91,27 +77,13 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
     arrows.length = 0;
     this.edgeParticles.clear();
 
-    this.spatialEdgeIndex.ensureFresh(this.graph);
-    const edgeEntries = cullBounds
-      ? this.spatialEdgeIndex.queryEntries(cullBounds)
-      : this.graph
-          .edges()
-          .map(edgeKey => this.edgeEntryFromGraph(edgeKey))
-          .filter((entry): entry is SpatialIndexedEdge => !!entry);
-    for (const edgeEntry of edgeEntries) {
-      const edgeKey = edgeEntry.key;
+    this.graph.forEachEdge((edgeKey, edgeAttributes, sourceKey, targetKey, sourceAttributes, targetAttributes) => {
       const edge = this.edges.get(edgeKey);
-      if (!edge) continue;
-      const edgeAttributes = this.graph.getEdgeAttributes(edgeKey);
-      const sourceKey = edgeEntry.sourceKey;
-      const targetKey = edgeEntry.targetKey;
       const sourceNode = this.nodes.get(sourceKey);
       const targetNode = this.nodes.get(targetKey);
-      if (!sourceNode || !targetNode || edge.isSelfLoop || edge.hovered || !edge.isVisible()) continue;
+      if (!edge || !sourceNode || !targetNode || edge.isSelfLoop || edge.hovered || !edge.isVisible()) return;
 
-      const sourceAttributes = { x: edgeEntry.sourceX, y: edgeEntry.sourceY };
-      const targetAttributes = { x: edgeEntry.targetX, y: edgeEntry.targetY };
-      if (cullBounds && !segmentIntersectsRect(sourceAttributes, targetAttributes, cullBounds)) continue;
+      if (cullBounds && !segmentIntersectsRect(sourceAttributes, targetAttributes, cullBounds)) return;
 
       const edgeStyle = edge.edgeStyle ?? resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, undefined], edgeAttributes);
       const geometry = computeEdgeGeometry(
@@ -122,7 +94,7 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
         targetNode.nodeStyle,
         edge.isBilateral
       );
-      if (geometry.lineLength <= 0 || edgeStyle.width <= 0) continue;
+      if (geometry.lineLength <= 0 || edgeStyle.width <= 0) return;
 
       const [tint, colorAlpha] = colorToPixi(edgeStyle.color);
       const alpha = colorAlpha * edgeStyle.alpha;
@@ -156,29 +128,12 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
         arrows.push(arrow);
       }
       this.edgeParticles.set(edgeKey, { line, arrow });
-    }
+    });
 
     this.lineLayer.update();
     this.arrowLayer.update();
     this.dirty = false;
     this.lastBoundsKey = boundsKey;
-  }
-
-  private edgeEntryFromGraph(edgeKey: string): SpatialIndexedEdge | undefined {
-    if (!this.graph.hasEdge(edgeKey)) return undefined;
-    const sourceKey = this.graph.source(edgeKey);
-    const targetKey = this.graph.target(edgeKey);
-    const sourceAttributes = this.graph.getNodeAttributes(sourceKey);
-    const targetAttributes = this.graph.getNodeAttributes(targetKey);
-    return {
-      key: edgeKey,
-      sourceKey,
-      targetKey,
-      sourceX: sourceAttributes.x,
-      sourceY: sourceAttributes.y,
-      targetX: targetAttributes.x,
-      targetY: targetAttributes.y
-    };
   }
 
   updateEdge(edgeKey: string): void {
