@@ -294,7 +294,9 @@ export class PixiGraph<
 
   private onViewportFrameEnd(): void {
     if (!this.viewport.dirty) return;
-    if (this.highMode) this.deferPerformanceLayerRestore();
+    // 视口拖拽时可能短暂停住（例如鼠标停顿），但不应在拖拽过程中自动恢复边/标签/icon，
+    // 否则会在鼠标松开时再次恢复，造成两次闪动。和节点拖拽一样，把恢复时机统一放到鼠标弹起。
+    if (this.highMode && !this.isViewportDragging()) this.deferPerformanceLayerRestore();
     this.updateGraphVisibility();
     this.viewport.dirty = false;
   }
@@ -318,6 +320,8 @@ export class PixiGraph<
 
   private hidePerformanceLayers(): void {
     if (!this.highMode || this.performanceLayersHidden) return;
+    clearTimeout(this.performanceRestoreTimer);
+    this.performanceRestoreTimer = undefined;
     this.performanceLayersHidden = true;
     this.renderController.setInteractionEnabled(false);
     this.renderController.setFastNodesRenderable(true);
