@@ -31,6 +31,7 @@ export interface GraphMutationControllerOptions<NodeAttributes extends BaseNodeA
   shouldIgnoreNodeAttributeUpdate: (nodeKey: string) => boolean;
   startNodeDrag: (event: MouseEvent, nodeKey: string, node: PixiNode) => void;
   shouldDeferConnectedEdgeUpdates?: (nodeKey: string, degree: number) => boolean;
+  markFastEdgesDirty?: () => void;
 }
 
 
@@ -51,6 +52,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   private readonly shouldIgnoreNodeAttributeUpdate: (nodeKey: string) => boolean;
   private readonly startNodeDrag: (event: MouseEvent, nodeKey: string, node: PixiNode) => void;
   private readonly shouldDeferConnectedEdgeUpdates: (nodeKey: string, degree: number) => boolean;
+  private readonly markFastEdgesDirty: () => void;
   private readonly parallelEdgeIndex = new ParallelEdgeIndex();
   private readonly edgeUpdateScheduler = new EdgeUpdateScheduler(edgeKey => this.updateEdgePositionByKey(edgeKey));
 
@@ -76,6 +78,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.shouldIgnoreNodeAttributeUpdate = options.shouldIgnoreNodeAttributeUpdate;
     this.startNodeDrag = options.startNodeDrag;
     this.shouldDeferConnectedEdgeUpdates = options.shouldDeferConnectedEdgeUpdates ?? (() => false);
+    this.markFastEdgesDirty = options.markFastEdgesDirty ?? (() => undefined);
   }
 
   destroy(): void {
@@ -84,19 +87,23 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   }
 
   handleGraphNodeAdded(data: { key: string; attributes: NodeAttributes }): void {
+    this.markFastEdgesDirty();
     this.createNode(data.key, data.attributes);
   }
 
   handleGraphNodeDropped(data: { key: string }): void {
+    this.markFastEdgesDirty();
     this.dropRenderedNodeEdges(data.key);
     this.dropNode(data.key);
   }
 
   handleGraphEdgeAdded(data: { key: string; attributes: EdgeAttributes; source: string; target: string }): void {
+    this.markFastEdgesDirty();
     this.createEdge(data.key, data.attributes, data.source, data.target);
   }
 
   handleGraphEdgeDropped(data: { key: string }): void {
+    this.markFastEdgesDirty();
     this.dropEdge(data.key);
   }
 
@@ -116,11 +123,13 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     // syncNodeByKey 返回“几何是否变化”。只有位置/尺寸/描边宽度变化才需要刷新相邻边。
     // 纯颜色/透明度/标签变化不影响边端点，避免在属性热路径里做多余边更新。
     if (this.syncNodeByKey(data.key)) {
+      this.markFastEdgesDirty();
       this.updateConnectedEdgesByNodeKey(data.key);
     }
   }
 
   handleGraphEdgeAttributesUpdated(data: { key: string }): void {
+    this.markFastEdgesDirty();
     this.updateEdgeStyleByKey(data.key);
   }
 
@@ -130,10 +139,12 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
       if (!this.syncNodeByKey(nodeKey)) return;
       this.graph.forEachEdge(nodeKey, edgeKey => affectedEdges.add(edgeKey));
     });
+    if (affectedEdges.size > 0) this.markFastEdgesDirty();
     for (const edgeKey of affectedEdges) this.updateEdgePositionByKey(edgeKey);
   }
 
   handleGraphEachEdgeAttributesUpdated(): void {
+    this.markFastEdgesDirty();
     this.graph.forEachEdge(this.updateEdgeStyleByKey.bind(this));
   }
 

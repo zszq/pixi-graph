@@ -1,16 +1,20 @@
 import { Culler, type Application } from 'pixi.js';
 import type { Viewport } from 'pixi-viewport';
+import type { AbstractGraph } from 'graphology-types';
 import { ZOOM_STEPS } from '../core/constants';
 import { makeWatermark, type WatermarkOption } from '../features/watermark/watermark';
 import type { PixiEdge } from '../elements/PixiEdge';
 import type { PixiNode } from '../elements/PixiNode';
 import type { GraphLayers } from '../renderers/GraphLayers';
 import { SpatialNodeIndex } from '../core/SpatialNodeIndex';
+import { colorToPixi } from '../utils/color';
+import type { BaseEdgeAttributes, BaseNodeAttributes } from '../types/attributes';
 
-export interface GraphRenderControllerOptions {
+export interface GraphRenderControllerOptions<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> {
   app: Application;
   container: HTMLElement;
   viewport: Viewport;
+  graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
   layers: GraphLayers;
   nodes: Map<string, PixiNode>;
   edges: Map<string, PixiEdge>;
@@ -20,10 +24,11 @@ export interface GraphRenderControllerOptions {
  * Owns render-only concerns: culling, LOD visibility, layer renderability,
  * watermark lifecycle, and image extraction.
  */
-export class GraphRenderController {
+export class GraphRenderController<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> {
   private readonly app: Application;
   private readonly container: HTMLElement;
   private readonly viewport: Viewport;
+  private readonly graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
   private readonly layers: GraphLayers;
   private readonly nodes: Map<string, PixiNode>;
   private readonly edges: Map<string, PixiEdge>;
@@ -36,11 +41,13 @@ export class GraphRenderController {
   private readonly spatialNodeIndex = new SpatialNodeIndex();
   private readonly fastVisibleNodes = new Set<string>();
   private fastVisibleInitialized = false;
+  private fastEdgesDirty = true;
 
-  constructor(options: GraphRenderControllerOptions) {
+  constructor(options: GraphRenderControllerOptions<NodeAttributes, EdgeAttributes>) {
     this.app = options.app;
     this.container = options.container;
     this.viewport = options.viewport;
+    this.graph = options.graph;
     this.layers = options.layers;
     this.nodes = options.nodes;
     this.edges = options.edges;
@@ -113,6 +120,15 @@ export class GraphRenderController {
     this.layers.setEdgesRenderable(renderable);
   }
 
+  setFastEdgesRenderable(renderable: boolean): void {
+    if (renderable && this.fastEdgesDirty) this.rebuildFastEdges();
+    this.layers.fastEdgeLayer.renderable = renderable;
+  }
+
+  markFastEdgesDirty(): void {
+    this.fastEdgesDirty = true;
+  }
+
   setEdgeLabelsRenderable(renderable: boolean): void {
     this.layers.setEdgeLabelsRenderable(renderable);
   }
@@ -132,7 +148,7 @@ export class GraphRenderController {
     }
     this.nodeDetailsRestorePending = true;
     this.nodeDetailsRestoreCursor = 0;
-    this.nodeDetailsRestoreList = Array.from(this.nodes.values());
+    this.nodeDetailsRestoreList = this.buildVisibleNodeDetailsRestoreList();
     requestAnimationFrame(() => this.restoreNodeDetailsChunk());
   }
 
@@ -142,6 +158,21 @@ export class GraphRenderController {
 
   nodeLabelsRenderable(): boolean {
     return this.layers.nodeLabelLayer.renderable;
+  }
+
+  private rebuildFastEdges(): void {
+    const graphics = this.layers.fastEdgeLayer;
+    graphics.clear();
+    this.graph.forEachEdge((edgeKey, _attributes, _source, _target, sourceAttributes, targetAttributes) => {
+      const edge = this.edges.get(edgeKey);
+      const style = edge?.edgeStyle;
+      if (!style) return;
+      const [color, colorAlpha] = colorToPixi(style.color);
+      const alpha = colorAlpha * style.alpha;
+      if (alpha <= 0 || style.width <= 0) return;
+      graphics.moveTo(sourceAttributes.x, sourceAttributes.y).lineTo(targetAttributes.x, targetAttributes.y).stroke({ width: Math.max(1, style.width), color, alpha });
+    });
+    this.fastEdgesDirty = false;
   }
 
   private restoreNodeDetailsChunk(): void {
@@ -165,6 +196,16 @@ export class GraphRenderController {
     }
   }
 
+  private buildVisibleNodeDetailsRestoreList(): PixiNode[] {
+    this.spatialNodeIndex.ensureFresh(this.nodes);
+    const visibleKeys = new Set(this.spatialNodeIndex.query(this.viewport.getVisibleBounds(), 0));
+    const visibleNodes: PixiNode[] = [];
+    for (const [nodeKey, node] of this.nodes) {
+      if (visibleKeys.has(nodeKey)) visibleNodes.push(node);
+    }
+    return visibleNodes;
+  }
+
   private cull(): void {
     Culler.shared.cull(this.viewport, this.app.renderer.screen);
     this.fastVisibleInitialized = false;
@@ -172,6 +213,7 @@ export class GraphRenderController {
 
   private fastCullNodes(): void {
     this.spatialNodeIndex.ensureFresh(this.nodes);
+    const zoomStep = this.currentZoomStep();
     if (!this.fastVisibleInitialized) {
       this.fastVisibleNodes.clear();
       for (const [key, node] of this.nodes) {
@@ -193,6 +235,7 @@ export class GraphRenderController {
       if (!node) continue;
       node.nodeGfx.culled = false;
       node.nodeLabelGfx.culled = false;
+      if (this.nodeDetailsRenderable) node.updateVisibility(zoomStep);
     }
 
     this.fastVisibleNodes.clear();

@@ -153,6 +153,7 @@ export class PixiGraph<
       app: this.app,
       container: this.container,
       viewport: this.viewport,
+      graph: this.graph,
       layers: this.layers,
       nodes: this.nodeKeyToNodeObject,
       edges: this.edgeKeyToEdgeObject
@@ -170,6 +171,7 @@ export class PixiGraph<
       isViewportDragging: () => this.isViewportDragging(),
       shouldIgnoreNodeAttributeUpdate: nodeKey => this.suppressedNodeAttributeUpdates.has(nodeKey),
       startNodeDrag: (event, nodeKey, node) => this.nodeDragController.start(event, nodeKey, node),
+      markFastEdgesDirty: () => this.renderController.markFastEdgesDirty(),
       shouldDeferConnectedEdgeUpdates: (_nodeKey, degree) => this.highMode && degree > 64
     });
     this.nodeDragController = new NodeDragController({
@@ -300,6 +302,7 @@ export class PixiGraph<
   private hidePerformanceLayers(): void {
     if (!this.highMode || this.performanceLayersHidden) return;
     this.performanceLayersHidden = true;
+    this.renderController.setFastEdgesRenderable(true);
     if (this.renderController.edgesRenderable()) this.setEdgesRenderable(false);
     if (this.renderController.nodeLabelsRenderable()) this.setNodeLabelsRenderable(false);
     this.renderController.setNodeDetailsRenderable(false);
@@ -316,10 +319,13 @@ export class PixiGraph<
     this.performanceRestoreTimer = undefined;
     this.mutationController.flushScheduledEdgeUpdates();
     this.performanceLayersHidden = false;
-    // Re-run full culling/LOD for the final camera position before making
-    // details renderable again; otherwise edges/labels can stay culled from an
-    // older viewport while high-mode fast node culling was active.
-    this.renderController.updateVisibility({ forceLod: true });
+    // Do not run a full PIXI Culler pass synchronously here. On 50k/100k
+    // graphs it blocks the idle transition for hundreds of ms, making edges,
+    // labels and icons feel like they "come back late". The next viewport
+    // dirty frame will refresh exact culling; until then previously culled
+    // off-screen objects remain harmless, while on-screen layers become
+    // visible immediately.
+    this.renderController.setFastEdgesRenderable(false);
     this.setEdgesRenderable(true);
     this.setNodeLabelsRenderable(true);
     this.renderController.setNodeDetailsRenderable(true);

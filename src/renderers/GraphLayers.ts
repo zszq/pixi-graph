@@ -1,6 +1,7 @@
-import { Container } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 
 export class GraphLayers {
+  readonly fastEdgeLayer = new Graphics();
   readonly edgeLayer = this.createCullableLayer();
   readonly edgeLabelLayer = this.createCullableLayer();
   readonly nodeLabelLayer = this.createCullableLayer();
@@ -8,7 +9,8 @@ export class GraphLayers {
   readonly watermarkLayer = new Container();
 
   attachToViewport(viewport: Pick<Container, 'addChild'>): void {
-    viewport.addChild(this.edgeLayer, this.edgeLabelLayer, this.nodeLabelLayer, this.nodeLayer);
+    this.fastEdgeLayer.renderable = false;
+    viewport.addChild(this.fastEdgeLayer, this.edgeLayer, this.edgeLabelLayer, this.nodeLabelLayer, this.nodeLayer);
   }
 
   attachWatermarkLayer(stage: Pick<Container, 'addChildAt'>): void {
