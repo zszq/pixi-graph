@@ -31,6 +31,7 @@ export interface GraphMutationControllerOptions<NodeAttributes extends BaseNodeA
   shouldIgnoreNodeAttributeUpdate: (nodeKey: string) => boolean;
   startNodeDrag: (event: MouseEvent, nodeKey: string, node: PixiNode) => void;
   markSpatialIndexDirty?: () => void;
+  updateFastNodePosition?: (nodeKey: string, position: PointData) => void;
   shouldDeferConnectedEdgeUpdates?: (nodeKey: string, degree: number) => boolean;
 }
 
@@ -52,6 +53,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   private readonly shouldIgnoreNodeAttributeUpdate: (nodeKey: string) => boolean;
   private readonly startNodeDrag: (event: MouseEvent, nodeKey: string, node: PixiNode) => void;
   private readonly markSpatialIndexDirty: () => void;
+  private readonly updateFastNodePosition: (nodeKey: string, position: PointData) => void;
   private readonly shouldDeferConnectedEdgeUpdates: (nodeKey: string, degree: number) => boolean;
   private readonly parallelEdgeIndex = new ParallelEdgeIndex();
   private readonly edgeUpdateScheduler = new EdgeUpdateScheduler(edgeKey => this.updateEdgePositionByKey(edgeKey));
@@ -78,6 +80,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.shouldIgnoreNodeAttributeUpdate = options.shouldIgnoreNodeAttributeUpdate;
     this.startNodeDrag = options.startNodeDrag;
     this.markSpatialIndexDirty = options.markSpatialIndexDirty ?? (() => undefined);
+    this.updateFastNodePosition = options.updateFastNodePosition ?? (() => undefined);
     this.shouldDeferConnectedEdgeUpdates = options.shouldDeferConnectedEdgeUpdates ?? (() => false);
   }
 
@@ -200,6 +203,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   updateNodePositionByKey(nodeKey: string, position: PointData): void {
     const node = this.nodeKeyToNodeObject.get(nodeKey);
     if (node) node.updatePosition(position);
+    this.updateFastNodePosition(nodeKey, position);
   }
 
   endNodeDrag(nodeKey: string): void {

@@ -1,4 +1,4 @@
-import { Culler, Particle, Texture, type Application } from 'pixi.js';
+import { Culler, Graphics, Particle, Texture, type Application, type PointData } from 'pixi.js';
 import type { Viewport } from 'pixi-viewport';
 import { ZOOM_STEPS } from '../core/constants';
 import { makeWatermark, type WatermarkOption } from '../features/watermark/watermark';
@@ -7,6 +7,8 @@ import type { PixiNode } from '../elements/PixiNode';
 import type { GraphLayers } from '../renderers/GraphLayers';
 import { SpatialNodeIndex } from '../core/SpatialNodeIndex';
 import { colorToPixi } from '../utils/color';
+
+const FAST_NODE_TEXTURE_SIZE = 32;
 
 export interface GraphRenderControllerOptions {
   app: Application;
@@ -39,6 +41,8 @@ export class GraphRenderController {
   private fastVisibleInitialized = false;
   private interactionDisabled = false;
   private fastNodesDirty = true;
+  private fastNodeTexture: Texture | undefined;
+  private readonly fastNodeParticles = new Map<string, Particle>();
 
   constructor(options: GraphRenderControllerOptions) {
     this.app = options.app;
@@ -126,6 +130,16 @@ export class GraphRenderController {
     this.layers.fastNodeLayer.renderable = renderable;
   }
 
+  updateFastNodePosition(nodeKey: string, position: PointData): void {
+    const particle = this.fastNodeParticles.get(nodeKey);
+    if (!particle) return;
+    particle.x = position.x;
+    particle.y = position.y;
+    // fastNodeLayer keeps positions static for cheaper pan/zoom rendering, so
+    // explicitly upload the one changed particle when a node is dragged.
+    this.layers.fastNodeLayer.update();
+  }
+
   markFastNodesDirty(): void {
     this.fastNodesDirty = true;
   }
@@ -180,28 +194,40 @@ export class GraphRenderController {
   private rebuildFastNodes(): void {
     const particles = this.layers.fastNodeLayer.particleChildren as Particle[];
     particles.length = 0;
-    const texture = Texture.WHITE;
+    this.fastNodeParticles.clear();
+    const texture = this.getFastNodeTexture();
 
-    for (const node of this.nodes.values()) {
+    for (const [nodeKey, node] of this.nodes) {
       const style = node.nodeStyle;
       const [tint, colorAlpha] = colorToPixi(style.color);
-      const size = Math.max(1, style.size * 2);
+      const diameter = Math.max(1, style.size * 2);
+      const scale = diameter / FAST_NODE_TEXTURE_SIZE;
       const particle = new Particle({
         texture,
         x: node.nodeGfx.x,
         y: node.nodeGfx.y,
-        scaleX: size,
-        scaleY: size,
+        scaleX: scale,
+        scaleY: scale,
         anchorX: 0.5,
         anchorY: 0.5,
         tint,
         alpha: colorAlpha * style.alpha
       });
       particles.push(particle);
+      this.fastNodeParticles.set(nodeKey, particle);
     }
 
     this.layers.fastNodeLayer.update();
     this.fastNodesDirty = false;
+  }
+
+  private getFastNodeTexture(): Texture {
+    if (this.fastNodeTexture) return this.fastNodeTexture;
+    const radius = FAST_NODE_TEXTURE_SIZE / 2;
+    const graphics = new Graphics().circle(radius, radius, radius).fill(0xffffff);
+    this.fastNodeTexture = this.app.renderer.generateTexture({ target: graphics });
+    graphics.destroy();
+    return this.fastNodeTexture;
   }
 
   private restoreNodeDetailsChunk(): void {

@@ -174,6 +174,7 @@ export class PixiGraph<
         this.renderController.markSpatialIndexDirty();
         this.renderController.markFastNodesDirty();
       },
+      updateFastNodePosition: (nodeKey, position) => this.renderController.updateFastNodePosition(nodeKey, position),
       shouldDeferConnectedEdgeUpdates: (_nodeKey, degree) => this.highMode && degree > 64
     });
     this.nodeDragController = new NodeDragController({
