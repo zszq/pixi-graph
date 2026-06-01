@@ -8,6 +8,8 @@ import { hideLoading, nextFrame, setProgress, showError, stage } from './loading
 import { hoverStyle, style } from './style';
 
 const BENCHMARK_DEFAULT_DATASET = 'data-50000-100000';
+// 普通预览默认用中等规模数据：1000 点 2000 边，秒级加载又能真实展示渲染/交互效果。
+const PREVIEW_DEFAULT_DATASET = 'data-1000-2000';
 
 function isBenchmarkMode(): boolean {
   const params = new URLSearchParams(location.search);
@@ -16,7 +18,7 @@ function isBenchmarkMode(): boolean {
 
 async function main() {
   const bench = isBenchmarkMode();
-  const activeKey = resolveActiveKey(bench ? BENCHMARK_DEFAULT_DATASET : undefined);
+  const activeKey = resolveActiveKey(bench ? BENCHMARK_DEFAULT_DATASET : PREVIEW_DEFAULT_DATASET);
   renderDatasetButtons(activeKey);
   startFpsMeter(document.getElementById('fps')!);
 
