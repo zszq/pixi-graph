@@ -58,6 +58,17 @@ export class GraphRenderController {
     else this.cull();
 
     const zoomStep = this.currentZoomStep();
+
+    // 高性能隐藏态：node/edge/label 层均不渲染（只渲染 fast 节点层与批量边），对数万个
+    // 节点/边逐个跑 LOD 可见性纯属浪费（实测 5万点跨档位约 45ms）。此处只更新批量边的
+    // LOD 档位，跳过逐对象循环，并保持 lastZoomStep 不变——使恢复后的第一个正常帧重新
+    // 跑一次完整 LOD 循环，补上隐藏期间的档位变化。
+    if (options.fastNodeCull) {
+      this.layers.batchEdgeLayer?.setZoomStep(zoomStep);
+      if (!options.skipBatchEdges) this.rebuildBatchEdges();
+      return;
+    }
+
     if (!options.forceLod && zoomStep === this.lastZoomStep) {
       if (!options.skipBatchEdges) this.rebuildBatchEdges();
       return;
