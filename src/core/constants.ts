@@ -13,6 +13,13 @@ export const VIEWPORT_CLICK_VALID_TIME = 200;
  */
 export const ZOOM_STEPS = [0.1, 0.2, 0.3, 0.4, 0.5, Infinity];
 
+/**
+ * 标签（节点/边）开始出现的最低 zoomStep。低于此档位时标签按 LOD 全部隐藏，此时把整个
+ * 标签层 renderable 置 false，可让 PIXI 渲染组直接跳过其下数万个标签容器的指令重建遍历。
+ * 必须与 renderers/*Label.ts 中文本出现的阈值（zoomStep>=2）保持一致。
+ */
+export const LABEL_ZOOM_STEP = 2;
+
 export const DEFAULT_STYLE: GraphStyleDefinition = {
   node: {
     size: 20,

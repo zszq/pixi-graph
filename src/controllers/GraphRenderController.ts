@@ -1,6 +1,6 @@
 import { Culler, Graphics, Particle, Texture, type Application, type PointData } from 'pixi.js';
 import type { Viewport } from 'pixi-viewport';
-import { ZOOM_STEPS } from '../core/constants';
+import { LABEL_ZOOM_STEP, ZOOM_STEPS } from '../core/constants';
 import { makeWatermark, type WatermarkOption } from '../features/watermark/watermark';
 import type { PixiEdge } from '../elements/PixiEdge';
 import type { PixiNode } from '../elements/PixiNode';
@@ -68,6 +68,10 @@ export class GraphRenderController {
       if (!options.skipBatchEdges) this.rebuildBatchEdges();
       return;
     }
+
+    // 非隐藏态：标签整层按 LOD 档位开关。低于标签档位时所有标签本就逐个隐藏，这里直接把整层
+    // renderable 置 false，让渲染组跳过其下数万个标签容器的遍历，省去无谓的指令重建开销。
+    this.applyLabelLayerLod(zoomStep);
 
     if (!options.forceLod && zoomStep === this.lastZoomStep) {
       if (!options.skipBatchEdges) this.rebuildBatchEdges();
@@ -192,6 +196,14 @@ export class GraphRenderController {
 
   setEdgeLabelsRenderable(renderable: boolean): void {
     this.layers.setEdgeLabelsRenderable(renderable);
+  }
+
+  // 标签整层按 LOD 档位开关：低于标签档位时整层 renderable=false，让渲染组跳过其下数万个
+  // 标签容器的遍历。供 LOD 更新与高性能层恢复时统一调用。
+  applyLabelLayerLod(zoomStep = this.currentZoomStep()): void {
+    const showLabels = zoomStep >= LABEL_ZOOM_STEP;
+    this.layers.setNodeLabelsRenderable(showLabels);
+    this.layers.setEdgeLabelsRenderable(showLabels);
   }
 
   setNodeLabelsRenderable(renderable: boolean): void {

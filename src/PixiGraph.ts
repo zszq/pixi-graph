@@ -363,7 +363,9 @@ export class PixiGraph<
     this.renderController.setNodesRenderable(true);
     this.renderController.refreshBatchEdges();
     this.setEdgesRenderable(true);
-    this.setNodeLabelsRenderable(true);
+    // 标签整层按当前缩放档位开关：低缩放下标签本就 LOD 隐藏，整层关闭可让渲染组跳过其下
+    // 数万个标签容器的遍历，显著降低恢复时的指令重建成本（恢复卡顿的主要来源之一）。
+    this.renderController.applyLabelLayerLod();
     this.renderController.setNodeDetailsRenderable(true);
     this.renderController.setInteractionEnabled(true);
     // 细节层恢复可见后立即剔除屏外对象。viewport 已是渲染组，若沿用隐藏期间的陈旧剔除
