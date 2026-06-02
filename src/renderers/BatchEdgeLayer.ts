@@ -5,6 +5,7 @@ import type { BaseEdgeAttributes, BaseNodeAttributes } from '../types/attributes
 import type { EdgeStyle, GraphStyleDefinition, NodeStyle } from '../style/style';
 import { resolveStyleDefinitions } from '../style/style';
 import { colorToPixi } from '../utils/color';
+import { SpatialEdgeIndex } from '../core/SpatialEdgeIndex';
 import type { PixiEdge } from '../elements/PixiEdge';
 import type { PixiNode } from '../elements/PixiNode';
 
@@ -28,6 +29,8 @@ export class BatchEdgeLayer<
   private readonly nodes: Map<string, PixiNode>;
   private readonly edges: Map<string, PixiEdge>;
   private readonly edgeParticles = new Map<string, EdgeParticlePair>();
+  // 边的空间索引：rebuild 时按视口只取候选边，免去遍历全部边（见 rebuild 与 SpatialEdgeIndex）。
+  private readonly spatialEdgeIndex = new SpatialEdgeIndex<NodeAttributes, EdgeAttributes>();
   private dirty = true;
   private lastBoundsKey = '';
   private readonly lineLayer = new ParticleContainer({
@@ -61,15 +64,26 @@ export class BatchEdgeLayer<
     this.lastBoundsKey = '';
   }
 
+  // 标记空间索引过期（节点几何变化、边增删时由上层调用）。why 与 markDirty 分开：markDirty 被 hover
+  // 等纯样式变更高频调用，但那些不改变边的空间分布，不应触发 O(E) 的索引重建；只有位置/拓扑变才标这个。
+  markIndexDirty(): void {
+    this.spatialEdgeIndex.markDirty();
+    this.markDirty();
+  }
+
   setZoomStep(zoomStep: number): void {
     const renderable = zoomStep >= 1;
     this.lineLayer.renderable = renderable;
     this.arrowLayer.renderable = renderable;
   }
 
-  // 重建可见边的粒子缓冲（what）：遍历全部边，剔除掉不与视口相交的，把可见边写成线条/箭头粒子。
+  // 重建可见边的粒子缓冲（what）：取候选边、剔除不与视口相交的，把可见边写成线条/箭头粒子。
   // why 瓦片量化缓存：把可见边界量化到 128px 网格生成 boundsKey，只要没标脏且仍在同一网格内就跳过
-  // 重建——平移不足一格不必重算，避免每帧重建上万条边。'all' 表示不限视口（全量重建）。
+  // 重建——平移不足一格不必重算。'all' 表示不限视口（全量重建）。
+  // ⚠️ PERF-CRITICAL（性能关键·勿改回遍历全部边）：有视口时用 SpatialEdgeIndex 只取视口附近的候选边，
+  // 而非 graph.forEachEdge 遍历全部边——放大时视口内边仅占全图 1~2%，全遍历是纯浪费（实测 5 万点放大
+  // 平移 rebuild ~36ms→个位数 ms）。几何与精确相交仍用实时 graph 坐标，索引只做空间粗筛（候选为可见边
+  // 的超集），故结果与全遍历完全一致。索引新鲜度由 markIndexDirty 维护，勿在此对每条边都过索引。
   rebuild(renderer: Renderer, visibleBounds?: { x: number; y: number; width: number; height: number }): void {
     const boundsKey = visibleBounds ? quantizedBoundsKey(visibleBounds, 128) : 'all';
     if (!this.dirty && boundsKey === this.lastBoundsKey) return;
@@ -80,63 +94,88 @@ export class BatchEdgeLayer<
     arrows.length = 0;
     this.edgeParticles.clear();
 
-    this.graph.forEachEdge((edgeKey, edgeAttributes, sourceKey, targetKey, sourceAttributes, targetAttributes) => {
-      const edge = this.edges.get(edgeKey);
-      const sourceNode = this.nodes.get(sourceKey);
-      const targetNode = this.nodes.get(targetKey);
-      if (!edge || !sourceNode || !targetNode || edge.isSelfLoop || edge.hovered || !edge.isVisible()) return;
-
-      if (cullBounds && !segmentIntersectsRect(sourceAttributes, targetAttributes, cullBounds)) return;
-
-      const edgeStyle = edge.edgeStyle ?? resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, undefined], edgeAttributes);
-      const geometry = computeEdgeGeometry(
-        { x: sourceAttributes.x, y: sourceAttributes.y },
-        { x: targetAttributes.x, y: targetAttributes.y },
-        edgeStyle,
-        sourceNode.nodeStyle,
-        targetNode.nodeStyle,
-        edge.isBilateral
-      );
-      if (geometry.lineLength <= 0 || edgeStyle.width <= 0) return;
-
-      const [tint, colorAlpha] = colorToPixi(edgeStyle.color);
-      const alpha = colorAlpha * edgeStyle.alpha;
-      const line = new Particle({
-        texture: Texture.WHITE,
-        x: geometry.lineX,
-        y: geometry.lineY,
-        scaleX: edgeStyle.width,
-        scaleY: geometry.lineLength,
-        anchorX: 0.5,
-        anchorY: 0.5,
-        rotation: geometry.lineRotation,
-        tint,
-        alpha
-      });
-      lines.push(line);
-
-      let arrow: Particle | undefined;
-      if (edgeStyle.arrow.show && edgeStyle.arrow.size > 0) {
-        const texture = this.getArrowTexture(renderer, edgeStyle.arrow.size);
-        arrow = new Particle({
-          texture,
-          x: geometry.arrowX,
-          y: geometry.arrowY,
-          anchorX: 0.5,
-          anchorY: 0.5,
-          rotation: geometry.arrowRotation,
-          tint,
-          alpha
-        });
-        arrows.push(arrow);
+    // selectCandidates 返回候选边；视口几乎覆盖全图时返回 null → 全量遍历更快（避免看全图时的索引开销）。
+    const candidates = cullBounds ? this.spatialEdgeIndex.selectCandidates(this.graph, cullBounds) : null;
+    if (candidates) {
+      for (const edgeKey of candidates) {
+        this.appendEdgeParticle(edgeKey, renderer, cullBounds, lines, arrows);
       }
-      this.edgeParticles.set(edgeKey, { line, arrow });
-    });
+    } else {
+      this.graph.forEachEdge(edgeKey => this.appendEdgeParticle(edgeKey, renderer, cullBounds, lines, arrows));
+    }
 
     this.lineLayer.update();
     this.arrowLayer.update();
     this.dirty = false;
     this.lastBoundsKey = boundsKey;
+  }
+
+  // 处理单条候选边：过滤（自环/hover/隐藏由各自层负责，不入批量）→ 精确视口相交剔除 → 算几何 →
+  // 写线条/箭头粒子。坐标全部取自实时 graph，保证即便索引候选偏多/偏旧也不会画错位置。
+  private appendEdgeParticle(
+    edgeKey: string,
+    renderer: Renderer,
+    cullBounds: { left: number; right: number; top: number; bottom: number } | undefined,
+    lines: Particle[],
+    arrows: Particle[]
+  ): void {
+    const edge = this.edges.get(edgeKey);
+    if (!edge || edge.isSelfLoop || edge.hovered || !edge.isVisible()) return;
+    if (!this.graph.hasEdge(edgeKey)) return;
+
+    const sourceKey = this.graph.source(edgeKey);
+    const targetKey = this.graph.target(edgeKey);
+    const sourceNode = this.nodes.get(sourceKey);
+    const targetNode = this.nodes.get(targetKey);
+    if (!sourceNode || !targetNode) return;
+
+    const sourceAttributes = this.graph.getNodeAttributes(sourceKey);
+    const targetAttributes = this.graph.getNodeAttributes(targetKey);
+    if (cullBounds && !segmentIntersectsRect(sourceAttributes, targetAttributes, cullBounds)) return;
+
+    const edgeStyle = edge.edgeStyle ?? resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, undefined], this.graph.getEdgeAttributes(edgeKey));
+    const geometry = computeEdgeGeometry(
+      { x: sourceAttributes.x, y: sourceAttributes.y },
+      { x: targetAttributes.x, y: targetAttributes.y },
+      edgeStyle,
+      sourceNode.nodeStyle,
+      targetNode.nodeStyle,
+      edge.isBilateral
+    );
+    if (geometry.lineLength <= 0 || edgeStyle.width <= 0) return;
+
+    const [tint, colorAlpha] = colorToPixi(edgeStyle.color);
+    const alpha = colorAlpha * edgeStyle.alpha;
+    const line = new Particle({
+      texture: Texture.WHITE,
+      x: geometry.lineX,
+      y: geometry.lineY,
+      scaleX: edgeStyle.width,
+      scaleY: geometry.lineLength,
+      anchorX: 0.5,
+      anchorY: 0.5,
+      rotation: geometry.lineRotation,
+      tint,
+      alpha
+    });
+    lines.push(line);
+
+    let arrow: Particle | undefined;
+    if (edgeStyle.arrow.show && edgeStyle.arrow.size > 0) {
+      const texture = this.getArrowTexture(renderer, edgeStyle.arrow.size);
+      arrow = new Particle({
+        texture,
+        x: geometry.arrowX,
+        y: geometry.arrowY,
+        anchorX: 0.5,
+        anchorY: 0.5,
+        rotation: geometry.arrowRotation,
+        tint,
+        alpha
+      });
+      arrows.push(arrow);
+    }
+    this.edgeParticles.set(edgeKey, { line, arrow });
   }
 
   updateEdge(edgeKey: string): void {

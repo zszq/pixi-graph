@@ -145,6 +145,8 @@ export class GraphRenderController {
     this.fastVisibleNodes.clear();
     this.fastVisibleInitialized = false;
     this.fastNodesDirty = true;
+    // 节点几何变/增删会改变边的空间分布，同时标脏边索引（边增删另由其 size 校验兜底）。
+    this.layers.batchEdgeLayer?.markIndexDirty();
   }
 
   setEdgesRenderable(renderable: boolean): void {
@@ -175,6 +177,9 @@ export class GraphRenderController {
   }
 
   updateFastNodePosition(nodeKey: string, position: PointData): void {
+    // 拖拽逐帧改节点位置 → 边空间分布变，标脏边索引（仅置标志，很便宜；高性能拖拽期不 rebuild，
+    // 松手恢复时才按新位置重建一次索引）。放在最前面，确保非高性能模式（无 fast 粒子）也能标脏。
+    this.layers.batchEdgeLayer?.markIndexDirty();
     const particle = this.fastNodeParticles.get(nodeKey);
     if (!particle) return;
     particle.x = position.x;
