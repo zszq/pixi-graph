@@ -222,17 +222,21 @@ export class PixiGraph<
     this.graphEventController.bind();
     this.bindViewportEvents();
 
+    // ⚠️ PERF-CRITICAL（性能关键·改前必读，勿调换以下三步顺序）：
+    //   createGraph → resetView(定位相机到 fit) → updateGraphVisibility(首次可见性更新)。
+    //   why：updateGraphVisibility 必须在 resetView 把缩放定到最终 fit 档位之后才跑。若在此之前
+    //   （初始 zoom=1、档位高于标签档）跑，优化⑤会把全部标签误判为可见而全量烘焙，create 退回
+    //   到未优化的 ~31s（实测）。createGraph 内部已刻意不做首次可见性更新，就是为此。
     this.createGraph();
     this.resetView(this.graph.nodes());
-    // 在相机定位到最终 fit 缩放之后做首次可见性更新：此时缩放档位真实，优化⑤只会为真正
-    // 在屏的标签按需烘焙，避免创建期全量烘焙数万个标签纹理。
     this.updateGraphVisibility();
 
     // ━━ 性能优化①｜viewport 渲染组（RenderGroup）━━ (tag: perf-v4-rendergroup)
-    // 把整个 viewport 标记为 PIXI v8 渲染组：平移/缩放只更新该组的变换矩阵，不再逐帧
-    // 重算其下数万个节点/边的世界变换。大图平移渲染开销可降一个数量级（实测 5 万点：
-    // 平移渲染 ~120ms→~1ms/帧，约 47×），原理同 sigma.js“相机即 uniform”。
-    // 代价：变换变廉价，但可见性/结构变更仍需 O(子节点数) 重建指令——见优化③④的补偿。
+    // ⚠️ PERF-CRITICAL（性能关键·勿删/勿前移）：把整个 viewport 标记为 PIXI v8 渲染组后，平移/缩放
+    // 只更新该组的变换矩阵，不再逐帧重算其下数万个节点/边的世界变换。大图平移渲染降一个数量级
+    // （实测 5 万点 ~120ms→~1ms/帧，约 47×），原理同 sigma.js“相机即 uniform”。这是整套高性能的
+    // 基石，删除会让大图平移直接卡死。代价：变换变廉价，但可见性/结构变更仍需 O(子节点数) 重建
+    // 指令——见优化③④的补偿。
     this.enableViewportRenderGroup();
 
     // Temporary workaround for hover passthrough until PIXI exposes a cleaner hook.
@@ -257,9 +261,10 @@ export class PixiGraph<
     this.subscriptions.add(this.viewport, 'frame-end', this.onViewportFrameEndBound);
   }
 
-  // viewport 的 parentRenderGroup 要等首次渲染把它并入 stage 的渲染组后才建立。在此之前
-  // 调用 enableRenderGroup 会创建出未与父组链接的 renderGroup，随后被首帧渲染重置而失效。
-  // 因此逐帧等待 parentRenderGroup 就绪后再启用，对初始化时机免疫。
+  // ⚠️ PERF-CRITICAL（性能关键·勿改成构造期直接 enableRenderGroup）：viewport 的 parentRenderGroup
+  // 要等首次渲染把它并入 stage 的渲染组后才建立。在此之前调用 enableRenderGroup 会创建出未与父组
+  // 链接的 renderGroup，随后被首帧渲染重置而失效（表现为优化①“没生效”、平移又变卡）。因此必须逐帧
+  // 轮询等 parentRenderGroup 就绪后再启用，对初始化时机免疫。改动此处务必重新验证大图平移帧时。
   private enableViewportRenderGroup(attempts = 0): void {
     if (this.viewport.isRenderGroup) return;
     if (!this.viewport.parentRenderGroup) {

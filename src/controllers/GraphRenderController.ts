@@ -60,10 +60,11 @@ export class GraphRenderController {
     const zoomStep = this.currentZoomStep();
 
     // ━━ 性能优化②｜隐藏态跳过逐对象 LOD 循环 ━━ (tag: perf-v4-rendergroup)
-    // 高性能隐藏态：node/edge/label 层均不渲染（只渲染 fast 节点层与批量边），对数万个
-    // 节点/边逐个跑 LOD 可见性纯属浪费（实测 5万点跨档位约 45ms）。此处只更新批量边的
-    // LOD 档位，跳过逐对象循环，并保持 lastZoomStep 不变——使恢复后的第一个正常帧重新
-    // 跑一次完整 LOD 循环，补上隐藏期间的档位变化。
+    // ⚠️ PERF-CRITICAL（性能关键·勿在此分支里跑逐对象 LOD 循环、勿在此更新 lastZoomStep）：
+    // 高性能隐藏态下 node/edge/label 层均不渲染（只渲染 fast 节点层与批量边），对数万个节点/边逐个
+    // 跑 LOD 可见性纯属浪费（实测 5 万点跨档位约 45ms 卡顿）。此处只更新批量边的 LOD 档位、跳过逐对象
+    // 循环并提前返回；关键是**保持 lastZoomStep 不变**——这样恢复后的第一个正常帧会因档位“看起来变了”
+    // 而重跑一次完整 LOD 循环，补上隐藏期间的档位变化。若在这里更新了 lastZoomStep，恢复后会漏掉 LOD。
     if (options.fastNodeCull) {
       this.layers.batchEdgeLayer?.setZoomStep(zoomStep);
       if (!options.skipBatchEdges) this.rebuildBatchEdges();
@@ -204,9 +205,9 @@ export class GraphRenderController {
   }
 
   // ━━ 性能优化④｜标签层按缩放档位整层开关 ━━ (tag: perf-v5-restore-lod)
-  // 标签整层按 LOD 档位开关：低于标签档位时整层 renderable=false，让渲染组跳过其下数万个
-  // 标签容器的遍历（配合优化③，5万点恢复后首个细节帧渲染 ~346ms→~112ms）。供 LOD 更新
-  // 与高性能层恢复时统一调用。
+  // ⚠️ PERF-CRITICAL（性能关键·勿改成始终让标签层可见）：标签整层按 LOD 档位开关——低于 LABEL_ZOOM_STEP
+  // 时把整层 renderable=false，让渲染组直接跳过其下数万个标签容器的遍历（配合优化③，5 万点恢复后首个
+  // 细节帧渲染 ~346ms→~112ms）。若恒置 true，恢复/缩放时渲染组要遍历全部标签容器，卡顿回归。
   applyLabelLayerLod(zoomStep = this.currentZoomStep()): void {
     const showLabels = zoomStep >= LABEL_ZOOM_STEP;
     this.layers.setNodeLabelsRenderable(showLabels);
@@ -320,9 +321,10 @@ export class GraphRenderController {
   }
 
   // ━━ 性能优化③｜恢复时快速空间剔除 ━━ (tag: perf-v5-restore-lod)
-  // 恢复高性能层时使用：细节层重新可见后立即剔除屏外节点/标签。渲染组下若沿用隐藏期间
-  // 的陈旧剔除标志，首个全细节帧会把大量屏外对象纳入渲染组指令，造成数百 ms 卡顿。这里用
-  // 基于空间索引的快速剔除（约 10ms），而非全量 PIXI Culler（5 万点要上百 ms，反而更慢）。
+  // ⚠️ PERF-CRITICAL（性能关键·勿改回 this.cull() 全量 Culler、勿改成不剔除）：恢复高性能层时，细节层
+  // 重新可见后必须立即剔除屏外节点/标签。渲染组下若沿用隐藏期间的陈旧剔除标志，首个全细节帧会把大量
+  // 屏外对象纳入渲染组指令，造成数百 ms 卡顿。这里**必须用基于空间索引的快速剔除**（约 10ms）；实测
+  // 改用全量 PIXI Culler 在 5 万点要上百 ms，反而让恢复更卡（曾从 ~270ms 恶化到 ~420ms）。
   cullViewport(): void {
     this.fastCullNodes();
   }

@@ -15,9 +15,11 @@ export const ZOOM_STEPS = [0.1, 0.2, 0.3, 0.4, 0.5, Infinity];
 
 /**
  * 性能优化④｜标签层按缩放档位整层开关 (tag: perf-v5-restore-lod)
- * 标签（节点/边）开始出现的最低 zoomStep。低于此档位时标签按 LOD 全部隐藏，此时把整个
- * 标签层 renderable 置 false，可让 PIXI 渲染组直接跳过其下数万个标签容器的指令重建遍历。
- * 必须与 renderers/*Label.ts 中文本出现的阈值（zoomStep>=2）保持一致。
+ * ⚠️ PERF-CRITICAL（性能关键·改值必须同步改对应渲染阈值）：标签（节点/边）开始出现的最低 zoomStep。
+ * 低于此档位时标签按 LOD 全部隐藏，此时把整个标签层 renderable 置 false，让 PIXI 渲染组直接跳过其下
+ * 数万个标签容器的指令重建遍历（优化④），并据此判定是否懒烘焙标签纹理（优化⑤）。
+ * **必须与 renderers/{node,edge}Label.ts 中文本出现的阈值（updateXxxLabelVisibility 的 zoomStep>=2）
+ * 保持一致**，否则会出现“整层已关但单个标签以为要显示”之类的撕裂。
  */
 export const LABEL_ZOOM_STEP = 2;
 

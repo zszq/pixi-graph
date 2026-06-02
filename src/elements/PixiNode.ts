@@ -63,10 +63,11 @@ export class PixiNode extends EventEmitter<PixiNodeEvents> {
     this.nodeStyle = nodeStyle;
     updateNodeStyle(this.nodeGfx, nodeStyle, textureCache);
     // ━━ 性能优化⑤｜延迟生成节点标签纹理 ━━
-    // 标签仅在放大(zoomStep>=LABEL_ZOOM_STEP)且在屏时才需要。创建时为数万个不可见标签
-    // 逐个烘焙文本纹理是巨大浪费（实测 5 万点 create 31s→2.6s）。这里把标签样式存为待执行
-    // 闭包，待 updateVisibility 判定标签将显示时再按需烘焙；若标签当前就可见则立即烘焙
-    // （覆盖放大状态下的样式变更）。
+    // ⚠️ PERF-CRITICAL（性能关键·勿改成在此直接 updateNodeLabelStyle 立即烘焙）：标签仅在放大
+    // (zoomStep>=LABEL_ZOOM_STEP)且在屏时才需要。创建时为数万个不可见标签逐个烘焙文本纹理是巨大浪费
+    // （实测 5 万点 create 31s→2.6s）。这里必须把标签样式**存为待执行闭包**，待 updateVisibility 判定
+    // 标签将显示时再按需烘焙；仅当标签当前已可见才立即烘焙（覆盖放大态下的样式变更）。改回立即烘焙会
+    // 让创建退回数十秒。
     this.pendingLabelStyle = () => updateNodeLabelStyle(this.nodeLabelGfx, nodeStyle, textureCache);
     if (this.labelVisible) this.bakeLabelIfPending();
   }
@@ -89,8 +90,9 @@ export class PixiNode extends EventEmitter<PixiNodeEvents> {
   }
 
   updateVisibility(zoomStep: number): void {
-    // 标签将显示且节点在屏时，按需烘焙之前延迟的标签纹理（性能优化⑤）。culled 标志由剔除
-    // 阶段在本次调用前刷新，故只为可见节点烘焙，避免一次性烘焙数万个屏外标签。
+    // ⚠️ PERF-CRITICAL（性能关键·勿去掉 !culled 判断）：标签将显示且节点在屏时，才按需烘焙延迟的标签
+    // 纹理（性能优化⑤）。culled 标志由剔除阶段在本次调用前刷新，**只为可见节点烘焙**——去掉 !culled
+    // 会在缩放到标签档位时一次性烘焙全部数万个屏外标签，造成大卡顿。
     this.labelVisible = zoomStep >= LABEL_ZOOM_STEP && !this.nodeGfx.culled;
     if (this.labelVisible) this.bakeLabelIfPending();
     updateNodeVisibility(this.nodeGfx, zoomStep);
