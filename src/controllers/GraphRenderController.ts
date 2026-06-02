@@ -59,6 +59,7 @@ export class GraphRenderController {
 
     const zoomStep = this.currentZoomStep();
 
+    // ━━ 性能优化②｜隐藏态跳过逐对象 LOD 循环 ━━ (tag: perf-v4-rendergroup)
     // 高性能隐藏态：node/edge/label 层均不渲染（只渲染 fast 节点层与批量边），对数万个
     // 节点/边逐个跑 LOD 可见性纯属浪费（实测 5万点跨档位约 45ms）。此处只更新批量边的
     // LOD 档位，跳过逐对象循环，并保持 lastZoomStep 不变——使恢复后的第一个正常帧重新
@@ -69,6 +70,7 @@ export class GraphRenderController {
       return;
     }
 
+    // ━━ 性能优化④｜标签层按缩放档位整层开关 ━━ (tag: perf-v5-restore-lod)
     // 非隐藏态：标签整层按 LOD 档位开关。低于标签档位时所有标签本就逐个隐藏，这里直接把整层
     // renderable 置 false，让渲染组跳过其下数万个标签容器的遍历，省去无谓的指令重建开销。
     this.applyLabelLayerLod(zoomStep);
@@ -198,8 +200,10 @@ export class GraphRenderController {
     this.layers.setEdgeLabelsRenderable(renderable);
   }
 
+  // ━━ 性能优化④｜标签层按缩放档位整层开关 ━━ (tag: perf-v5-restore-lod)
   // 标签整层按 LOD 档位开关：低于标签档位时整层 renderable=false，让渲染组跳过其下数万个
-  // 标签容器的遍历。供 LOD 更新与高性能层恢复时统一调用。
+  // 标签容器的遍历（配合优化③，5万点恢复后首个细节帧渲染 ~346ms→~112ms）。供 LOD 更新
+  // 与高性能层恢复时统一调用。
   applyLabelLayerLod(zoomStep = this.currentZoomStep()): void {
     const showLabels = zoomStep >= LABEL_ZOOM_STEP;
     this.layers.setNodeLabelsRenderable(showLabels);
@@ -312,6 +316,7 @@ export class GraphRenderController {
     return visibleNodes;
   }
 
+  // ━━ 性能优化③｜恢复时快速空间剔除 ━━ (tag: perf-v5-restore-lod)
   // 恢复高性能层时使用：细节层重新可见后立即剔除屏外节点/标签。渲染组下若沿用隐藏期间
   // 的陈旧剔除标志，首个全细节帧会把大量屏外对象纳入渲染组指令，造成数百 ms 卡顿。这里用
   // 基于空间索引的快速剔除（约 10ms），而非全量 PIXI Culler（5 万点要上百 ms，反而更慢）。

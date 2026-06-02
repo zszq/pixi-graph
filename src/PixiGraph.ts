@@ -225,9 +225,11 @@ export class PixiGraph<
     this.createGraph();
     this.resetView(this.graph.nodes());
 
+    // ━━ 性能优化①｜viewport 渲染组（RenderGroup）━━ (tag: perf-v4-rendergroup)
     // 把整个 viewport 标记为 PIXI v8 渲染组：平移/缩放只更新该组的变换矩阵，不再逐帧
-    // 重算其下数万个节点/边的世界变换。大图平移渲染开销可降一个数量级（实测 1 万点：
-    // 移动时渲染 31ms→0.6ms），原理同 sigma.js“相机即 uniform”。
+    // 重算其下数万个节点/边的世界变换。大图平移渲染开销可降一个数量级（实测 5 万点：
+    // 平移渲染 ~120ms→~1ms/帧，约 47×），原理同 sigma.js“相机即 uniform”。
+    // 代价：变换变廉价，但可见性/结构变更仍需 O(子节点数) 重建指令——见优化③④的补偿。
     this.enableViewportRenderGroup();
 
     // Temporary workaround for hover passthrough until PIXI exposes a cleaner hook.
@@ -363,14 +365,14 @@ export class PixiGraph<
     this.renderController.setNodesRenderable(true);
     this.renderController.refreshBatchEdges();
     this.setEdgesRenderable(true);
-    // 标签整层按当前缩放档位开关：低缩放下标签本就 LOD 隐藏，整层关闭可让渲染组跳过其下
-    // 数万个标签容器的遍历，显著降低恢复时的指令重建成本（恢复卡顿的主要来源之一）。
+    // 性能优化④（见 GraphRenderController.applyLabelLayerLod）：标签整层按当前缩放档位开关，
+    // 低缩放下整层关闭让渲染组跳过其下数万个标签容器的遍历，显著降低恢复时的指令重建成本。
     this.renderController.applyLabelLayerLod();
     this.renderController.setNodeDetailsRenderable(true);
     this.renderController.setInteractionEnabled(true);
-    // 细节层恢复可见后立即剔除屏外对象。viewport 已是渲染组，若沿用隐藏期间的陈旧剔除
-    // 标志，首个全细节帧会把大量屏外节点/标签纳入渲染组指令，造成数百 ms 卡顿（实测 5 万
-    // 点松手卡顿 ~500ms）。剔除本身用基于屏幕的 Culler，仅约几十 ms，远小于其消除的开销。
+    // 性能优化③（见 GraphRenderController.cullViewport）：细节层恢复可见后立即用快速空间剔除
+    // 屏外对象。viewport 已是渲染组，若沿用隐藏期间的陈旧剔除标志，首个全细节帧会把大量屏外
+    // 节点/标签纳入渲染组指令，造成数百 ms 卡顿（实测 5 万点松手曾 ~500ms）。
     this.renderController.cullViewport();
   }
 
