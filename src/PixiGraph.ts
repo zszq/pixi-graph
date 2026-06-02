@@ -371,6 +371,15 @@ export class PixiGraph<
 
   private restorePerformanceLayersNow(): void {
     if (!this.highMode || !this.performanceLayersHidden) return;
+    // ⚠️ 拖拽（画布平移或节点拖拽）进行中绝不恢复细节层。缩放/吸附结束等"延迟 end 事件"可能在拖拽
+    // 开始之后才触发，并经 deferPerformanceLayerRestore 安排一个恢复定时器；若该定时器在拖拽中
+    // fire 就会让边/标签错误地在拖拽过程中冒出来。这里统一拦截，恢复改由 drag-end 的
+    // showPerformanceLayers 兜底。这是覆盖所有路径的根本保险（zoomed-end / snap-end / snap-zoom-end…）。
+    if (this.isViewportDragging() || this.nodeDragController?.isDragging()) {
+      clearTimeout(this.performanceRestoreTimer);
+      this.performanceRestoreTimer = undefined;
+      return;
+    }
     clearTimeout(this.performanceRestoreTimer);
     this.performanceRestoreTimer = undefined;
     this.mutationController.flushScheduledEdgeUpdates();
