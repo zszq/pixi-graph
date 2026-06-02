@@ -300,6 +300,13 @@ export class GraphRenderController {
     return visibleNodes;
   }
 
+  // 恢复高性能层时使用：细节层重新可见后立即剔除屏外节点/标签。渲染组下若沿用隐藏期间
+  // 的陈旧剔除标志，首个全细节帧会把大量屏外对象纳入渲染组指令，造成数百 ms 卡顿。这里用
+  // 基于空间索引的快速剔除（约 10ms），而非全量 PIXI Culler（5 万点要上百 ms，反而更慢）。
+  cullViewport(): void {
+    this.fastCullNodes();
+  }
+
   private cull(): void {
     Culler.shared.cull(this.viewport, this.app.renderer.screen);
     this.fastVisibleInitialized = false;

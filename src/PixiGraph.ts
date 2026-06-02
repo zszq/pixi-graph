@@ -359,12 +359,6 @@ export class PixiGraph<
     this.performanceRestoreTimer = undefined;
     this.mutationController.flushScheduledEdgeUpdates();
     this.performanceLayersHidden = false;
-    // Do not run a full PIXI Culler pass synchronously here. On 50k/100k
-    // graphs it blocks the idle transition for hundreds of ms, making edges,
-    // labels and icons feel like they "come back late". The next viewport
-    // dirty frame will refresh exact culling; until then previously culled
-    // off-screen objects remain harmless, while on-screen layers become
-    // visible immediately.
     this.renderController.setFastNodesRenderable(false);
     this.renderController.setNodesRenderable(true);
     this.renderController.refreshBatchEdges();
@@ -372,6 +366,10 @@ export class PixiGraph<
     this.setNodeLabelsRenderable(true);
     this.renderController.setNodeDetailsRenderable(true);
     this.renderController.setInteractionEnabled(true);
+    // 细节层恢复可见后立即剔除屏外对象。viewport 已是渲染组，若沿用隐藏期间的陈旧剔除
+    // 标志，首个全细节帧会把大量屏外节点/标签纳入渲染组指令，造成数百 ms 卡顿（实测 5 万
+    // 点松手卡顿 ~500ms）。剔除本身用基于屏幕的 Culler，仅约几十 ms，远小于其消除的开销。
+    this.renderController.cullViewport();
   }
 
   private deferPerformanceLayerRestore(): void {
