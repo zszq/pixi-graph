@@ -101,6 +101,9 @@ export class GraphRenderController {
 
   uncull(): void {
     for (const node of this.nodes.values()) {
+      // 整图导出前确保所有标签纹理已烘焙：懒加载(性能优化⑤)下未被访问到的标签尚未生成，
+      // 否则导出的整图会缺失这些标签。仅在 uncull(导出等)这类刻意全量操作时才付出该代价。
+      node.ensureLabelBaked();
       node.nodeGfx.culled = false;
       node.nodeLabelGfx.culled = false;
     }

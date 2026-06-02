@@ -224,6 +224,9 @@ export class PixiGraph<
 
     this.createGraph();
     this.resetView(this.graph.nodes());
+    // 在相机定位到最终 fit 缩放之后做首次可见性更新：此时缩放档位真实，优化⑤只会为真正
+    // 在屏的标签按需烘焙，避免创建期全量烘焙数万个标签纹理。
+    this.updateGraphVisibility();
 
     // ━━ 性能优化①｜viewport 渲染组（RenderGroup）━━ (tag: perf-v4-rendergroup)
     // 把整个 viewport 标记为 PIXI v8 渲染组：平移/缩放只更新该组的变换矩阵，不再逐帧
@@ -271,7 +274,9 @@ export class PixiGraph<
     this.graph.forEachEdge((edgeKey, attributes, source, target) => this.mutationController.handleGraphEdgeAdded({ key: edgeKey, attributes, source, target }));
     this.highMode = this.exceedsHighPerformance();
     this.renderController.setBatchEdgesEnabled(this.highMode);
-    this.renderController.updateVisibility();
+    // 可见性更新放到 resetView 把相机定位到最终 fit 缩放之后再做（见 init）。否则此处运行在
+    // 初始 zoom=1（zoomStep 高于标签档位）、节点尚未被有效剔除的瞬态，会触发优化⑤把全部
+    // 标签误判为“可见”而全量烘焙，使创建退回到未优化的耗时。
   }
 
   destroy(): void {
