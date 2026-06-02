@@ -23,9 +23,15 @@ export interface GraphEventControllerOptions<NodeAttributes extends BaseNodeAttr
 }
 
 /**
- * Owns Graphology event subscriptions and routes graph mutations to the render
- * mutation layer. PixiGraph only needs to provide the high-performance mode
- * recomputation hook.
+ * 图事件订阅与转发层（what）：把 Graphology 图发出的 nodeAdded/edgeDropped/
+ * attributesUpdated 等事件，统一转发给 GraphMutationController 的对应 handler。
+ *
+ * why 单独成类：把"订阅/退订图事件"从同步逻辑里分离出来，使 PixiGraph 只需提供一个
+ * updateHighMode 回调；所有订阅都经 EventSubscriptions 登记，destroy 时能成对注销，
+ * 避免实例销毁后回调仍持有图引用导致泄漏。
+ *
+ * why 增删才调 updateHighMode：节点/边的增删会改变图规模，可能跨过 highPerformance 阈值，
+ * 需要重算是否进入高性能模式；而纯属性更新不改变规模，故 attributesUpdated 系列不触发它。
  */
 export class GraphEventController<NodeAttributes extends BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes> {
   private readonly graph: AbstractGraph<NodeAttributes, EdgeAttributes>;

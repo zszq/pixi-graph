@@ -1,5 +1,7 @@
 import rgba from 'color-rgba';
 
+// 颜色解析缓存。why：colorToPixi 在样式刷新/批量边重建等热路径被大量调用，而颜色串种类有限；
+// 缓存解析结果避免重复跑 color-rgba。上限 256 + 删最旧键，防止用函数生成大量唯一色时无限增长。
 const COLOR_CACHE_LIMIT = 256;
 const colorCache = new Map<string, [tint: number, alpha: number]>();
 

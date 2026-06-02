@@ -17,6 +17,9 @@ export interface WatermarkOption {
   };
 }
 
+// 水印特性（what）：构建一个文字或图片水印 Container。cover=true 时按 row×column 平铺铺满画布，
+// 否则只在 position 处放单个。由 PixiGraph 加到 stage 的水印层（不随平移缩放移动，见 GraphLayers）。
+// why 做成纯构建函数：无状态、易测试；平铺/单点、文字/图片的分支都收敛在这里，调用方只管增删容器。
 /** Build a watermark container, optionally tiled to cover the whole viewport. */
 export function makeWatermark(containerWidth: number, containerHeight: number, option: WatermarkOption): Container {
   const watermark = new Container();
@@ -64,6 +67,8 @@ function makeTextWatermark(option: WatermarkOption): Text {
   return text;
 }
 
+// 平铺铺满：把画布按 row×column 等分网格，每格中心放一个水印贴片。why 用网格中心而非左上角：
+// 让水印分布均匀、边缘留白对称，覆盖更自然。
 function coverScreen(containerWidth: number, containerHeight: number, option: WatermarkOption, makeTile: () => Container): Container[] {
   const row = option.row || 5;
   const column = option.column || 6;

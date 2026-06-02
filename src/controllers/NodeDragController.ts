@@ -27,6 +27,14 @@ export interface NodeDragControllerOptions<NodeAttributes extends BaseNodeAttrib
   isHighMode: () => boolean;
 }
 
+/**
+ * 节点拖拽控制器（what）：从节点上按下后，接管 document 级的 mousemove/mouseup，把鼠标位置
+ * 转成世界坐标写回图节点的 x/y，并实时更新该节点渲染位置与相邻边；松手收尾。
+ *
+ * why 监听 document 而非画布：拖拽中鼠标常常移出画布甚至窗口边缘，只有挂在 document 上才能
+ * 持续收到移动/松开事件，否则快速拖拽会"丢手"。拖拽期间 viewport.pause=true，避免同一手势
+ * 既拖节点又平移画布。
+ */
 export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes> {
   private readonly graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
   private readonly viewport: Viewport;
@@ -92,6 +100,10 @@ export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeA
     const nodeKey = this.mousedownNodeKey;
     const newPosition = this.dragOffset ? this.offsetPosition(nodeKey, worldPosition) : worldPosition;
 
+    // 把新位置写回图，但用 suppressedNodeAttributeUpdates 把该 key 标记为"忽略"：
+    // why——updateNodeAttributes 会触发 nodeAttributesUpdated 事件 → handleGraphNodeAttributesUpdated
+    // 又会做一次同步，与下面手动的 updateNodePositionByKey 重复。拖拽是热路径，标记后让事件处理器
+    // 直接跳过，避免每帧两次同步。
     this.suppressedNodeAttributeUpdates.add(nodeKey);
     try {
       this.graph.updateNodeAttributes(nodeKey, attributes => ({
@@ -105,6 +117,8 @@ export class NodeDragController<NodeAttributes extends BaseNodeAttributes, EdgeA
 
     this.mutationController.updateNodePositionByKey(nodeKey, newPosition);
     this.hidePerformanceLayers();
+    // 高性能模式下拖拽期间边是隐藏的，没必要逐帧更新相邻边几何（松手时再 immediate 全量更新）；
+    // 非高性能模式边可见，需要实时跟随。
     if (!this.isHighMode()) this.mutationController.updateConnectedEdgesByNodeKey(nodeKey);
     this.emit('nodeMove', event, nodeKey, newPosition);
   }

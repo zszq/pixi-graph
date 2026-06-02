@@ -1,5 +1,8 @@
 import { Text, BitmapText } from 'pixi.js';
 
+// 文本/图标的呈现类型。why 区分 TEXT 与 BITMAP_TEXT：TEXT 用普通 Text，质量高、支持任意样式，
+// 但每段唯一文本各生成一张纹理（成本高）；BITMAP_TEXT 复用字形图集，适合大量重复/动态文本。
+// IMAGE 表示图标用图片（异步加载并裁成圆形）。
 export enum TextType {
   TEXT = 'TEXT',
   BITMAP_TEXT = 'BITMAP_TEXT',

@@ -39,7 +39,20 @@ export interface GraphMutationControllerOptions<NodeAttributes extends BaseNodeA
 
 
 /**
- * Owns graph mutation, hover, and element lifecycle concerns.
+ * 图数据 → 渲染对象的同步层（what）。
+ *
+ * 职责：把 Graphology 图的增删改事件（节点/边的 added/dropped/attributesUpdated）翻译成对
+ * 应 PixiNode / PixiEdge 渲染对象的创建、销毁、样式与位置更新；并处理 hover 高亮、节点拖拽
+ * 起手、平行边（同一对端点间多条边）的弧形偏移分组。
+ *
+ * 为什么单独成类（why）：PixiGraph 主类只负责"画布/视口/渲染调度"，把"数据模型 ↔ 渲染对象"
+ * 的映射与维护抽到这里，保持职责单一、便于测试。所有渲染对象的生命周期都集中在此，避免散落各处
+ * 导致增删不对称（内存泄漏）或样式/位置不同步。
+ *
+ * 关键设计：构造参数里的一组可选回调（markSpatialIndexDirty / updateFastNodePosition /
+ * markBatchEdgesDirty / updateBatchEdge / shouldDeferConnectedEdgeUpdates）是与
+ * GraphRenderController 的解耦边界——本类只在数据变化时"通知"渲染层把相应缓存标脏或局部更新，
+ * 而不直接依赖渲染层实现，从而让两个控制器互不知晓彼此内部。
  */
 export class GraphMutationController<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> {
   private readonly graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
@@ -95,6 +108,12 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.parallelEdgeIndex.clear();
   }
 
+  // --- Graphology 图事件处理器 ---------------------------------------------
+  // 以下 handleGraph* 由 GraphEventController 绑定到图的 nodeAdded/edgeDropped/
+  // attributesUpdated 等事件。它们是"数据变更 → 渲染对象同步"的唯一入口，确保渲染对象与图
+  // 数据始终一致；每个增删都顺带把空间索引/批量边缓存标脏（why：这些缓存按全量数据构建，
+  // 数据一变就必须失效重建，否则会渲染出过期的节点位置或边）。
+
   handleGraphNodeAdded(data: { key: string; attributes: NodeAttributes }): void {
     this.markSpatialIndexDirty();
     this.markBatchEdgesDirty();
@@ -146,6 +165,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.updateEdgeStyleByKey(data.key);
   }
 
+  // 全量节点属性更新（如整体重新布局后）：逐节点同步，并只收集"几何真正变化"的节点的相邻边
+  // 一次性更新。why：用 Set 去重相邻边，避免相邻两端都动时同一条边被更新两次。
   handleGraphEachNodeAttributesUpdated(): void {
     const affectedEdges = new Set<string>();
     this.graph.forEachNode(nodeKey => {
@@ -207,6 +228,9 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.markBatchEdgesDirty();
   }
 
+  // 刷新某节点所有相邻边的位置（节点移动后边端点要跟随）。why 的 defer 分支：拖动高密度节点
+  // （度数极大，如星形中心）会瞬间弄脏上千条边，同步全更会卡帧；交给 EdgeUpdateScheduler 分帧
+  // 处理。immediate=true 用于必须立即一致的场景（如导出前 flush）。
   updateConnectedEdgesByNodeKey(nodeKey: string, immediate = false): void {
     const edgeKeys = this.graph.edges(nodeKey).filter(edgeKey => this.edgeKeyToEdgeObject.has(edgeKey));
     if (!immediate && this.shouldDeferConnectedEdgeUpdates(nodeKey, edgeKeys.length)) {
@@ -443,6 +467,10 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     return resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, edge.hovered ? this.hoverStyle.edge : undefined], edgeAttributes);
   }
 
+  // 维护"平行边组"：同一对端点之间有多条边时需互相错开（isBilateral=true 触发弧形/侧移偏移），
+  // 否则会完全重叠看不清。what：把本边登记进 ParallelEdgeIndex，取回该端点对的全部边；only-one
+  // 时不偏移。why 要刷新整组：新增/删除一条平行边会改变整组的"是否平行"状态，组内每条边的偏移
+  // 都得重算，否则旧成员仍按重叠方式绘制。
   private updateParallelEdgeGroup(edgeKey: string, sourceNodeKey: string, targetNodeKey: string): void {
     const parallelEdgeKeys = this.parallelEdgeIndex.register(edgeKey, sourceNodeKey, targetNodeKey);
     const hasParallelEdges = parallelEdgeKeys.length > 1;
@@ -460,6 +488,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     }
   }
 
+  // 把被 hover 的元素移到同层最后（绘制在最上层），避免高亮节点/边被相邻元素压住。
+  // why 提前 return：已在末尾时无需移动，省去无谓的子节点重排（hover 是高频事件）。
   private moveToFront(layer: { children: Array<unknown>; setChildIndex(child: any, index: number): void }, child: unknown): void {
     const lastIndex = layer.children.length - 1;
     if (lastIndex < 0 || layer.children[lastIndex] === child) return;

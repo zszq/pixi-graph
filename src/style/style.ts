@@ -1,3 +1,8 @@
+// 样式系统（what）：定义最终样式的完整结构 GraphStyle（node/edge 各项的具体值），以及"样式定义"
+// GraphStyleDefinition——它允许在样式树的任意层级写成 函数 / 部分对象 / 完整值。
+// why 这样设计：数据驱动样式。使用方可写 `color: node => colors[node.group]`，让每个元素按自身
+// 属性算出样式；解析时（resolveStyleDefinitions）在 DEFAULT_STYLE 之上深度合并 base 与 hover 态，
+// 得到该元素的最终样式。函数可出现在任意层级，故需递归解析。
 import type { BaseNodeAttributes, BaseEdgeAttributes } from '../types/attributes';
 import type { TextType, TextStyle } from '../utils/text';
 
@@ -79,6 +84,9 @@ export interface GraphStyleDefinition<NodeAttributes extends BaseNodeAttributes 
 }
 
 
+// 静态样式定义（整棵子树都没有函数）的解析结果缓存。why：同一份 style 配置对象会被成千上万个
+// 元素反复解析；若其中不含函数，结果与元素属性无关，可按定义对象身份缓存复用，省去重复深拷贝。
+// 用 WeakMap，定义对象被回收时缓存自动释放。
 const resolvedStaticStyleCache = new WeakMap<object, unknown>();
 
 function containsFunction(value: unknown): boolean {

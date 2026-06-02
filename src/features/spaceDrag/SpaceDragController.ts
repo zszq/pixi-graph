@@ -4,8 +4,11 @@ export interface SpaceDragControllerOptions {
 }
 
 /**
- * Owns all global keyboard listeners needed for "hold Space to pan", so
- * PixiGraph.destroy() can reliably unbind them.
+ * 空格拖拽控制器（what）：实现"按住空格 + 拖拽 = 平移画布"（与框选共用普通拖拽手势时用它切换）。
+ * 集中管理所需的全局键盘监听，使 PixiGraph.destroy() 能可靠注销，避免泄漏。
+ *
+ * why arm-on-enter（指针进入容器才挂键盘监听、离开即卸）：只在鼠标悬于图上时才响应空格，
+ * 避免在页面别处按空格（如滚动页面）被本组件劫持；也减少常驻全局监听。
  */
 export class SpaceDragController {
   private readonly container: HTMLElement;

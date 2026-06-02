@@ -16,8 +16,12 @@ export interface BoxSelectViewportOptions {
 }
 
 /**
- * Rubber-band selection drawn directly on the PIXI stage. Intended to pair with
- * space-to-pan so a plain drag starts a selection rectangle on empty canvas.
+ * 框选（橡皮筋矩形）特性（what）：直接在 PIXI stage 上画选择矩形，松手时用 selectInRectangle
+ * 命中矩形内的节点/边。与"空格平移"配合：开启 spaceDrag 后，空画布上的普通拖拽即用于框选。
+ *
+ * why 两个回调 + 两个开关：onChange 实时回传选区、onComplete 松手回传最终选区；lazy 控制是否
+ * 拖拽过程中也持续判定（实时高亮）还是仅松手判定（省算力）；realTime 影响判定节流策略。命中判定
+ * 经 throttle 限频(30ms)，避免大图拖拽中每次 mousemove 都做一次全量矩形命中。
  */
 export class BoxSelectViewport {
   private readonly graph: AbstractGraph;

@@ -2,9 +2,13 @@ import { Assets, Container, Graphics, Rectangle, Sprite, Texture, type Renderer 
 import { textToPixi, type TextStyle, type TextType } from '../utils/text';
 
 /**
- * Caches generated textures by a string key so repeated node/edge styles share
- * a single GPU texture. Textures are rendered at 2x renderer resolution for
- * crisp output when zoomed in.
+ * 纹理缓存（what）：按字符串 key 缓存"渲染一次得到的 Texture"，让外观相同的节点/边/标签复用同
+ * 一张 GPU 纹理，再以 Sprite/Particle 绘制。纹理以渲染器 2× 分辨率生成，放大时仍清晰。
+ *
+ * why：成千上万个节点若各自用 Graphics 实时绘制，CPU/GPU 都扛不住；"先烘焙成纹理、再批量贴图"
+ * 是本库高性能的基础。**关键约定**：调用方拼 key 时必须囊括每一个影响外观的样式属性（尺寸、
+ * 颜色、描边宽度、字体、文本内容、图片 URL 等），否则会错误复用到过期纹理（如改了颜色却命中旧
+ * 缓存）。文本/图片各唯一时纹理无法复用，是大图创建的主要成本——见 PixiNode 的标签懒加载。
  */
 export class TextureCache {
   private readonly renderer: Renderer;
@@ -69,6 +73,8 @@ export class TextureCache {
     );
   }
 
+  // 异步纹理（如需先下载图片再烘焙）。why 维护 pending：同一 key 的多个节点会几乎同时请求，
+  // 用 in-flight Promise 去重，避免同一张图片被并发下载/烘焙多次。
   getAsync(key: string, create: () => Promise<Container>, explicitFrame?: Rectangle): Promise<Texture> {
     const texture = this.textures.get(key);
     if (texture) return Promise.resolve(texture);

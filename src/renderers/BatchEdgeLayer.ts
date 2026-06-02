@@ -67,6 +67,9 @@ export class BatchEdgeLayer<
     this.arrowLayer.renderable = renderable;
   }
 
+  // 重建可见边的粒子缓冲（what）：遍历全部边，剔除掉不与视口相交的，把可见边写成线条/箭头粒子。
+  // why 瓦片量化缓存：把可见边界量化到 128px 网格生成 boundsKey，只要没标脏且仍在同一网格内就跳过
+  // 重建——平移不足一格不必重算，避免每帧重建上万条边。'all' 表示不限视口（全量重建）。
   rebuild(renderer: Renderer, visibleBounds?: { x: number; y: number; width: number; height: number }): void {
     const boundsKey = visibleBounds ? quantizedBoundsKey(visibleBounds, 128) : 'all';
     if (!this.dirty && boundsKey === this.lastBoundsKey) return;
@@ -186,6 +189,11 @@ export class BatchEdgeLayer<
   }
 }
 
+// 计算一条边线段（及箭头）的绘制几何（what）：线条用一个矩形 Particle 表示，需要其中心点、旋转角、
+// 长度；箭头需要其位置与朝向。why 各种扣减：线段两端要从节点圆"外缘"起止（扣掉两端 size+border，
+// 目标端再扣箭头高度），否则线会插进节点圆里或被箭头盖住；isBilateral（有平行边）时整体沿法向
+// 侧移半个 gap，让来回两条边分开不重叠。三角函数：radian 是端到端方向，rotation 是其法向（线条
+// Particle 以竖直为基准，故用法向旋转）。
 function computeEdgeGeometry(
   sourceNodePosition: { x: number; y: number },
   targetNodePosition: { x: number; y: number },
@@ -273,6 +281,8 @@ function segmentsIntersect(a1: { x: number; y: number }, a2: { x: number; y: num
   return false;
 }
 
+// 线段是否与矩形相交（边的视口剔除判据）。what：先看任一端点是否在矩形内（快速命中），否则
+// 逐条检测线段与矩形四边是否相交。why：不能只看端点——两端都在屏外、但中段横穿视口的长边也得绘制。
 function segmentIntersectsRect(a: { x: number; y: number }, b: { x: number; y: number }, rect: { left: number; right: number; top: number; bottom: number }): boolean {
   if (pointInRect(a, rect) || pointInRect(b, rect)) return true;
 
