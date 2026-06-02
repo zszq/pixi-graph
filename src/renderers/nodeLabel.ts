@@ -3,7 +3,6 @@
 import { Container, Sprite, Texture } from 'pixi.js';
 import { colorToPixi } from '../utils/color';
 import type { NodeStyle } from '../style/style';
-import { textToPixi } from '../utils/text';
 import type { TextureCache } from '../textures/TextureCache';
 
 const DELIMITER = '::';
@@ -29,9 +28,7 @@ export function updateNodeLabelStyle(nodeLabelGfx: Container, nodeStyle: NodeSty
   const { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness, content, type, padding, backgroundColor } = nodeStyle.label;
 
   const nodeLabelTextTextureKey = [NODE_LABEL_TEXT, fontFamily, fontSize, fontWeight, color, stroke, strokeThickness, content].join(DELIMITER);
-  const nodeLabelTextTexture = textureCache.get(nodeLabelTextTextureKey, () =>
-    textToPixi(type, content, { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness })
-  );
+  const nodeLabelTextTexture = textureCache.getText(nodeLabelTextTextureKey, type, content, { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness });
 
   const labelOffsetY = nodeOuterSize + (nodeLabelTextTexture.height + padding * 2) / 2;
 

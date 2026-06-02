@@ -1,4 +1,5 @@
-import { Container, Rectangle, Texture, type Renderer } from 'pixi.js';
+import { Assets, Container, Graphics, Rectangle, Sprite, Texture, type Renderer } from 'pixi.js';
+import { textToPixi, type TextStyle, type TextType } from '../utils/text';
 
 /**
  * Caches generated textures by a string key so repeated node/edge styles share
@@ -39,6 +40,33 @@ export class TextureCache {
 
   getOnly(key: string): Texture | undefined {
     return this.textures.get(key);
+  }
+
+  getText(key: string, type: TextType, content: string, style: TextStyle): Texture {
+    return this.get(key, () => textToPixi(type, content, style));
+  }
+
+  loadCircularImage(key: string, url: string, radius: number): Promise<Texture> {
+    const cached = this.textures.get(key);
+    if (cached) return Promise.resolve(cached);
+    return this.getAsync(
+      key,
+      async () => {
+        const raw = await Assets.load<Texture>(url);
+        const diameter = radius * 2;
+        const container = new Container();
+        const sprite = new Sprite(raw);
+        sprite.anchor.set(0.5);
+        const minSide = Math.min(raw.width, raw.height) || diameter;
+        sprite.scale.set(diameter / minSide);
+        const mask = new Graphics();
+        mask.circle(0, 0, radius).fill(0xffffff);
+        sprite.mask = mask;
+        container.addChild(sprite, mask);
+        return container;
+      },
+      new Rectangle(-radius, -radius, radius * 2, radius * 2)
+    );
   }
 
   getAsync(key: string, create: () => Promise<Container>, explicitFrame?: Rectangle): Promise<Texture> {

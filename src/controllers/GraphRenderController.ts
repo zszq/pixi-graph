@@ -1,6 +1,6 @@
 import { Culler, Graphics, Particle, Texture, type Application, type PointData } from 'pixi.js';
 import type { Viewport } from 'pixi-viewport';
-import { ZOOM_STEPS } from '../core/constants';
+import { LABEL_ZOOM_STEP, ZOOM_STEPS } from '../core/constants';
 import { makeWatermark, type WatermarkOption } from '../features/watermark/watermark';
 import type { PixiEdge } from '../elements/PixiEdge';
 import type { PixiNode } from '../elements/PixiNode';
@@ -53,13 +53,28 @@ export class GraphRenderController {
     this.edges = options.edges;
   }
 
-  updateVisibility(options: { fastNodeCull?: boolean; forceLod?: boolean } = {}): void {
+  updateVisibility(options: { fastNodeCull?: boolean; forceLod?: boolean; skipBatchEdges?: boolean } = {}): void {
     if (options.fastNodeCull) this.fastCullNodes();
     else this.cull();
 
     const zoomStep = this.currentZoomStep();
+
+    // 高性能隐藏态：node/edge/label 层均不渲染（只渲染 fast 节点层与批量边），对数万个
+    // 节点/边逐个跑 LOD 可见性纯属浪费（实测 5万点跨档位约 45ms）。此处只更新批量边的
+    // LOD 档位，跳过逐对象循环，并保持 lastZoomStep 不变——使恢复后的第一个正常帧重新
+    // 跑一次完整 LOD 循环，补上隐藏期间的档位变化。
+    if (options.fastNodeCull) {
+      this.layers.batchEdgeLayer?.setZoomStep(zoomStep);
+      if (!options.skipBatchEdges) this.rebuildBatchEdges();
+      return;
+    }
+
+    // 非隐藏态：标签整层按 LOD 档位开关。低于标签档位时所有标签本就逐个隐藏，这里直接把整层
+    // renderable 置 false，让渲染组跳过其下数万个标签容器的遍历，省去无谓的指令重建开销。
+    this.applyLabelLayerLod(zoomStep);
+
     if (!options.forceLod && zoomStep === this.lastZoomStep) {
-      this.rebuildBatchEdges();
+      if (!options.skipBatchEdges) this.rebuildBatchEdges();
       return;
     }
     this.lastZoomStep = zoomStep;
@@ -70,6 +85,10 @@ export class GraphRenderController {
       if (!this.nodeDetailsRenderable) node.setDetailsRenderable(false);
     }
     for (const edge of this.edges.values()) edge.updateVisibility(zoomStep);
+    if (!options.skipBatchEdges) this.rebuildBatchEdges();
+  }
+
+  refreshBatchEdges(): void {
     this.rebuildBatchEdges();
   }
 
@@ -179,6 +198,14 @@ export class GraphRenderController {
     this.layers.setEdgeLabelsRenderable(renderable);
   }
 
+  // 标签整层按 LOD 档位开关：低于标签档位时整层 renderable=false，让渲染组跳过其下数万个
+  // 标签容器的遍历。供 LOD 更新与高性能层恢复时统一调用。
+  applyLabelLayerLod(zoomStep = this.currentZoomStep()): void {
+    const showLabels = zoomStep >= LABEL_ZOOM_STEP;
+    this.layers.setNodeLabelsRenderable(showLabels);
+    this.layers.setEdgeLabelsRenderable(showLabels);
+  }
+
   setNodeLabelsRenderable(renderable: boolean): void {
     this.layers.setNodeLabelsRenderable(renderable);
   }
@@ -277,12 +304,19 @@ export class GraphRenderController {
 
   private buildVisibleNodeDetailsRestoreList(): PixiNode[] {
     this.spatialNodeIndex.ensureFresh(this.nodes);
-    const visibleKeys = new Set(this.spatialNodeIndex.query(this.viewport.getVisibleBounds(), 0));
     const visibleNodes: PixiNode[] = [];
-    for (const [nodeKey, node] of this.nodes) {
-      if (visibleKeys.has(nodeKey)) visibleNodes.push(node);
+    for (const nodeKey of this.spatialNodeIndex.query(this.viewport.getVisibleBounds(), 0)) {
+      const node = this.nodes.get(nodeKey);
+      if (node) visibleNodes.push(node);
     }
     return visibleNodes;
+  }
+
+  // 恢复高性能层时使用：细节层重新可见后立即剔除屏外节点/标签。渲染组下若沿用隐藏期间
+  // 的陈旧剔除标志，首个全细节帧会把大量屏外对象纳入渲染组指令，造成数百 ms 卡顿。这里用
+  // 基于空间索引的快速剔除（约 10ms），而非全量 PIXI Culler（5 万点要上百 ms，反而更慢）。
+  cullViewport(): void {
+    this.fastCullNodes();
   }
 
   private cull(): void {

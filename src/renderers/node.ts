@@ -2,10 +2,10 @@
 // 节点由三个叠放的 Sprite 组成（圆形填充 / 圆形描边 / 图标），各自的位图先经
 // TextureCache 渲染成纹理再复用。createNode 一次性建好结构，updateNodeStyle 按样式
 // 刷新纹理与着色，updateNodeVisibility 按缩放档位（zoomStep）切换各层是否绘制。
-import { Container, Circle, Rectangle, Sprite, Graphics, Texture, Assets } from 'pixi.js';
+import { Container, Circle, Sprite, Graphics, Texture } from 'pixi.js';
 import { colorToPixi } from '../utils/color';
 import type { NodeStyle } from '../style/style';
-import { textToPixi, TextType } from '../utils/text';
+import { TextType } from '../utils/text';
 import type { TextureCache } from '../textures/TextureCache';
 
 // 纹理缓存 key 的分隔符；用 label 标记子 Sprite，便于后续按名取回。
@@ -59,39 +59,17 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
   const nodeIconTextureKey = [NODE_ICON, content, fontFamily, fontSize, fontWeight, color, stroke, strokeThickness].join(DELIMITER);
 
   if (type !== TextType.IMAGE) {
-    const nodeIconTexture = textureCache.get(nodeIconTextureKey, () => textToPixi(type, content, { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness }));
+    const nodeIconTexture = textureCache.getText(nodeIconTextureKey, type, content, { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness });
     applyNodeIcon(nodeIconTexture);
   } else {
     // 图片图标的缓存 key 需含尺寸：圆形裁剪半径随节点 size 变化。
-    const diameter = nodeStyle.size * 2;
     const nodeImageTextureKey = [NODE_ICON, 'IMAGE', content, nodeStyle.size].join(DELIMITER);
     if (textureCache.has(nodeImageTextureKey)) {
       applyNodeIcon(textureCache.getOnly(nodeImageTextureKey)!);
     } else {
-      // PIXI v8：Texture.from(url) 不再惰性加载远程图片，字符串图片须先经 Assets 异步加载。
-      // 加载后把 "cover 缩放 + 圆形裁剪" 一次性烘焙进纹理，图标精灵直接用裁好的圆形纹理、
-      // 不再挂实时遮罩——否则异步回调/剔除期间精灵不在渲染管线，PIXI 不会注册遮罩效果，
-      // 导致放大后图片被失效遮罩挡住、必须 hover 重挂才显示。
+      // 图片图标由 TextureCache 统一异步烘焙成圆形纹理，避免每个节点都临时挂遮罩。
       textureCache
-        .getAsync(
-          nodeImageTextureKey,
-          async () => {
-            const raw = await Assets.load<Texture>(content);
-            const container = new Container();
-            const sprite = new Sprite(raw);
-            sprite.anchor.set(0.5);
-            // 按原图宽高比做 cover 缩放：较短边铺满直径，长边溢出由遮罩与裁剪 frame 裁掉，避免变形。
-            const minSide = Math.min(raw.width, raw.height) || diameter;
-            sprite.scale.set(diameter / minSide);
-            const mask = new Graphics();
-            mask.circle(0, 0, nodeStyle.size).fill(WHITE);
-            sprite.mask = mask;
-            container.addChild(sprite, mask);
-            return container;
-          },
-          // 固定裁剪区域为节点圆的外接正方形，避免 cover 长边把纹理撑大。
-          new Rectangle(-nodeStyle.size, -nodeStyle.size, diameter, diameter)
-        )
+        .loadCircularImage(nodeImageTextureKey, content, nodeStyle.size)
         .then(baked => {
           if (!(nodeGfx.children[2] instanceof Sprite)) return;
           applyNodeIcon(baked);
