@@ -348,9 +348,13 @@ export class PixiGraph<
   // --- high performance mode ----------------------------------------------
 
   private hidePerformanceLayers(): void {
-    if (!this.highMode || this.performanceLayersHidden) return;
+    if (!this.highMode) return;
+    // 先无条件取消待恢复定时器：缩放/吸附结束会设一个 140ms 恢复定时器，若此后拖拽开始而本方法
+    // 因“已隐藏”提前 return、未清掉它，定时器会在拖拽过程中 fire，把边/标签错误地恢复显示（拖拽
+    // 期间本应保持高性能隐藏态）。故清除定时器要放在 performanceLayersHidden 的提前返回之前。
     clearTimeout(this.performanceRestoreTimer);
     this.performanceRestoreTimer = undefined;
+    if (this.performanceLayersHidden) return;
     this.performanceLayersHidden = true;
     this.renderController.setInteractionEnabled(false);
     this.renderController.setFastNodesRenderable(true);
