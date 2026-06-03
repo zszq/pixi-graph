@@ -37,7 +37,12 @@ export class GraphRenderController {
   private nodeDetailsRestoreCursor = 0;
   private nodeDetailsRestoreList: PixiNode[] = [];
   private readonly spatialNodeIndex = new SpatialNodeIndex();
-  private readonly fastVisibleNodes = new Set<string>();
+  private fastVisibleNodes = new Set<string>();
+  // ━━ 性能优化⑧｜cull 可见集复用 ━━ (tag: perf-v8-pan-gc)
+  // ⚠️ PERF-CRITICAL（性能关键·勿改回 new Set + O(n) 拷贝）：fastCullNodes 平移时每帧调用，复用下一帧
+  // 可见集与查询缓冲、末尾交换引用，免去每帧 new Set/new Array 与 O(n) 拷贝的 GC 抖动。
+  private nextVisibleNodes = new Set<string>();
+  private readonly fastCullQueryBuffer: string[] = [];
   private fastVisibleInitialized = false;
   private interactionDisabled = false;
   private fastNodesDirty = true;
@@ -350,7 +355,12 @@ export class GraphRenderController {
       this.fastVisibleInitialized = true;
     }
 
-    const nextVisible = new Set(this.spatialNodeIndex.query(this.viewport.getVisibleBounds()));
+    // 复用持久 Set：清空后从查询缓冲填入，避免每帧 new Set。
+    const nextVisible = this.nextVisibleNodes;
+    nextVisible.clear();
+    this.spatialNodeIndex.queryInto(this.viewport.getVisibleBounds(), this.fastCullQueryBuffer);
+    for (const key of this.fastCullQueryBuffer) nextVisible.add(key);
+
     for (const key of this.fastVisibleNodes) {
       if (nextVisible.has(key)) continue;
       const node = this.nodes.get(key);
@@ -366,7 +376,9 @@ export class GraphRenderController {
       if (this.nodeDetailsRenderable) node.updateVisibility(zoomStep);
     }
 
-    this.fastVisibleNodes.clear();
-    for (const key of nextVisible) this.fastVisibleNodes.add(key);
+    // PERF-CRITICAL (tag: perf-v8-pan-gc)：交换引用（O(1)）——nextVisible 成为新的 fastVisibleNodes，
+    // 旧集留作下帧复用。勿改回 fastVisibleNodes.clear()+逐个 add 拷贝。
+    this.nextVisibleNodes = this.fastVisibleNodes;
+    this.fastVisibleNodes = nextVisible;
   }
 }

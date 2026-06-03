@@ -49,6 +49,15 @@ export class SpatialNodeIndex {
   }
 
   query(bounds: Rectangle, margin = 128): string[] {
+    const result: string[] = [];
+    this.queryInto(bounds, result, margin);
+    return result;
+  }
+
+  // ━━ 性能优化⑧｜查询写入复用缓冲 ━━ (tag: perf-v8-pan-gc)
+  // ⚠️ PERF-CRITICAL（性能关键·勿改回每次返回新数组）：把命中节点 key 填入调用方提供的数组（先清空）。
+  // fastCullNodes 平移时每帧调用，复用缓冲避免每帧新建数组造成 GC 抖动；需要独立数组的调用方用 query()。
+  queryInto(bounds: Rectangle, out: string[], margin = 128): void {
     const left = bounds.left - margin;
     const right = bounds.right + margin;
     const top = bounds.top - margin;
@@ -57,7 +66,7 @@ export class SpatialNodeIndex {
     const maxX = Math.floor(right / this.cellSize);
     const minY = Math.floor(top / this.cellSize);
     const maxY = Math.floor(bottom / this.cellSize);
-    const result: string[] = [];
+    out.length = 0;
 
     for (let y = minY; y <= maxY; y += 1) {
       for (let x = minX; x <= maxX; x += 1) {
@@ -65,12 +74,10 @@ export class SpatialNodeIndex {
         if (!cell) continue;
         for (const node of cell) {
           if (node.x + node.radius < left || node.x - node.radius > right || node.y + node.radius < top || node.y - node.radius > bottom) continue;
-          result.push(node.key);
+          out.push(node.key);
         }
       }
     }
-
-    return result;
   }
 
   clear(): void {

@@ -28,6 +28,12 @@ export class SpatialEdgeIndex<NodeAttributes extends BaseNodeAttributes = BaseNo
   // 跨格子过多的超长边单独存：登记进太多格子既占内存又拖慢查询，干脆每次查询都算作候选（只多不少）。
   // 坐标非有限值的退化边也归入此集，保证不会被漏掉。
   private readonly longEdges = new Set<string>();
+  // ━━ 性能优化⑦｜候选缓冲复用 ━━ (tag: perf-v8-pan-gc)
+  // ⚠️ PERF-CRITICAL（性能关键·勿在 selectCandidates 里 new Set/new Array）：selectCandidates 是
+  // rebuild 每帧跨瓦片调用的热路径，复用此缓冲避免逐帧分配造成 GC。仅供 selectCandidates；公共 query
+  // 仍返回全新数组，保证外部持有返回值时不被下次调用覆盖——勿让 query 也复用缓冲。
+  private readonly candidateBuffer: string[] = [];
+  private readonly seenBuffer = new Set<string>();
   private edgeCount = 0;
   private cellSize = 1024;
   private fresh = false;
@@ -52,7 +58,7 @@ export class SpatialEdgeIndex<NodeAttributes extends BaseNodeAttributes = BaseNo
   /** 返回与视口可能相交的候选边 key（真正可见边的超集，需调用方再做精确相交过滤）。 */
   query(graph: AbstractGraph<NodeAttributes, EdgeAttributes>, bounds: SpatialEdgeQueryBounds): string[] {
     this.ensureFresh(graph);
-    return this.collectCandidates(bounds);
+    return this.collectCandidates(bounds, [], new Set());
   }
 
   /**
@@ -62,17 +68,17 @@ export class SpatialEdgeIndex<NodeAttributes extends BaseNodeAttributes = BaseNo
   selectCandidates(graph: AbstractGraph<NodeAttributes, EdgeAttributes>, bounds: SpatialEdgeQueryBounds): string[] | null {
     this.ensureFresh(graph);
     if (this.coversMostCells(bounds)) return null;
-    return this.collectCandidates(bounds);
+    return this.collectCandidates(bounds, this.candidateBuffer, this.seenBuffer);
   }
 
-  private collectCandidates(bounds: SpatialEdgeQueryBounds): string[] {
+  private collectCandidates(bounds: SpatialEdgeQueryBounds, result: string[], seen: Set<string>): string[] {
     const minX = Math.floor(bounds.left / this.cellSize);
     const maxX = Math.floor(bounds.right / this.cellSize);
     const minY = Math.floor(bounds.top / this.cellSize);
     const maxY = Math.floor(bounds.bottom / this.cellSize);
 
-    const seen = new Set<string>();
-    const result: string[] = [];
+    result.length = 0;
+    seen.clear();
     for (const key of this.longEdges) {
       seen.add(key);
       result.push(key);

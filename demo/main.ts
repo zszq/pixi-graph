@@ -16,7 +16,22 @@ function isBenchmarkMode(): boolean {
   return params.get('bench') === '1' || params.get('benchmark') === '1';
 }
 
+// 用 ?seed=N 让布局可复现（mulberry32 覆盖 Math.random）。仅用于 A/B 基准，保证两次加载布局一致。
+function applySeedIfRequested() {
+  const seedParam = new URLSearchParams(location.search).get('seed');
+  if (seedParam === null) return;
+  let s = (Number(seedParam) >>> 0) || 1;
+  Math.random = () => {
+    s |= 0;
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 async function main() {
+  applySeedIfRequested();
   const bench = isBenchmarkMode();
   const activeKey = resolveActiveKey(bench ? BENCHMARK_DEFAULT_DATASET : PREVIEW_DEFAULT_DATASET);
   renderDatasetButtons(activeKey);
