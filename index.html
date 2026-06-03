@@ -1,159 +1,676 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pixi-graph demo</title>
+    <title>pixi-graph · 交互演示</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
     <style>
+      :root {
+        --paper: #f4f5fa;
+        --ink: #1a1f2e;
+        --ink-dim: #5a6478;
+        --ink-faint: #9aa3b2;
+        --line: rgba(26, 31, 46, 0.1);
+        --line-strong: rgba(26, 31, 46, 0.16);
+        --panel: rgba(255, 255, 255, 0.74);
+        --panel-solid: #ffffff;
+        --accent: #4a5fe2;
+        --accent-soft: rgba(74, 95, 226, 0.1);
+        --accent-line: rgba(74, 95, 226, 0.35);
+        --danger: #e5484d;
+        --danger-soft: rgba(229, 72, 77, 0.1);
+        --ok: #12a594;
+        --radius: 12px;
+        --radius-sm: 9px;
+        --shadow: 0 8px 28px -10px rgba(26, 31, 46, 0.28), 0 2px 8px -4px rgba(26, 31, 46, 0.16);
+        --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+        --sans: 'Sora', system-ui, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
       html,
       body {
         margin: 0;
         height: 100%;
-        font-family: system-ui, sans-serif;
+        font-family: var(--sans);
+        color: var(--ink);
+        background: var(--paper);
+        /* 全屏 demo 不需要页面滚动；杜绝意外溢出产生 body 滚动条，否则会让所有 right/bottom 定位的浮层整体抖动 */
+        overflow: hidden;
       }
+
+      /* 画布背后的蓝图点阵 + 柔和暗角，给透明的图一个有质感的底，但保持低对比不抢戏 */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background-image: radial-gradient(circle at center, rgba(26, 31, 46, 0.05) 1px, transparent 1.4px);
+        background-size: 26px 26px;
+        -webkit-mask-image: radial-gradient(ellipse 120% 100% at 50% 40%, #000 55%, transparent 100%);
+        mask-image: radial-gradient(ellipse 120% 100% at 50% 40%, #000 55%, transparent 100%);
+        pointer-events: none;
+      }
+
       #graph {
-        width: 100vw;
-        height: 100vh;
-      }
-      #right-panel {
         position: absolute;
-        top: 12px;
-        right: 12px;
-        z-index: 3;
+        inset: 0;
+        z-index: 1;
+      }
+
+      /* ── 顶部品牌条 ── */
+      #brand {
+        position: absolute;
+        top: 18px;
+        left: 18px;
+        z-index: 4;
         display: flex;
-        flex-direction: column;
-        gap: 8px;
-        width: 180px;
+        align-items: center;
+        gap: 11px;
+        pointer-events: none;
       }
-      #right-panel button {
+      #brand .mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: var(--accent);
+        position: relative;
+        box-shadow: 0 6px 16px -6px var(--accent);
+        flex: none;
+      }
+      /* 用 mark 内的小圆点暗示“节点-边”网络 */
+      #brand .mark::before,
+      #brand .mark::after {
+        content: '';
+        position: absolute;
         background: #fff;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        padding: 6px 10px;
+        border-radius: 50%;
+      }
+      #brand .mark::before {
+        width: 7px;
+        height: 7px;
+        top: 8px;
+        left: 8px;
+        box-shadow:
+          14px 3px 0 -1px rgba(255, 255, 255, 0.95),
+          2px 15px 0 -1px rgba(255, 255, 255, 0.95);
+      }
+      #brand .mark::after {
+        width: 17px;
+        height: 2px;
+        top: 12px;
+        left: 10px;
+        border-radius: 2px;
+        transform: rotate(22deg);
+        transform-origin: left center;
+        background: rgba(255, 255, 255, 0.7);
+      }
+      #brand .name {
+        font-weight: 700;
+        font-size: 17px;
+        letter-spacing: -0.01em;
+      }
+      #brand .name b {
+        color: var(--accent);
+        font-weight: 700;
+      }
+      #brand .tag {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--ink-faint);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      /* ── 通用浮层卡片 ── */
+      .panel {
+        position: absolute;
+        z-index: 4;
+        background: var(--panel);
+        -webkit-backdrop-filter: blur(14px) saturate(1.4);
+        backdrop-filter: blur(14px) saturate(1.4);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+
+      .group + .group {
+        border-top: 1px solid var(--line);
+      }
+      .group {
+        padding: 11px 12px;
+      }
+      .group-label {
+        font-family: var(--mono);
+        font-size: 9.5px;
+        font-weight: 500;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        margin: 0 2px 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .group-label::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--line);
+      }
+
+      /* 按钮 */
+      .btn {
+        appearance: none;
+        font-family: var(--sans);
+        font-size: 12.5px;
+        font-weight: 500;
+        color: var(--ink);
+        background: var(--panel-solid);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        padding: 7px 11px;
         cursor: pointer;
-        font-size: 13px;
         text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition:
+          transform 0.12s ease,
+          background 0.12s ease,
+          border-color 0.12s ease,
+          box-shadow 0.12s ease,
+          color 0.12s ease;
       }
-      #right-panel button:hover {
-        background: #f3f4f6;
+      .btn:hover {
+        border-color: var(--accent-line);
+        background: var(--accent-soft);
+        transform: translateY(-1px);
       }
-      #right-panel button.active {
-        background: #4a5fe2;
-        border-color: #4a5fe2;
+      .btn:active {
+        transform: translateY(0);
+      }
+      .btn .ico {
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--accent);
+        width: 13px;
+        text-align: center;
+        flex: none;
+      }
+      .btn .lbl {
+        flex: 1;
+      }
+      /* 危险动作（移除） */
+      .btn.danger:hover {
+        border-color: rgba(229, 72, 77, 0.4);
+        background: var(--danger-soft);
+      }
+      .btn.danger .ico {
+        color: var(--danger);
+      }
+
+      /* 主操作（实心填充） */
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        justify-content: center;
+        font-weight: 600;
+      }
+      .btn.primary .ico {
+        color: rgba(255, 255, 255, 0.85);
+      }
+      .btn.primary:hover {
+        background: #3a4fd0;
+        border-color: #3a4fd0;
+      }
+
+      /* 开关型按钮：右侧状态药丸 */
+      .btn .state {
+        font-family: var(--mono);
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: rgba(26, 31, 46, 0.08);
+        color: var(--ink-dim);
+        text-transform: uppercase;
+      }
+      .btn.on {
+        border-color: var(--accent-line);
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .btn.on .state {
+        background: var(--accent);
         color: #fff;
       }
-      #right-panel .divider {
-        height: 1px;
-        background: rgba(0, 0, 0, 0.12);
-        margin: 2px 0;
+      .btn.on .ico {
+        color: var(--accent);
       }
+
+      /* 行内按钮组（如导出 / 缩放） */
+      .row {
+        display: flex;
+        gap: 7px;
+      }
+      .row .btn {
+        flex: 1;
+        justify-content: center;
+        padding: 7px 6px;
+      }
+
+      /* ── 左侧：数据集 ── */
       #datasets {
-        position: absolute;
-        top: 12px;
-        left: 12px;
+        top: 70px;
+        left: 18px;
+        width: 188px;
+        padding: 11px 12px;
         display: flex;
         flex-direction: column;
         gap: 6px;
-        width: 160px;
       }
       #datasets .title {
-        font-size: 12px;
-        color: #6b7280;
-        margin-bottom: 2px;
+        font-family: var(--mono);
+        font-size: 9.5px;
+        font-weight: 500;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        margin: 0 2px 4px;
       }
       #datasets button {
-        background: #fff;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        padding: 6px 10px;
+        appearance: none;
+        font-family: var(--sans);
+        font-size: 12.5px;
+        color: var(--ink);
+        background: var(--panel-solid);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        padding: 7px 11px;
         cursor: pointer;
-        font-size: 13px;
         text-align: left;
+        transition: all 0.12s ease;
       }
       #datasets button:hover {
-        background: #f3f4f6;
+        border-color: var(--accent-line);
+        background: var(--accent-soft);
+        transform: translateY(-1px);
       }
       #datasets button.active {
-        background: #4a5fe2;
-        border-color: #4a5fe2;
+        background: var(--accent);
+        border-color: var(--accent);
         color: #fff;
+        font-weight: 600;
       }
-      /* 加载进度遮罩：盖住画布，避免大数据加载时长时间白屏 */
+
+      /* ── 右侧：控制台 ── */
+      #console {
+        top: 18px;
+        right: 18px;
+        width: 212px;
+        max-height: calc(100vh - 36px);
+        overflow-y: auto;
+        /* 预留滚动槽：内容超高出现滚动条时不挤压内部、不回流，避免右侧菜单抖动 */
+        scrollbar-gutter: stable;
+        display: flex;
+        flex-direction: column;
+      }
+      #console::-webkit-scrollbar {
+        width: 6px;
+      }
+      #console::-webkit-scrollbar-thumb {
+        background: var(--line-strong);
+        border-radius: 3px;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+      }
+
+      /* ── 底部左：实时指标 ── */
+      #stats {
+        left: 18px;
+        bottom: 18px;
+        display: flex;
+        align-items: stretch;
+        padding: 4px;
+        gap: 2px;
+      }
+      #stats .stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 6px 13px;
+        min-width: 58px;
+      }
+      #stats .stat + .stat {
+        border-left: 1px solid var(--line);
+      }
+      #stats .k {
+        font-family: var(--mono);
+        font-size: 8.5px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
+      #stats .v {
+        font-family: var(--mono);
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+      }
+      #stats .v .u {
+        font-size: 9px;
+        font-weight: 500;
+        color: var(--ink-faint);
+        margin-left: 1px;
+      }
+      #stats #stat-fps {
+        color: var(--ok);
+      }
+
+      /* ── 底部居中：事件检视器（居中以避开右侧控制台列，防止滚动到底时被其遮挡） ── */
+      #inspector {
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 18px;
+        width: 280px;
+        padding: 12px 13px;
+      }
+      #inspector .group-label {
+        margin-bottom: 9px;
+      }
+      #inspector .insp-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 22px;
+      }
+      #inspector .badge {
+        font-family: var(--mono);
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        text-transform: uppercase;
+        flex: none;
+      }
+      #inspector .insp-key {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--ink);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #inspector .insp-hint {
+        font-size: 11.5px;
+        color: var(--ink-faint);
+      }
+      #inspector .insp-detail {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--ink-dim);
+        margin-top: 7px;
+        min-height: 14px;
+      }
+      #inspector.flash .badge {
+        animation: pop 0.32s ease;
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(0.78);
+          opacity: 0.4;
+        }
+        60% {
+          transform: scale(1.06);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      /* ── 加载遮罩 ── */
       #loading {
         position: absolute;
         inset: 0;
-        z-index: 10;
+        z-index: 20;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 14px;
-        background: #fff;
-        transition: opacity 0.3s ease;
+        gap: 16px;
+        background: var(--paper);
+        transition: opacity 0.35s ease;
       }
       #loading.hidden {
         opacity: 0;
         pointer-events: none;
       }
+      #loading .spinner {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        background: var(--accent);
+        box-shadow: 0 8px 22px -6px var(--accent);
+        animation: spin 1.4s cubic-bezier(0.6, 0.05, 0.3, 0.95) infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg) scale(1);
+          border-radius: 11px;
+        }
+        50% {
+          transform: rotate(180deg) scale(0.78);
+          border-radius: 50%;
+        }
+        100% {
+          transform: rotate(360deg) scale(1);
+          border-radius: 11px;
+        }
+      }
       #loading .track {
-        width: 280px;
-        height: 8px;
-        background: #e5e7eb;
+        width: 260px;
+        height: 6px;
+        background: rgba(26, 31, 46, 0.08);
         border-radius: 999px;
         overflow: hidden;
       }
       #loading .bar {
         height: 100%;
         width: 0;
-        background: #4a5fe2;
+        background: var(--accent);
         border-radius: 999px;
         transition: width 0.15s ease;
       }
       #loading .text {
         font-size: 13px;
-        color: #374151;
+        font-weight: 500;
+        color: var(--ink);
       }
       #loading .pct {
-        font-size: 12px;
-        color: #9ca3af;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink-faint);
       }
-      #fps {
-        position: absolute;
-        left: 12px;
-        bottom: 12px;
-        z-index: 3;
-        padding: 6px 10px;
-        border-radius: 6px;
-        background: rgba(17, 24, 39, 0.78);
-        color: #fff;
-        font-size: 12px;
-        font-variant-numeric: tabular-nums;
-        pointer-events: none;
+
+      @media (max-width: 720px) {
+        #inspector,
+        #brand .tag {
+          display: none;
+        }
       }
     </style>
   </head>
   <body>
     <div id="graph"></div>
-    <div id="fps">FPS --</div>
+
+    <div id="brand">
+      <div class="mark"></div>
+      <div>
+        <div class="name">
+          pixi
+          <b>·</b>
+          graph
+        </div>
+        <div class="tag">WebGL · 大规模图渲染</div>
+      </div>
+    </div>
+
+    <!-- 数据集（datasets.ts 注入标题 + 按钮） -->
+    <div id="datasets" class="panel"></div>
+
+    <!-- 控制台 -->
+    <aside id="console" class="panel">
+      <div class="group">
+        <div class="group-label">视图</div>
+        <button class="btn primary" id="reset-view" title="将相机重新适配到全部节点（resetView）">
+          <span class="ico">⌖</span>
+          <span class="lbl">复位视图</span>
+        </button>
+        <div class="row" style="margin-top: 7px">
+          <button class="btn" id="zoom-in" title="放大一档（zoomIn）">
+            <span class="ico">+</span>
+            <span class="lbl">放大</span>
+          </button>
+          <button class="btn" id="zoom-out" title="缩小一档（zoomOut）">
+            <span class="ico">−</span>
+            <span class="lbl">缩小</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-label">元素</div>
+        <div class="grid2">
+          <button class="btn" id="add-node" title="在视口中心附近新增一个随机节点">
+            <span class="ico">+</span>
+            <span class="lbl">节点</span>
+          </button>
+          <button class="btn danger" id="remove-node" title="移除最近新增的（或最后一个）节点">
+            <span class="ico">−</span>
+            <span class="lbl">节点</span>
+          </button>
+          <button class="btn" id="add-edge" title="在两个随机节点间新增一条边">
+            <span class="ico">+</span>
+            <span class="lbl">边</span>
+          </button>
+          <button class="btn danger" id="remove-edge" title="移除最近新增的（或最后一条）边">
+            <span class="ico">−</span>
+            <span class="lbl">边</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-label">显隐</div>
+        <button class="btn on" id="toggle-edges" title="显示 / 隐藏所有边（setEdgesRenderable）">
+          <span class="ico">╱</span>
+          <span class="lbl">边</span>
+          <span class="state">ON</span>
+        </button>
+        <button class="btn on" id="toggle-node-labels" style="margin-top: 7px" title="显示 / 隐藏节点标签（setNodeLabelsRenderable，开启后由缩放档位 LOD 决定是否真正出现）">
+          <span class="ico">A</span>
+          <span class="lbl">节点标签</span>
+          <span class="state">ON</span>
+        </button>
+        <button class="btn on" id="toggle-edge-labels" style="margin-top: 7px" title="显示 / 隐藏边标签（setEdgeLabelsRenderable，开启后由缩放档位 LOD 决定是否真正出现）">
+          <span class="ico">a</span>
+          <span class="lbl">边标签</span>
+          <span class="state">ON</span>
+        </button>
+        <button class="btn" id="show-all" style="margin-top: 7px" title="取消视口剔除（uncull）：把被屏外剔除而隐藏的节点/标签全部强制显示，常用于整图导出前">
+          <span class="ico">◳</span>
+          <span class="lbl">全部显示（取消剔除）</span>
+        </button>
+      </div>
+
+      <div class="group">
+        <div class="group-label">选择</div>
+        <button class="btn" id="toggle-select" title="开启框选：在画布上拖拽矩形框选节点/边，结果显示在下方事件检视器">
+          <span class="ico">▱</span>
+          <span class="lbl">框选</span>
+          <span class="state">OFF</span>
+        </button>
+      </div>
+
+      <div class="group">
+        <div class="group-label">水印</div>
+        <div class="row">
+          <button class="btn" id="wm-text" title="添加平铺文字水印（createWatermark TEXT）"><span class="lbl" style="flex: none">文字</span></button>
+          <button class="btn" id="wm-image" title="添加平铺图片水印（createWatermark IMAGE）"><span class="lbl" style="flex: none">图片</span></button>
+          <button class="btn danger" id="wm-clear" title="清除全部水印（clearWatermark）"><span class="lbl" style="flex: none">清除</span></button>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-label">导出</div>
+        <div class="row">
+          <button class="btn" id="export-png" title="导出整图为 PNG 并下载（extract）"><span class="lbl" style="flex: none">PNG</span></button>
+          <button class="btn" id="export-jpg" title="导出整图为 JPG 并下载（extract）"><span class="lbl" style="flex: none">JPG</span></button>
+          <button class="btn" id="export-webp" title="导出整图为 WEBP 并下载（extract）"><span class="lbl" style="flex: none">WEBP</span></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 实时指标 -->
+    <div id="stats" class="panel">
+      <div class="stat">
+        <span class="k">FPS</span>
+        <span class="v" id="stat-fps">--</span>
+      </div>
+      <div class="stat">
+        <span class="k">节点</span>
+        <span class="v" id="stat-nodes">0</span>
+      </div>
+      <div class="stat">
+        <span class="k">边</span>
+        <span class="v" id="stat-edges">0</span>
+      </div>
+      <div class="stat">
+        <span class="k">缩放</span>
+        <span class="v" id="stat-zoom">
+          1.00
+          <span class="u">×</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- 事件检视器 -->
+    <div id="inspector" class="panel">
+      <div class="group-label">事件检视器</div>
+      <div class="insp-row" id="insp-empty"><span class="insp-hint">悬停或点击节点 / 边以查看事件</span></div>
+      <div class="insp-row" id="insp-active" style="display: none">
+        <span class="badge" id="insp-type">—</span>
+        <span class="insp-key" id="insp-key">—</span>
+      </div>
+      <div class="insp-detail" id="insp-detail"></div>
+    </div>
+
+    <!-- 加载遮罩 -->
     <div id="loading">
+      <div class="spinner"></div>
       <div class="text" id="loading-text">准备中…</div>
       <div class="track"><div class="bar" id="loading-bar"></div></div>
       <div class="pct" id="loading-pct">0%</div>
     </div>
-    <div id="datasets"></div>
-    <div id="right-panel">
-      <button id="add-node">Add Node</button>
-      <button id="remove-node">Remove Node</button>
-      <button id="add-edge">Add Edge</button>
-      <button id="remove-edge">Remove Edge</button>
-      <button id="toggle-select">Box Select: Off</button>
-      <button id="recenter">Reset View</button>
-      <div class="divider"></div>
-      <button id="zoom-in">Zoom In</button>
-      <button id="zoom-out">Zoom Out</button>
-      <button id="watermark">Toggle Watermark</button>
-      <button id="extract">Extract PNG</button>
-    </div>
+
     <script type="module" src="/demo/main.ts"></script>
   </body>
 </html>

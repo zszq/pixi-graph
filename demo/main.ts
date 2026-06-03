@@ -1,5 +1,6 @@
 import { PixiGraph, selectInRectangle } from 'pixi-graph';
 import { bindControls } from './controls';
+import { bindHud } from './hud';
 import { runBenchmark } from './benchmark';
 import { buildGraph, fetchJsonWithProgress, runLayout } from './data';
 import { renderDatasetButtons, resolveActiveKey } from './datasets';
@@ -20,7 +21,7 @@ function isBenchmarkMode(): boolean {
 function applySeedIfRequested() {
   const seedParam = new URLSearchParams(location.search).get('seed');
   if (seedParam === null) return;
-  let s = (Number(seedParam) >>> 0) || 1;
+  let s = Number(seedParam) >>> 0 || 1;
   Math.random = () => {
     s |= 0;
     s = (s + 0x6d2b79f5) | 0;
@@ -35,7 +36,7 @@ async function main() {
   const bench = isBenchmarkMode();
   const activeKey = resolveActiveKey(bench ? BENCHMARK_DEFAULT_DATASET : PREVIEW_DEFAULT_DATASET);
   renderDatasetButtons(activeKey);
-  startFpsMeter(document.getElementById('fps')!);
+  startFpsMeter(document.getElementById('stat-fps')!);
 
   const timings: Record<string, number> = {};
   const mark = (name: string) => {
@@ -74,11 +75,8 @@ async function main() {
   setProgress(1, '完成');
   hideLoading();
 
-  pixiGraph.enableSelect(selection => console.log('selection', selection), true);
-  pixiGraph.on('nodeClick', (_event, nodeKey) => console.log('nodeClick', nodeKey));
-  pixiGraph.on('viewportClick', () => console.log('viewportClick'));
-
   bindControls(pixiGraph);
+  bindHud(pixiGraph);
 
   // 暴露到全局，便于在控制台调试
   (window as unknown as Record<string, unknown>).pixiGraph = pixiGraph;
