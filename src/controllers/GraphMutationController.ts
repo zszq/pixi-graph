@@ -257,6 +257,11 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
       // 拖拽期间会屏蔽 hover 进入/离开事件；结束时主动清掉旧 hover，避免拖拽节点一直高亮。
       this.unhoverNode(nodeKey);
     }
+    // 标脏节点空间索引：拖拽通过 suppressedNodeAttributeUpdates 跳过了属性更新事件（那里本会标脏），
+    // 且逐帧 updateNodePositionByKey 也不标脏（避免每帧 O(N) 重建）。若结束时不补标脏，索引仍记录旧
+    // 位置，之后平移的 fastCullNodes 会按旧位置把"已拖入视口的节点"误剔除——节点看不见却仍能 hover
+    // 拖动（看起来像被边遮挡）。拖拽期 viewport.pause=true 无法同时平移，故只需结束时标脏一次。
+    this.markSpatialIndexDirty();
   }
 
   updateEdgePositionByKey(edgeKey: string): void {
