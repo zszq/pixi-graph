@@ -325,7 +325,10 @@ export class PixiGraph<
     if (!this.viewport.dirty) return;
     // 视口拖拽时可能短暂停住（例如鼠标停顿），但不应在拖拽过程中自动恢复边/标签/icon，
     // 否则会在鼠标松开时再次恢复，造成两次闪动。和节点拖拽一样，把恢复时机统一放到鼠标弹起。
-    if (this.highMode && !this.isViewportDragging()) this.deferPerformanceLayerRestore();
+    // ⚠️ 必须加 performanceLayersHidden 守卫：dirty 帧可能来自点击节点/画布（pointerdown 即标 dirty）
+    // 等并未隐藏过的情况，此时绝不能由本方法去“先隐藏再延迟恢复”——否则点击会让边闪一下（消失再出现）。
+    // 真正的隐藏由 drag-start/zoomed/snap 等交互事件负责；这里只在已隐藏时保持隐藏并（重）安排恢复。
+    if (this.highMode && this.performanceLayersHidden && !this.isViewportDragging()) this.deferPerformanceLayerRestore();
     this.updateGraphVisibility();
     this.viewport.dirty = false;
   }
@@ -366,6 +369,10 @@ export class PixiGraph<
 
   private showPerformanceLayers(): void {
     if (!this.highMode) return;
+    // 仅当确实处于隐藏态时才安排恢复。why：deferPerformanceLayerRestore 会“先 hide 再延迟恢复”，
+    // 这对“拖拽/缩放期间已隐藏、结束后恢复”是对的；但点击节点未发生真正拖拽时从未隐藏过，若仍走
+    // 恢复流程会先把边隐藏再 140ms 后显示，导致边闪一下（消失再出现）。未隐藏则直接 no-op。
+    if (!this.performanceLayersHidden) return;
     this.deferPerformanceLayerRestore();
   }
 
