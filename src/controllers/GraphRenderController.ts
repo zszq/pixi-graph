@@ -224,6 +224,15 @@ export class GraphRenderController {
     this.layers.setEdgeLabelsRenderable(showLabels);
   }
 
+  // 恢复高性能层后，刷新每条边的逐元素 LOD（边线 / 标签 / 箭头的 renderable）。
+  // why：节点的逐元素 LOD 由 cullViewport→fastCullNodes 即时刷新，但边没有等价的逐元素刷新——
+  // 隐藏态的 updateVisibility 提前返回不跑逐边循环，且刻意保留 lastZoomStep。若恢复时不补这一刷新，
+  // 边标签/箭头的 renderable 会停留在隐藏前的旧档位，导致“缩放后边标签不显示、直到点击才出现”。
+  // 仅在恢复时调用一次（非逐帧），O(E) 只做标志赋值，成本可忽略。
+  refreshEdgeLod(zoomStep = this.currentZoomStep()): void {
+    for (const edge of this.edges.values()) edge.updateVisibility(zoomStep);
+  }
+
   setNodeLabelsRenderable(renderable: boolean): void {
     this.layers.setNodeLabelsRenderable(renderable);
   }

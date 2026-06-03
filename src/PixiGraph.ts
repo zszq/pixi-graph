@@ -398,6 +398,9 @@ export class PixiGraph<
     // 性能优化④（见 GraphRenderController.applyLabelLayerLod）：标签整层按当前缩放档位开关，
     // 低缩放下整层关闭让渲染组跳过其下数万个标签容器的遍历，显著降低恢复时的指令重建成本。
     this.renderController.applyLabelLayerLod();
+    // 补刷逐边 LOD：节点由下面的 cullViewport 刷新，边没有等价机制，不补会导致缩放后边标签/箭头
+    // 停留在旧档位、需点击才显示（见 GraphRenderController.refreshEdgeLod）。
+    this.renderController.refreshEdgeLod();
     this.renderController.setNodeDetailsRenderable(true);
     this.renderController.setInteractionEnabled(true);
     // 性能优化③（见 GraphRenderController.cullViewport）：细节层恢复可见后立即用快速空间剔除
