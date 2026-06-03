@@ -7,13 +7,13 @@ export interface ElementBounds {
   top: number;
 }
 
-/** Read the host element bounds once when a gesture starts. */
+/** 手势开始时读取一次宿主元素的边界。 */
 export function getElementBounds(element: HTMLElement): ElementBounds {
   const bounds = element.getBoundingClientRect();
   return { left: bounds.left, top: bounds.top };
 }
 
-/** Convert a DOM mouse/pointer event into coordinates relative to cached host bounds. */
+/** 把 DOM 鼠标/指针事件转换为相对于缓存宿主边界的坐标。 */
 export function getElementPointFromBounds(event: Pick<MouseEvent, 'clientX' | 'clientY'>, bounds: ElementBounds): ScreenPoint {
   return {
     x: event.clientX - bounds.left,
@@ -21,7 +21,7 @@ export function getElementPointFromBounds(event: Pick<MouseEvent, 'clientX' | 'c
   };
 }
 
-/** Convert a DOM mouse/pointer event into coordinates relative to a host element. */
+/** 把 DOM 鼠标/指针事件转换为相对于某宿主元素的坐标。 */
 export function getElementPoint(event: Pick<MouseEvent, 'clientX' | 'clientY'>, element: HTMLElement): ScreenPoint {
   return getElementPointFromBounds(event, getElementBounds(element));
 }

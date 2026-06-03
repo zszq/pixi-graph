@@ -1,6 +1,6 @@
 /**
- * Leading-and-trailing throttle: invokes `fn` immediately, then at most once
- * per `delay` ms, always firing a final trailing call with the latest args.
+ * 首尾触发的节流：立即调用一次 `fn`，之后每 `delay` 毫秒最多调用一次，
+ * 并始终用最新参数补一次结尾调用。
  */
 export function throttle<Args extends unknown[]>(fn: (...args: Args) => void, delay: number): (...args: Args) => void {
   let lastCalledTime = 0;

@@ -16,9 +16,9 @@ describe('throttle', () => {
   it('coalesces rapid calls into a trailing call with the latest args', () => {
     const fn = vi.fn();
     const throttled = throttle(fn, 100);
-    throttled(1); // leading
+    throttled(1); // 首次立即触发
     throttled(2);
-    throttled(3); // latest wins for trailing
+    throttled(3); // 结尾以最新参数为准
     expect(fn).toHaveBeenCalledTimes(1);
 
     vi.advanceTimersByTime(100);

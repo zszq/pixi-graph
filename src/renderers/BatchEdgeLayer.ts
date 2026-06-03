@@ -15,10 +15,8 @@ interface EdgeParticlePair {
 }
 
 /**
- * Large-graph edge layer backed by two ParticleContainers. It follows the
- * sigma/G6-style split: interaction/labels stay on normal objects, while the
- * dense visible edge strokes are collapsed into GPU-friendly contiguous
- * particle buffers.
+ * 由两个 ParticleContainer 支撑的大图边层。沿用 sigma/G6 式的拆分：交互/标签留在普通
+ * 对象上，而密集可见的边线条则压成 GPU 友好的连续粒子缓冲。
  */
 export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> extends Container {
   private readonly graph: AbstractGraph<NodeAttributes, EdgeAttributes>;

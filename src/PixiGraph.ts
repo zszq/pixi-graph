@@ -51,7 +51,7 @@ export class PixiGraph<
   readonly minScale: number;
   readonly maxScale: number;
 
-  /** Resolves once the async PIXI renderer is initialized and the graph drawn. */
+  /** 当异步 PIXI 渲染器完成初始化且图已绘制后兑现。 */
   readonly ready: Promise<this>;
 
   viewport!: Viewport;
@@ -111,7 +111,7 @@ export class PixiGraph<
     this.ready = this.init();
   }
 
-  /** Async factory — preferred over `new`, since PIXI v8 initializes the renderer asynchronously. */
+  /** 异步工厂方法——优先于 `new`，因为 PIXI v8 的渲染器是异步初始化的。 */
   static async create<N extends BaseNodeAttributes = BaseNodeAttributes, E extends BaseEdgeAttributes = BaseEdgeAttributes>(options: GraphOptions<N, E>): Promise<PixiGraph<N, E>> {
     const instance = new PixiGraph(options);
     await instance.ready;
@@ -128,7 +128,7 @@ export class PixiGraph<
       powerPreference: 'high-performance'
     });
     this.container.appendChild(this.app.canvas);
-    (globalThis as Record<string, unknown>).__PIXI_APP__ = this.app; // PixiJS devtools
+    (globalThis as Record<string, unknown>).__PIXI_APP__ = this.app; // 供 PixiJS 开发者工具使用
 
     this.textureCache = new TextureCache(this.app.renderer);
 
@@ -239,7 +239,7 @@ export class PixiGraph<
     // 指令——见优化③④的补偿。
     this.enableViewportRenderGroup();
 
-    // Temporary workaround for hover passthrough until PIXI exposes a cleaner hook.
+    // hover 穿透的临时变通方案，待 PIXI 提供更干净的钩子后再替换。
     document.addEventListener('pointermove', this.onDocumentPointerMoveBound);
 
     return this;
@@ -314,12 +314,12 @@ export class PixiGraph<
     const worldHeight = bounds.height + WORLD_PADDING * 2;
 
     this.viewport.resize(this.container.clientWidth, this.container.clientHeight, worldWidth, worldHeight);
-    this.viewport.setZoom(1); // otherwise scale is 0 when initialized inside React useEffect
+    this.viewport.setZoom(1); // 否则在 React useEffect 中初始化时 scale 会是 0
     this.viewport.center = bounds.center;
     this.viewport.fit(true);
   }
 
-  // --- viewport interaction ------------------------------------------------
+  // --- 视口交互 ------------------------------------------------
 
   private onViewportFrameEnd(): void {
     if (!this.viewport.dirty) return;
@@ -333,7 +333,7 @@ export class PixiGraph<
     this.viewport.dirty = false;
   }
 
-  // --- visibility / culling ------------------------------------------------
+  // --- 可见性 / 剔除 ------------------------------------------------
 
   // viewport 标记 dirty（平移/缩放/resize）时运行：先剔除屏外元素，再把当前缩放映射到
   // 离散的 zoomStep 桶，逐个让节点/边按档位切换各部分可见性（LOD）。
@@ -341,14 +341,14 @@ export class PixiGraph<
     this.renderController.updateVisibility({ fastNodeCull: this.highMode && this.performanceLayersHidden, skipBatchEdges: this.highMode && this.performanceLayersHidden });
   }
 
-  /** Mark every element on-screen again (used before a full-graph extract). */
+  /** 把所有元素重新标记为在屏（整图导出前调用）。 */
   uncull(): void {
     this.restorePerformanceLayersNow();
     this.mutationController.flushScheduledEdgeUpdates();
     this.renderController.uncull();
   }
 
-  // --- high performance mode ----------------------------------------------
+  // --- 高性能模式 ----------------------------------------------
 
   private hidePerformanceLayers(): void {
     if (!this.highMode) return;
@@ -425,7 +425,7 @@ export class PixiGraph<
     return this.graph.order >= nodeNumber || this.graph.size >= edgeNumber;
   }
 
-  // --- public controls -----------------------------------------------------
+  // --- 公开控制方法 -----------------------------------------------------
 
   private get zoomStepAmount(): number {
     return Math.min(this.viewport.worldWidth, this.viewport.worldHeight) / 10;
@@ -463,14 +463,14 @@ export class PixiGraph<
     return undefined;
   }
 
-  /** Export the current view as a base64 image. */
+  /** 将当前视图导出为 base64 图片。 */
   extract(full = true, format: 'png' | 'jpg' | 'webp' = 'png', quality = 0.92): Promise<string> {
     this.restorePerformanceLayersNow();
     this.mutationController.flushScheduledEdgeUpdates();
     return this.renderController.extract(full, format, quality);
   }
 
-  // --- watermark -----------------------------------------------------------
+  // --- 水印 -----------------------------------------------------------
 
   createWatermark(option: WatermarkOption): string {
     return this.renderController.createWatermark(option);
@@ -484,7 +484,7 @@ export class PixiGraph<
     this.renderController.clearWatermark();
   }
 
-  // --- renderable toggles --------------------------------------------------
+  // --- 可渲染开关 --------------------------------------------------
 
   setEdgesRenderable(renderable: boolean): void {
     this.renderController.setEdgesRenderable(renderable);
@@ -502,9 +502,9 @@ export class PixiGraph<
     this.renderController.setNodeLabelsRenderable(renderable);
   }
 
-  // --- box selection -------------------------------------------------------
+  // --- 框选 -------------------------------------------------------
 
-  /** Viewport-based box select; only effective together with `spaceDrag`. */
+  /** 基于视口的框选；仅在与 `spaceDrag` 搭配时生效。 */
   enableAutoSelect(complete: SelectionCallback, lazy?: boolean, realTime?: boolean): void {
     if (!this.spaceDrag) return;
     this.boxSelectViewport = new BoxSelectViewport({
@@ -519,7 +519,7 @@ export class PixiGraph<
     });
   }
 
-  /** DOM-overlay box select; hold Shift then drag, or call `choose.open()`. */
+  /** DOM 覆盖层框选；按住 Shift 再拖拽，或调用 `choose.open()`。 */
   enableSelect(complete: SelectionCallback, lazy?: boolean, realTime?: boolean, onStateChange?: SelectionStateCallback): void {
     this.choose = new BoxSelectDom({
       container: this.container,
@@ -533,7 +533,7 @@ export class PixiGraph<
     });
   }
 
-  // --- space-to-pan helper -------------------------------------------------
+  // --- 空格平移辅助 -------------------------------------------------
 
   private bindSpaceDrag(): void {
     this.spaceDragController = new SpaceDragController({

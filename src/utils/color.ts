@@ -6,8 +6,8 @@ const COLOR_CACHE_LIMIT = 256;
 const colorCache = new Map<string, [tint: number, alpha: number]>();
 
 /**
- * Resolve any CSS color string (named, hex, rgb(a), hsl(a)) into a PIXI tint
- * number and an alpha value, ready to assign to `sprite.tint` / `sprite.alpha`.
+ * 把任意 CSS 颜色字符串（命名色、hex、rgb(a)、hsl(a)）解析为 PIXI 的 tint 数值
+ * 与 alpha 值，可直接赋给 `sprite.tint` / `sprite.alpha`。
  */
 export function colorToPixi(color: string): [tint: number, alpha: number] {
   const cached = colorCache.get(color);

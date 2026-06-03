@@ -59,10 +59,10 @@ function segmentIntersectsRect(a: PointData, b: PointData, rect: RectBounds): bo
 }
 
 /**
- * Hit-test graph nodes (and optionally edges) against a screen-space rectangle.
+ * 用屏幕空间矩形对图节点（以及可选的边）做命中测试。
  *
- * @param lazy when true, skip edge line intersection and instead select every
- *   edge incident to a selected node (cheaper, "select edges with nodes").
+ * @param lazy 为 true 时跳过边线相交判定，改为选中所有与已选节点相连的边
+ *   （更省，即“随节点一起选中边”）。
  */
 export function selectInRectangle(graph: AbstractGraph, viewport: Viewport, startPoint: PointData, endPoint: PointData, lazy?: boolean): SelectionResult {
   const nodes = new Set<string>();

@@ -33,7 +33,7 @@ export interface GraphStyle {
       fontSize: number;
       fontWeight: TextStyle['fontWeight'];
       align: TextStyle['align'];
-      color: string; // fill
+      color: string; // 填充色
       stroke: string;
       strokeThickness: number;
       backgroundColor: string;
@@ -60,7 +60,7 @@ export interface GraphStyle {
       fontWeight: TextStyle['fontWeight'];
       align: TextStyle['align'];
       content: string;
-      color: string; // fill
+      color: string; // 填充色
       stroke: string;
       strokeThickness: number;
       backgroundColor: string;
@@ -98,7 +98,7 @@ function containsFunction(value: unknown): boolean {
   return false;
 }
 
-/** Recursively resolve a (possibly function/partial) style definition against an element's attributes. */
+/** 针对元素属性，递归解析（可能是函数/部分对象的）样式定义。 */
 export function resolveStyleDefinition<Style, Attributes>(styleDefinition: StyleDefinition<Style, Attributes>, attributes: Attributes): Style {
   let style: Style;
   if (styleDefinition instanceof Function) {
@@ -143,9 +143,8 @@ function mergeStyleValues<Style>(base: Style, next: Style): Style {
 }
 
 /**
- * Resolve defaults → base → state into a final style object.
- * The style definition can be partial or functional at any nesting level, so we resolve first,
- * then merge only the concrete values we care about.
+ * 把 默认 → 基础 → 状态 三层解析合并为最终样式对象。
+ * 样式定义在任意嵌套层级都可能是部分对象或函数，故先解析，再只合并我们关心的具体值。
  */
 export function resolveStyleDefinitions<Style, Attributes>(styleDefinitions: (StyleDefinition<Style, Attributes> | undefined)[], attributes: Attributes): Style {
   const styles = styleDefinitions.filter((x): x is StyleDefinition<Style, Attributes> => !!x).map(styleDefinition => resolveStyleDefinition(styleDefinition, attributes));

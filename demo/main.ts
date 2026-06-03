@@ -80,7 +80,7 @@ async function main() {
 
   bindControls(pixiGraph);
 
-  // expose for console tinkering
+  // 暴露到全局，便于在控制台调试
   (window as unknown as Record<string, unknown>).pixiGraph = pixiGraph;
 
   if (bench) {

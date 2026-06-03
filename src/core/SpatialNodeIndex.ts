@@ -9,13 +9,11 @@ interface IndexedNode {
 }
 
 /**
- * Uniform-grid world-space visibility index for large static graph views.
+ * 大图静态视图用的均匀网格世界空间可见性索引。
  *
- * A quadtree is attractive, but for graph layouts with fairly even point
- * distribution a fixed grid has lower allocation overhead, simpler rebuilds,
- * and very fast viewport range queries. This is used only during high-mode
- * camera interaction where edges/labels are hidden and node positions are
- * usually stable.
+ * 四叉树看似更优，但对于分布较均匀的图布局，固定网格的分配开销更低、重建更简单、
+ * 视口范围查询极快。本索引仅在高性能模式的相机交互期使用——此时边/标签已隐藏、
+ * 节点位置通常稳定。
  */
 export class SpatialNodeIndex {
   private readonly cells = new Map<string, IndexedNode[]>();

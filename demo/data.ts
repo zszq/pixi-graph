@@ -45,7 +45,7 @@ export function buildGraph({ nodes, links }: RawData): Graph<NodeAttrs, EdgeAttr
     const key = `${link.source}->${link.target}`;
     if (!graph.hasEdge(key)) graph.addEdgeWithKey(key, link.source, link.target, { ...link });
   });
-  // random seed positions, then a force-directed layout
+  // 先给随机种子位置，再跑力导向布局
   graph.forEachNode(node => {
     graph.setNodeAttribute(node, 'x', Math.random());
     graph.setNodeAttribute(node, 'y', Math.random());

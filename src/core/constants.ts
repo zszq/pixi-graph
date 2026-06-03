@@ -1,15 +1,15 @@
 import { TextType } from '../utils/text';
 import type { GraphStyleDefinition } from '../style/style';
 
-/** Extra world padding (px) around the graph bounding box when fitting the view. */
+/** 适配视图时，图包围盒四周额外留出的世界坐标内边距（px）。 */
 export const WORLD_PADDING = 100;
 
-/** Max press duration (ms) on empty canvas still counted as a click (vs a drag). */
+/** 在空白画布上按压的最大时长（ms），不超过则仍算点击（而非拖拽）。 */
 export const VIEWPORT_CLICK_VALID_TIME = 200;
 
 /**
- * Zoom thresholds defining the level-of-detail buckets. `findIndex(zoom <= step)`
- * yields a `zoomStep` 0..5; renderers reveal more detail as the step increases.
+ * 定义细节层级（LOD）分桶的缩放阈值。`findIndex(zoom <= step)` 得到 0..5 的 `zoomStep`；
+ * 档位越高，渲染器展示的细节越多。
  */
 export const ZOOM_STEPS = [0.1, 0.2, 0.3, 0.4, 0.5, Infinity];
 

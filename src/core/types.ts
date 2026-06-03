@@ -9,23 +9,23 @@ export interface HighPerformanceThreshold {
 }
 
 export interface GraphOptions<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> {
-  /** Host element the canvas is appended to and sized against. */
+  /** 画布将被追加到的宿主元素，并以其尺寸为基准。 */
   container: HTMLElement;
-  /** Graphology graph providing the data model (nodes need `x`/`y` attributes). */
+  /** 提供数据模型的 Graphology 图（节点需带 `x`/`y` 属性）。 */
   graph: AbstractGraph<NodeAttributes, EdgeAttributes>;
-  /** Base style definition (functions, partials, or full values at any level). */
+  /** 基础样式定义（任意层级可为函数、部分对象或完整值）。 */
   style: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
-  /** Style overrides applied while a node/edge is hovered. */
+  /** 节点/边悬停时叠加的样式覆盖。 */
   hoverStyle: GraphStyleDefinition<NodeAttributes, EdgeAttributes>;
-  /** Pan only while holding Space (frees plain drag for box selection). */
+  /** 仅按住空格时才平移（让普通拖拽空出来做框选）。 */
   spaceDrag?: boolean;
-  /** Keep the cursor-to-node offset while dragging instead of snapping to center. */
+  /** 拖拽时保持光标相对节点的偏移，而非吸附到节点中心。 */
   dragOffset?: boolean;
-  /** Above these counts, edges/labels are hidden during interaction for performance. */
+  /** 超过这些数量时，交互期间隐藏边/标签以提升性能。 */
   highPerformance?: HighPerformanceThreshold;
-  /** Maximum zoom scale. Defaults to 2. */
+  /** 最大缩放比例，默认 2。 */
   maxScale?: number;
-  /** Minimum zoom scale. Defaults to 0.1. */
+  /** 最小缩放比例，默认 0.1。 */
   minScale?: number;
 }
 

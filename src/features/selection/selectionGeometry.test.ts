@@ -3,7 +3,7 @@ import Graph from 'graphology';
 import type { Viewport } from 'pixi-viewport';
 import { selectInRectangle } from './selectionGeometry';
 
-// Identity screen projection: world coordinates map straight to screen space.
+// 恒等屏幕投影：世界坐标直接映射到屏幕空间。
 const fakeViewport = {
   toScreen: (x: number, y: number) => ({ x, y })
 } as unknown as Viewport;

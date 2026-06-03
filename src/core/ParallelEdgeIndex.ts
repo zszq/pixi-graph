@@ -1,6 +1,6 @@
 /**
- * Tracks edges between the same pair of nodes so bilateral offsets can be
- * recomputed locally when one edge is added or removed.
+ * 跟踪同一对节点之间的平行边，使得增删某条边时能就地重算双向偏移（bilateral offset），
+ * 而不必全图重扫。
  */
 export class ParallelEdgeIndex {
   private readonly pairToEdgeKeys = new Map<string, Set<string>>();

@@ -12,9 +12,8 @@ interface Subscription {
 }
 
 /**
- * Small lifecycle helper for event sources that expose EventEmitter-like on/off
- * methods. It keeps bind/unbind symmetric and prevents destroy() from becoming
- * a long list of duplicated off() calls.
+ * 事件订阅生命周期小助手：面向暴露 EventEmitter 式 on/off 的事件源。
+ * 它让绑定/解绑保持对称，避免 destroy() 退化成一长串重复的 off() 调用。
  */
 export class EventSubscriptions {
   private readonly subscriptions: Subscription[] = [];

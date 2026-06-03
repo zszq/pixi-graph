@@ -13,8 +13,8 @@ export interface GraphBounds {
 }
 
 /**
- * Compute bounds in one pass and without spreading large arrays into Math.min /
- * Math.max. This keeps resetView safe for 50k+ node demos.
+ * 一次遍历算出包围盒，且不把大数组展开给 Math.min / Math.max。
+ * 这样 resetView 在 5 万+ 节点的场景下也安全（避免展开超大数组爆栈/卡顿）。
  */
 export function computeGraphBounds<NodeAttributes extends BaseNodeAttributes>(graph: AbstractGraph<NodeAttributes>, nodeKeys: Iterable<string>): GraphBounds | undefined {
   let hasNode = false;

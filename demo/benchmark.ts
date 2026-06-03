@@ -50,8 +50,8 @@ export async function runBenchmark(options: {
   const samples: BenchmarkSample[] = [];
   const startedAt = now();
 
-  // Keep benchmark phases cheap and deterministic. Do not call extract() here:
-  // it allocates offscreen renderbuffers and can fail on large canvases before measuring useful graph costs.
+  // 保持各基准阶段廉价且确定。这里不要调用 extract()：
+  // 它会分配离屏 renderbuffer，在大画布上可能未测到有用的图开销前就失败。
   const phases: Array<[BenchmarkPhase, () => void | Promise<void>]> = [
     ['init', options.init],
     ['select', options.select],

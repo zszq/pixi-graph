@@ -1,4 +1,4 @@
-/** Whether a value is a finite integer. */
+/** 判断一个值是否为有限整数。 */
 export function isInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && Math.floor(value) === value;
 }
@@ -8,7 +8,7 @@ const URL_REGEXP = new RegExp(
   'i'
 );
 
-/** Whether a string looks like an http(s)/ftp URL. */
+/** 判断一个字符串是否像 http(s)/ftp URL。 */
 export function isUrl(value: string): boolean {
   return URL_REGEXP.test(value);
 }

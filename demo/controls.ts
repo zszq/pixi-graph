@@ -49,9 +49,8 @@ function setSelectButtonState(button: HTMLButtonElement, active: boolean): void 
 }
 
 function enableSelection(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>, button: HTMLButtonElement): void {
-  // The demo keeps a single BoxSelectDom instance alive; the button only toggles
-  // whether the overlay is open. State changes come from the selection controller
-  // so the UI stays in sync when selection completes or is cancelled externally.
+  // demo 全程只保留一个 BoxSelectDom 实例；按钮只切换覆盖层是否打开。状态变更来自选择
+  // 控制器，因此当选择完成或被外部取消时，UI 仍能保持同步。
   pixiGraph.enableSelect(
     selection => {
       console.log('selection', selection);

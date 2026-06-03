@@ -16,9 +16,8 @@ export interface ViewportInteractionControllerOptions {
 }
 
 /**
- * Owns viewport pointer/zoom/pan interaction state. PixiGraph can ask whether
- * the viewport is dragging, while this controller keeps cursor, click timing,
- * and high-performance layer toggles local to viewport behavior.
+ * 负责视口的指针/缩放/平移交互状态。PixiGraph 可询问视口是否正在拖拽，而本控制器
+ * 把光标、点击计时、高性能层开关等与视口行为相关的逻辑收拢在此。
  */
 export class ViewportInteractionController {
   private readonly container: HTMLElement;
@@ -99,7 +98,7 @@ export class ViewportInteractionController {
 
   private handleZoomed(): void {
     const scaled = this.viewport.scaled;
-    // zoomed fires past the clamp range while zoomed-end does not, so guard the range
+    // zoomed 会在超出夹紧范围时仍触发，而 zoomed-end 不会，故在此对范围做守卫
     if (scaled > this.minScale && scaled < this.maxScale) {
       this.hidePerformanceLayers();
     }

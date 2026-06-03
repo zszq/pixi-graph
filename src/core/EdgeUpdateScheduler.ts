@@ -1,12 +1,9 @@
 /**
- * Frame-budgeted edge update scheduler.
+ * 带帧预算的边更新调度器。
  *
- * High-degree node updates can dirty thousands of incident edges. Updating all
- * of them synchronously keeps geometry perfectly current but destroys frame
- * time. This scheduler coalesces repeated dirty marks and processes them in
- * small batches on subsequent animation frames. Call `flushAll()` for API paths
- * that require immediate consistency, e.g. export or drag end before showing
- * hidden layers.
+ * 更新高度数节点会弄脏其相连的成千上万条边。若同步更新全部边，几何虽完全实时，却会
+ * 拖垮帧时间。本调度器把重复的脏标记合并，在后续动画帧里分小批处理。对需要立即一致的
+ * API 路径（如导出、或拖拽结束后显示隐藏层之前）调用 `flushAll()`。
  */
 export class EdgeUpdateScheduler {
   private readonly dirtyEdges = new Set<string>();

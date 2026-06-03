@@ -14,8 +14,8 @@ export interface DisplayObjectPointerEvents {
 type EmitPointerEvent = <EventName extends keyof DisplayObjectPointerEvents>(eventName: EventName, event: Parameters<DisplayObjectPointerEvents[EventName]>[0]) => boolean;
 
 /**
- * Bridge PIXI's federated events to the small typed event surface used by graph
- * elements. Keeping this in one place avoids duplicated node/edge listeners.
+ * 把 PIXI 的 federated 事件桥接到图元素使用的那套小型类型化事件接口。
+ * 集中在此一处，避免在节点/边上重复编写监听器。
  */
 export function bindPointerEvents(gfx: Container, emit: EmitPointerEvent): void {
   gfx.on('mousemove', event => emit('mousemove', event.originalEvent as FederatedPointerEvent));

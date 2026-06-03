@@ -23,8 +23,8 @@ export interface TextStyle {
 }
 
 /**
- * Build a PIXI text view (regular or bitmap) from a {@link TextStyle}. The
- * returned object is rendered once into a cached texture by the renderers.
+ * 根据 {@link TextStyle} 构建 PIXI 文本视图（普通文本或位图文本）。
+ * 返回对象会被各渲染器渲染一次并缓存为纹理。
  */
 export function textToPixi(type: TextType, content: string, style: TextStyle): Text | BitmapText {
   if (type === TextType.TEXT) {

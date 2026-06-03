@@ -20,8 +20,7 @@ export interface GraphRenderControllerOptions {
 }
 
 /**
- * Owns render-only concerns: culling, LOD visibility, layer renderability,
- * watermark lifecycle, and image extraction.
+ * 负责纯渲染相关的事务：剔除、LOD 可见性、各层可渲染开关、水印生命周期与图像导出。
  */
 export class GraphRenderController {
   private readonly app: Application;
@@ -189,8 +188,8 @@ export class GraphRenderController {
     if (!particle) return;
     particle.x = position.x;
     particle.y = position.y;
-    // fastNodeLayer keeps positions static for cheaper pan/zoom rendering, so
-    // explicitly upload the one changed particle when a node is dragged.
+    // fastNodeLayer 把位置视为静态以换取更廉价的平移/缩放渲染，故拖拽某节点时
+    // 需显式上传这一个改动的粒子。
     this.layers.fastNodeLayer.update();
   }
 
@@ -311,8 +310,7 @@ export class GraphRenderController {
   private restoreNodeDetailsChunk(): void {
     if (!this.nodeDetailsRestorePending) return;
     const nodes = this.nodeDetailsRestoreList;
-    // Restore quickly after camera idle. Large graphs should finish in a few
-    // frames rather than visibly waiting for seconds.
+    // 相机空闲后快速恢复。大图应在数帧内完成，而非让用户肉眼等待数秒。
     const budget = this.nodes.size >= 50000 ? 12000 : 6000;
     const end = Math.min(nodes.length, this.nodeDetailsRestoreCursor + budget);
     const zoomStep = this.currentZoomStep();
