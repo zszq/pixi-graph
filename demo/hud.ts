@@ -20,8 +20,14 @@ function bindStats(pixiGraph: AnyGraph): void {
     $nodes.textContent = String(graph.order);
     $edges.textContent = String(graph.size);
   };
+  // 缩放：按 scaled 变化才写 DOM。why 用 frame-end 而非 zoomed/moved——放大/缩小按钮走 viewport.zoom()，
+  // 它不一定触发 zoomed/moved；frame-end 每帧都有，能覆盖按钮缩放/滚轮/吸附/复位等所有改变缩放的路径。
+  let lastZoom = -1;
   const refreshZoom = () => {
-    $zoom.innerHTML = `${pixiGraph.viewport.scaled.toFixed(2)}<span class="u">×</span>`;
+    const z = pixiGraph.viewport.scaled;
+    if (z === lastZoom) return;
+    lastZoom = z;
+    $zoom.innerHTML = `${z.toFixed(2)}<span class="u">×</span>`;
   };
 
   refreshCounts();
@@ -29,9 +35,7 @@ function bindStats(pixiGraph: AnyGraph): void {
   for (const ev of ['nodeAdded', 'nodeDropped', 'edgeAdded', 'edgeDropped', 'cleared'] as const) {
     graph.on(ev, refreshCounts);
   }
-  // zoomed 覆盖滚轮/按钮缩放；moved 兜底吸附/复位等带缩放的相机变化。
-  pixiGraph.viewport.on('zoomed', refreshZoom);
-  pixiGraph.viewport.on('moved', refreshZoom);
+  pixiGraph.viewport.on('frame-end', refreshZoom);
 }
 
 // 把一条记录写进事件检视器（节点/边交互、框选结果等都复用它）。导出以便其它模块（如框选）调用。
