@@ -244,6 +244,16 @@ export class GraphRenderController {
     if (zoomStep !== this.lastZoomStep) this.lastZoomStep = -1;
   }
 
+  // 初始化之后动态加入的节点/边没有任何“首次可见性”处理（createNode/createEdge 刻意不做，
+  // 见 PixiGraph.createGraph 的性能注释），全靠下一次完整 LOD 循环兜底。若加入时 zoomStep
+  // 恰好未跨档，updateVisibility 的等值判断会跳过循环，新元素的标签纹理（优化⑤懒烘焙）将
+  // 永远停留在待烘焙状态、LOD 可见性也停留在创建时的默认值。因此增量添加元素时必须作废
+  // 档位缓存，强制下一个脏帧重跑完整循环——cull 在循环之前刷新剔除标志，屏外标签依旧不会
+  // 被烘焙，不会重现全量烘焙的性能回归。
+  invalidateLod(): void {
+    this.lastZoomStep = -1;
+  }
+
   setNodeLabelsRenderable(renderable: boolean): void {
     this.layers.setNodeLabelsRenderable(renderable);
   }

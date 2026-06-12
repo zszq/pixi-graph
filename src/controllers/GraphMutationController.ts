@@ -35,6 +35,7 @@ export interface GraphMutationControllerOptions<NodeAttributes extends BaseNodeA
   markBatchEdgesDirty?: () => void;
   updateBatchEdge?: (edgeKey: string) => void;
   shouldDeferConnectedEdgeUpdates?: (nodeKey: string, degree: number) => boolean;
+  markLodDirty?: () => void;
 }
 
 
@@ -72,6 +73,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   private readonly markBatchEdgesDirty: () => void;
   private readonly updateBatchEdge: (edgeKey: string) => void;
   private readonly shouldDeferConnectedEdgeUpdates: (nodeKey: string, degree: number) => boolean;
+  private readonly markLodDirty: () => void;
   private readonly parallelEdgeIndex = new ParallelEdgeIndex();
   private readonly edgeUpdateScheduler = new EdgeUpdateScheduler(edgeKey => this.updateEdgePositionByKey(edgeKey));
 
@@ -101,6 +103,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.markBatchEdgesDirty = options.markBatchEdgesDirty ?? (() => undefined);
     this.updateBatchEdge = options.updateBatchEdge ?? (() => undefined);
     this.shouldDeferConnectedEdgeUpdates = options.shouldDeferConnectedEdgeUpdates ?? (() => false);
+    this.markLodDirty = options.markLodDirty ?? (() => undefined);
   }
 
   destroy(): void {
@@ -117,6 +120,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   handleGraphNodeAdded(data: { key: string; attributes: NodeAttributes }): void {
     this.markSpatialIndexDirty();
     this.markBatchEdgesDirty();
+    // 新元素的首次 LOD/标签烘焙依赖下一次完整可见性循环，必须作废档位缓存（见 invalidateLod 注释）
+    this.markLodDirty();
     this.createNode(data.key, data.attributes);
   }
 
@@ -129,6 +134,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
 
   handleGraphEdgeAdded(data: { key: string; attributes: EdgeAttributes; source: string; target: string }): void {
     this.markBatchEdgesDirty();
+    this.markLodDirty();
     this.createEdge(data.key, data.attributes, data.source, data.target);
   }
 

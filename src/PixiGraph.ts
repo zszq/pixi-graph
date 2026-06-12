@@ -188,6 +188,13 @@ export class PixiGraph<
         this.renderController.markFastNodesDirty();
         this.renderController.markBatchEdgesDirty();
       },
+      // 与 markSpatialIndexDirty 分开：后者在节点拖拽热路径上高频触发，作废 LOD 缓存会让
+      // 每个脏帧都重跑 O(N+E) 全量循环；本回调只在元素增删时调用。置 viewport.dirty 是为了
+      // 没有后续平移/缩放（如静默追加数据）时，frame-end 也能执行这次补偿性的可见性更新。
+      markLodDirty: () => {
+        this.renderController.invalidateLod();
+        this.viewport.dirty = true;
+      },
       updateFastNodePosition: (nodeKey, position) => this.renderController.updateFastNodePosition(nodeKey, position),
       markBatchEdgesDirty: () => this.renderController.markBatchEdgesDirty(),
       updateBatchEdge: edgeKey => this.renderController.updateBatchEdge(edgeKey),
