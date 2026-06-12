@@ -54,7 +54,9 @@ export class TextureCache {
   }
 
   getText(key: string, type: TextType, content: string, style: TextStyle): Texture {
-    return this.get(key, () => textToPixi(type, content, style));
+    // 字形栅格化分辨率与下方 generateTexture 的烘焙分辨率（renderer.resolution * 2）对齐，
+    // 避免字形先低清栅格化再被放大烘焙而发虚。
+    return this.get(key, () => textToPixi(type, content, style, this.renderer.resolution * 2));
   }
 
   loadCircularImage(key: string, url: string, radius: number): Promise<Texture> {

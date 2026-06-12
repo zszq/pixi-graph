@@ -26,7 +26,7 @@ export interface TextStyle {
  * 根据 {@link TextStyle} 构建 PIXI 文本视图（普通文本或位图文本）。
  * 返回对象会被各渲染器渲染一次并缓存为纹理。
  */
-export function textToPixi(type: TextType, content: string, style: TextStyle): Text | BitmapText {
+export function textToPixi(type: TextType, content: string, style: TextStyle, resolution = 2): Text | BitmapText {
   if (type === TextType.TEXT) {
     const text = new Text({
       text: content,
@@ -39,7 +39,9 @@ export function textToPixi(type: TextType, content: string, style: TextStyle): T
         stroke: style.strokeThickness > 0 ? { color: style.stroke, width: style.strokeThickness } : undefined
       }
     });
-    text.resolution = 2;
+    // why 与烘焙分辨率一致：字形先按此分辨率栅格化，再被 generateTexture 二次渲染；
+    // 若低于烘焙分辨率，字形会被放大采样而发虚。
+    text.resolution = resolution;
     text.roundPixels = true;
     return text;
   }

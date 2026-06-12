@@ -50,6 +50,7 @@ export class PixiGraph<
   readonly dragOffset: boolean;
   readonly minScale: number;
   readonly maxScale: number;
+  readonly resolution: number;
 
   /** 当异步 PIXI 渲染器完成初始化且图已绘制后兑现。 */
   readonly ready: Promise<this>;
@@ -106,6 +107,9 @@ export class PixiGraph<
     this.dragOffset = options.dragOffset ?? false;
     this.minScale = options.minScale ?? 0.1;
     this.maxScale = options.maxScale ?? 2;
+    // why 默认下限取 2：低 DPI 屏（Windows 100% 缩放时 devicePixelRatio=1）按 1× 渲染
+    // 锯齿明显，2× 超采样后由浏览器缩回，观感对齐 Retina；超大图可显式传低值换性能。
+    this.resolution = options.resolution ?? Math.max(window.devicePixelRatio || 1, 2);
 
     this.app = new Application();
     this.ready = this.init();
@@ -121,7 +125,7 @@ export class PixiGraph<
   private async init(): Promise<this> {
     await this.app.init({
       resizeTo: this.container,
-      resolution: window.devicePixelRatio,
+      resolution: this.resolution,
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
