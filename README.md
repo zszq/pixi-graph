@@ -77,10 +77,10 @@ const pixiGraph = await PixiGraph.create({ ..., graph });
 ```ts
 const style = {
   node: {
-    color: '#000000',
+    color: '#5e6ad2',
   },
   edge: {
-    color: '#000000',
+    color: '#a9b4ce',
   },
 };
 
@@ -150,12 +150,12 @@ const pixiGraph = await PixiGraph.create({ ..., style });
 
 ```ts
 const style = {
-  node: { color: '#000000' },
-  edge: { color: '#000000' },
+  node: { color: '#5e6ad2' },
+  edge: { color: '#a9b4ce' },
 };
 const hoverStyle = {
-  node: { color: '#ff0000' },
-  edge: { color: '#ff0000' },
+  node: { color: '#ffb224' },
+  edge: { color: '#ffb224' },
 };
 
 const pixiGraph = await PixiGraph.create({ ..., style, hoverStyle });
@@ -294,7 +294,7 @@ export interface GraphStyleDefinition<NodeAttributes extends BaseNodeAttributes 
 ```ts
 // 静态
 const style = {
-  node: { color: '#000000' },
+  node: { color: '#5e6ad2' },
 };
 
 // 单值函数（数据驱动）

@@ -77,7 +77,9 @@ export class BoxSelectViewport {
     const top = Math.min(this.startPoint.y, currentPoint.y);
 
     this.graphics.clear();
-    this.graphics.rect(left, top, width, height).stroke({ width: 2, color: 0x0379f3 });
+    // 选框颜色与库默认节点主色（靛蓝）保持一致，两种框选实现观感统一；
+    // 半透明填充 + 不透明亮色描边，保证深浅背景下都清晰可见
+    this.graphics.rect(left, top, width, height).fill({ color: 0x5e6ad2, alpha: 0.2 }).stroke({ width: 2, color: 0x7c8cf8 });
 
     this.endPoint = currentPoint;
 

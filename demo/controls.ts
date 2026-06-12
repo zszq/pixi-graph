@@ -175,7 +175,7 @@ export function bindControls(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>) {
       column: 6,
       position: { x: 0, y: 0 },
       rotation: -Math.PI / 8,
-      style: { fontFamily: 'Sora', fontSize: 24, fontWeight: 'normal', color: 'rgba(26,31,46,0.12)' }
+      style: { fontFamily: 'Sora', fontSize: 24, fontWeight: 'normal', color: 'rgba(232,235,244,0.08)' }
     });
   });
   $('wm-image').addEventListener('click', () => {
@@ -188,7 +188,7 @@ export function bindControls(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>) {
       column: 5,
       position: { x: 0, y: 0 },
       rotation: -Math.PI / 10,
-      style: { fontFamily: 'Sora', fontSize: 24, fontWeight: 'normal', color: 'rgba(0,0,0,0.1)' }
+      style: { fontFamily: 'Sora', fontSize: 24, fontWeight: 'normal', color: 'rgba(232,235,244,0.07)' }
     });
   });
   $('wm-clear').addEventListener('click', () => pixiGraph.clearWatermark());

@@ -23,10 +23,16 @@ export const ZOOM_STEPS = [0.1, 0.2, 0.3, 0.4, 0.5, Infinity];
  */
 export const LABEL_ZOOM_STEP = 2;
 
+/**
+ * 默认配色取低饱和靛蓝主色系（参考 Linear 品牌色 #5E6AD2 一类的内敛蓝紫）：
+ * 纯黑节点在浅色页面上过于生硬，靛蓝填充 + 白描边在任意浅色宿主背景上
+ * 都有足够对比，且重叠节点之间能靠白边互相分离。
+ * 边用带蓝调的灰（而非纯灰），与节点同色系、视觉上退居其次而不显脏。
+ */
 export const DEFAULT_STYLE: GraphStyleDefinition = {
   node: {
     size: 20,
-    color: '#000',
+    color: '#5e6ad2',
     alpha: 1,
     border: {
       width: 2,
@@ -50,8 +56,9 @@ export const DEFAULT_STYLE: GraphStyleDefinition = {
       fontSize: 12,
       fontWeight: '400',
       align: 'left',
-      color: '#333333',
-      stroke: 'black',
+      color: '#374151',
+      // 描边默认作浅色晕光（halo）：深色文字配深色描边没有意义，调大 thickness 即可在密集图上衬出文字
+      stroke: '#ffffff',
       strokeThickness: 0,
       backgroundColor: 'rgba(0, 0, 0, 0)',
       padding: 4
@@ -59,7 +66,7 @@ export const DEFAULT_STYLE: GraphStyleDefinition = {
   },
   edge: {
     width: 1,
-    color: '#cccccc',
+    color: '#a9b4ce',
     alpha: 1,
     selefLoop: {
       radius: 30,
@@ -77,8 +84,9 @@ export const DEFAULT_STYLE: GraphStyleDefinition = {
       fontSize: 12,
       fontWeight: '400',
       align: 'left',
-      color: '#333333',
-      stroke: 'black',
+      // 边标签是次级信息，比节点标签再淡一档，避免与节点标签争夺注意力
+      color: '#6b7280',
+      stroke: '#ffffff',
       strokeThickness: 0,
       backgroundColor: 'rgba(0, 0, 0, 0)',
       padding: 4,

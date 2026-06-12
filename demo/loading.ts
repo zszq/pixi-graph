@@ -19,7 +19,8 @@ export function hideLoading() {
 export function showError(err: unknown) {
   const message = err instanceof Error ? err.message : String(err);
   $text.textContent = `加载失败：${message}`;
-  $text.style.color = '#dc2626';
+  // 与页面 CSS 变量 --danger 同值，错误色全站统一
+  $text.style.color = '#ff6369';
 }
 
 // 返回一个把「阶段内 0~1」映射到全局区间 [from, to] 的进度回调，便于各阶段独立汇报进度。

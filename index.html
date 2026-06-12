@@ -8,24 +8,29 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
     <style>
+      /*
+       * 深色「星图」主题：图可视化的高级感公认范式（Obsidian 图谱 / GitHub 星系图 / Linear 暗色 UI）——
+       * 深墨蓝底 + 发光感的潘通蓝紫节点 + 半透明蛛网细边。深底上的强调色需更亮且低饱和才不刺眼
+       * （IBM Carbon / Observable 深色数据可视化色板的结论），故 accent 取发光感的浅蓝紫。
+       */
       :root {
-        --paper: #f4f5fa;
-        --ink: #1a1f2e;
-        --ink-dim: #5a6478;
-        --ink-faint: #9aa3b2;
-        --line: rgba(26, 31, 46, 0.1);
-        --line-strong: rgba(26, 31, 46, 0.16);
-        --panel: rgba(255, 255, 255, 0.74);
-        --panel-solid: #ffffff;
-        --accent: #4a5fe2;
-        --accent-soft: rgba(74, 95, 226, 0.1);
-        --accent-line: rgba(74, 95, 226, 0.35);
-        --danger: #e5484d;
-        --danger-soft: rgba(229, 72, 77, 0.1);
-        --ok: #12a594;
+        --paper: #0b0f1d;
+        --ink: #e8ebf4;
+        --ink-dim: #9aa3bc;
+        --ink-faint: #5f6880;
+        --line: rgba(232, 235, 244, 0.08);
+        --line-strong: rgba(232, 235, 244, 0.15);
+        --panel: rgba(17, 22, 38, 0.72);
+        --panel-solid: #151a2c;
+        --accent: #7c8cf8;
+        --accent-soft: rgba(124, 140, 248, 0.13);
+        --accent-line: rgba(124, 140, 248, 0.45);
+        --danger: #ff6369;
+        --danger-soft: rgba(255, 99, 105, 0.12);
+        --ok: #3dd68c;
         --radius: 12px;
         --radius-sm: 9px;
-        --shadow: 0 8px 28px -10px rgba(26, 31, 46, 0.28), 0 2px 8px -4px rgba(26, 31, 46, 0.16);
+        --shadow: 0 8px 28px -10px rgba(0, 0, 0, 0.6), 0 2px 8px -4px rgba(0, 0, 0, 0.45);
         --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
         --sans: 'Sora', system-ui, sans-serif;
       }
@@ -50,7 +55,7 @@
         position: fixed;
         inset: 0;
         z-index: 0;
-        background-image: radial-gradient(circle at center, rgba(26, 31, 46, 0.05) 1px, transparent 1.4px);
+        background-image: radial-gradient(circle at center, rgba(232, 235, 244, 0.05) 1px, transparent 1.4px);
         background-size: 26px 26px;
         -webkit-mask-image: radial-gradient(ellipse 120% 100% at 50% 40%, #000 55%, transparent 100%);
         mask-image: radial-gradient(ellipse 120% 100% at 50% 40%, #000 55%, transparent 100%);
@@ -209,7 +214,7 @@
       }
       /* 危险动作（移除） */
       .btn.danger:hover {
-        border-color: rgba(229, 72, 77, 0.4);
+        border-color: rgba(255, 99, 105, 0.4);
         background: var(--danger-soft);
       }
       .btn.danger .ico {
@@ -217,19 +222,20 @@
       }
 
       /* 主操作（实心填充） */
+      /* 发光感浅蓝紫作底时，深色文字比白字对比更足、也更有「亮色按钮」的精致感 */
       .btn.primary {
         background: var(--accent);
         border-color: var(--accent);
-        color: #fff;
+        color: #0b0f1d;
         justify-content: center;
         font-weight: 600;
       }
       .btn.primary .ico {
-        color: rgba(255, 255, 255, 0.85);
+        color: rgba(11, 15, 29, 0.7);
       }
       .btn.primary:hover {
-        background: #3a4fd0;
-        border-color: #3a4fd0;
+        background: #6b7be8;
+        border-color: #6b7be8;
       }
 
       /* 开关型按钮：右侧状态药丸 */
@@ -240,7 +246,7 @@
         letter-spacing: 0.05em;
         padding: 2px 7px;
         border-radius: 999px;
-        background: rgba(26, 31, 46, 0.08);
+        background: rgba(232, 235, 244, 0.1);
         color: var(--ink-dim);
         text-transform: uppercase;
       }
@@ -251,7 +257,7 @@
       }
       .btn.on .state {
         background: var(--accent);
-        color: #fff;
+        color: #0b0f1d;
       }
       .btn.on .ico {
         color: var(--accent);
@@ -308,7 +314,7 @@
       #datasets button.active {
         background: var(--accent);
         border-color: var(--accent);
-        color: #fff;
+        color: #0b0f1d;
         font-weight: 600;
       }
 
@@ -488,7 +494,7 @@
       #loading .track {
         width: 260px;
         height: 6px;
-        background: rgba(26, 31, 46, 0.08);
+        background: rgba(232, 235, 244, 0.1);
         border-radius: 999px;
         overflow: hidden;
       }

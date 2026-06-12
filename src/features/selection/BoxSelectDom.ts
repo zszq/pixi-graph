@@ -69,11 +69,12 @@ export class BoxSelectDom {
     this.selectedArea = document.createElement('div');
     Object.assign(this.selectedArea.style, {
       position: 'absolute',
-      backgroundColor: '#F4B400',
-      opacity: '0.2',
+      // 与库默认节点主色（靛蓝）同色系。透明度只放在填充色上（rgba）而不用元素级 opacity，
+      // 否则边框会被一并压淡，深色背景下选框几乎不可见
+      backgroundColor: 'rgba(94, 106, 210, 0.2)',
       width: '0px',
       height: '0px',
-      border: '1.5px solid #000',
+      border: '1.5px solid #7c8cf8',
       display: 'none',
       pointerEvents: 'none'
     });
