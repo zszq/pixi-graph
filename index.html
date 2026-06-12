@@ -7,6 +7,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script>
+      // 主题须在样式表生效前落到 <html> 上，否则亮色加载时会先闪一帧深色底
+      if (new URLSearchParams(location.search).get('theme') === 'light') document.documentElement.dataset.theme = 'light';
+    </script>
     <style>
       /*
        * 深色「星图」主题：图可视化的高级感公认范式（Obsidian 图谱 / GitHub 星系图 / Linear 暗色 UI）——
@@ -27,12 +31,49 @@
         --accent-line: rgba(124, 140, 248, 0.45);
         --danger: #ff6369;
         --danger-soft: rgba(255, 99, 105, 0.12);
+        --danger-line: rgba(255, 99, 105, 0.4);
         --ok: #3dd68c;
+        /* 实心 accent 上的文字/图标色：深底主题 accent 偏亮，深字比白字对比更足 */
+        --on-accent: #0b0f1d;
+        --on-accent-dim: rgba(11, 15, 29, 0.7);
+        --accent-hover: #6b7be8;
+        --pill: rgba(232, 235, 244, 0.1);
+        --dot: rgba(232, 235, 244, 0.05);
         --radius: 12px;
         --radius-sm: 9px;
         --shadow: 0 8px 28px -10px rgba(0, 0, 0, 0.6), 0 2px 8px -4px rgba(0, 0, 0, 0.45);
         --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
         --sans: 'Sora', system-ui, sans-serif;
+      }
+
+      /*
+       * 亮色「晨雾」主题：纸白底上 accent 反向处理——亮底缺少深底的发光衬托，
+       * 强调色必须更深、更饱和才有重量（同样来自 IBM Carbon 双主题色板的结论），
+       * 故取深一档的靛蓝；accent 变深后其上文字改回白色。仅覆盖颜色类变量，
+       * 布局、圆角等结构性变量两套主题共用。
+       */
+      html[data-theme='light'] {
+        --paper: #f3f5fa;
+        --ink: #1c2333;
+        --ink-dim: #5b6478;
+        --ink-faint: #8a92a8;
+        --line: rgba(28, 35, 51, 0.08);
+        --line-strong: rgba(28, 35, 51, 0.16);
+        --panel: rgba(255, 255, 255, 0.78);
+        --panel-solid: #ffffff;
+        --accent: #5468e7;
+        --accent-soft: rgba(84, 104, 231, 0.1);
+        --accent-line: rgba(84, 104, 231, 0.45);
+        --danger: #e5484d;
+        --danger-soft: rgba(229, 72, 77, 0.1);
+        --danger-line: rgba(229, 72, 77, 0.4);
+        --ok: #18a05e;
+        --on-accent: #ffffff;
+        --on-accent-dim: rgba(255, 255, 255, 0.78);
+        --accent-hover: #4356d6;
+        --pill: rgba(28, 35, 51, 0.08);
+        --dot: rgba(28, 35, 51, 0.07);
+        --shadow: 0 8px 28px -10px rgba(23, 30, 54, 0.22), 0 2px 8px -4px rgba(23, 30, 54, 0.12);
       }
 
       * {
@@ -55,7 +96,7 @@
         position: fixed;
         inset: 0;
         z-index: 0;
-        background-image: radial-gradient(circle at center, rgba(232, 235, 244, 0.05) 1px, transparent 1.4px);
+        background-image: radial-gradient(circle at center, var(--dot) 1px, transparent 1.4px);
         background-size: 26px 26px;
         -webkit-mask-image: radial-gradient(ellipse 120% 100% at 50% 40%, #000 55%, transparent 100%);
         mask-image: radial-gradient(ellipse 120% 100% at 50% 40%, #000 55%, transparent 100%);
@@ -214,28 +255,27 @@
       }
       /* 危险动作（移除） */
       .btn.danger:hover {
-        border-color: rgba(255, 99, 105, 0.4);
+        border-color: var(--danger-line);
         background: var(--danger-soft);
       }
       .btn.danger .ico {
         color: var(--danger);
       }
 
-      /* 主操作（实心填充） */
-      /* 发光感浅蓝紫作底时，深色文字比白字对比更足、也更有「亮色按钮」的精致感 */
+      /* 主操作（实心填充）。文字色随主题取 --on-accent：深底主题 accent 偏亮配深字，亮底主题 accent 偏深配白字 */
       .btn.primary {
         background: var(--accent);
         border-color: var(--accent);
-        color: #0b0f1d;
+        color: var(--on-accent);
         justify-content: center;
         font-weight: 600;
       }
       .btn.primary .ico {
-        color: rgba(11, 15, 29, 0.7);
+        color: var(--on-accent-dim);
       }
       .btn.primary:hover {
-        background: #6b7be8;
-        border-color: #6b7be8;
+        background: var(--accent-hover);
+        border-color: var(--accent-hover);
       }
 
       /* 开关型按钮：右侧状态药丸 */
@@ -246,7 +286,7 @@
         letter-spacing: 0.05em;
         padding: 2px 7px;
         border-radius: 999px;
-        background: rgba(232, 235, 244, 0.1);
+        background: var(--pill);
         color: var(--ink-dim);
         text-transform: uppercase;
       }
@@ -257,7 +297,7 @@
       }
       .btn.on .state {
         background: var(--accent);
-        color: #0b0f1d;
+        color: var(--on-accent);
       }
       .btn.on .ico {
         color: var(--accent);
@@ -314,7 +354,7 @@
       #datasets button.active {
         background: var(--accent);
         border-color: var(--accent);
-        color: #0b0f1d;
+        color: var(--on-accent);
         font-weight: 600;
       }
 
@@ -494,7 +534,7 @@
       #loading .track {
         width: 260px;
         height: 6px;
-        background: rgba(232, 235, 244, 0.1);
+        background: var(--pill);
         border-radius: 999px;
         overflow: hidden;
       }
@@ -560,6 +600,15 @@
             <span class="lbl">缩小</span>
           </button>
         </div>
+      </div>
+
+      <div class="group">
+        <div class="group-label">主题</div>
+        <button class="btn" id="toggle-theme" title="深色 / 亮色主题切换。图侧颜色烘焙在纹理缓存里，故带 ?theme= 参数重载页面重建实例">
+          <span class="ico">◐</span>
+          <span class="lbl">亮色模式</span>
+          <span class="state">OFF</span>
+        </button>
       </div>
 
       <div class="group">

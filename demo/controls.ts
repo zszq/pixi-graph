@@ -1,8 +1,12 @@
 // 页面测试控件：视图、元素增删、显隐开关、框选、水印、导出。
 // 每个按钮对应 PixiGraph 的一个公开能力，便于在 demo 里直观试用。
 import type { PixiGraph } from 'pixi-graph';
-import type { EdgeAttrs, NodeAttrs } from './types';
 import { setInspector } from './hud';
+import { resolveTheme } from './theme';
+import type { EdgeAttrs, NodeAttrs } from './types';
+
+// 水印属于「隐约可见」的层级，颜色须随主题取底色的反色淡墨，否则亮底上白水印不可见
+const WATERMARK_COLOR = resolveTheme() === 'light' ? 'rgba(28, 35, 51, 0.07)' : 'rgba(232, 235, 244, 0.08)';
 
 let demoNodeSeq = 0;
 let demoEdgeSeq = 0;
@@ -175,7 +179,7 @@ export function bindControls(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>) {
       column: 6,
       position: { x: 0, y: 0 },
       rotation: -Math.PI / 8,
-      style: { fontFamily: 'Sora', fontSize: 24, fontWeight: 'normal', color: 'rgba(232,235,244,0.08)' }
+      style: { fontFamily: 'Sora', fontSize: 24, fontWeight: 'normal', color: WATERMARK_COLOR }
     });
   });
   $('wm-image').addEventListener('click', () => {
@@ -188,7 +192,7 @@ export function bindControls(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>) {
       column: 5,
       position: { x: 0, y: 0 },
       rotation: -Math.PI / 10,
-      style: { fontFamily: 'Sora', fontSize: 24, fontWeight: 'normal', color: 'rgba(232,235,244,0.07)' }
+      style: { fontFamily: 'Sora', fontSize: 24, fontWeight: 'normal', color: WATERMARK_COLOR }
     });
   });
   $('wm-clear').addEventListener('click', () => pixiGraph.clearWatermark());

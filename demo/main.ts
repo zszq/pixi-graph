@@ -8,6 +8,7 @@ import { renderResolutionButtons, resolveResolution } from './resolution';
 import { startFpsMeter } from './fps';
 import { hideLoading, nextFrame, setProgress, showError, stage } from './loading';
 import { hoverStyle, style } from './style';
+import { bindThemeToggle } from './theme';
 
 const BENCHMARK_DEFAULT_DATASET = 'data-50000-100000';
 // 普通预览默认用中等规模数据：1000 点 2000 边，秒级加载又能真实展示渲染/交互效果。
@@ -38,6 +39,7 @@ async function main() {
   const activeKey = resolveActiveKey(bench ? BENCHMARK_DEFAULT_DATASET : PREVIEW_DEFAULT_DATASET);
   renderDatasetButtons(activeKey);
   renderResolutionButtons();
+  bindThemeToggle();
   startFpsMeter(document.getElementById('stat-fps')!);
 
   const timings: Record<string, number> = {};
