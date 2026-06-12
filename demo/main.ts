@@ -4,6 +4,7 @@ import { bindHud } from './hud';
 import { runBenchmark } from './benchmark';
 import { buildGraph, fetchJsonWithProgress, runLayout } from './data';
 import { renderDatasetButtons, resolveActiveKey } from './datasets';
+import { renderResolutionButtons, resolveResolution } from './resolution';
 import { startFpsMeter } from './fps';
 import { hideLoading, nextFrame, setProgress, showError, stage } from './loading';
 import { hoverStyle, style } from './style';
@@ -36,6 +37,7 @@ async function main() {
   const bench = isBenchmarkMode();
   const activeKey = resolveActiveKey(bench ? BENCHMARK_DEFAULT_DATASET : PREVIEW_DEFAULT_DATASET);
   renderDatasetButtons(activeKey);
+  renderResolutionButtons();
   startFpsMeter(document.getElementById('stat-fps')!);
 
   const timings: Record<string, number> = {};
@@ -64,13 +66,17 @@ async function main() {
   await nextFrame();
   const container = document.getElementById('graph')!;
   mark('pixi:start');
+  const resolution = resolveResolution();
   const pixiGraph = await PixiGraph.create({
     container,
     graph,
     style,
     hoverStyle,
-    highPerformance: { nodeNumber: 5000, edgeNumber: 5000 }
+    highPerformance: { nodeNumber: 5000, edgeNumber: 5000 },
+    // undefined 时不覆盖，走库默认 max(devicePixelRatio, 2)
+    ...(resolution !== undefined ? { resolution } : {})
   });
+  console.log('[pixi-graph demo] resolution =', pixiGraph.resolution, '(devicePixelRatio =', window.devicePixelRatio, ')');
   mark('pixi:end');
   setProgress(1, '完成');
   hideLoading();
