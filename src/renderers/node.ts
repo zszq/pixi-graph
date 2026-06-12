@@ -62,18 +62,19 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
     const nodeIconTexture = textureCache.getText(nodeIconTextureKey, type, content, { fontFamily, fontSize, fontWeight, align, color, stroke, strokeThickness });
     applyNodeIcon(nodeIconTexture);
   } else {
-    // 图片图标的缓存 key 需含尺寸：圆形裁剪半径随节点 size 变化。
-    const nodeImageTextureKey = [NODE_ICON, 'IMAGE', content, nodeStyle.size].join(DELIMITER);
+    // 裁剪半径收缩到边框描边内沿（描边以 size 为中线、向内延伸 width/2）：
+    // 图标 Sprite 叠在边框 Sprite 之上，若按 size 裁剪会盖住边框内侧一半。
+    const nodeImageRadius = Math.max(nodeStyle.size - nodeStyle.border.width / 2, 0);
+    // 图片图标的缓存 key 需含尺寸：圆形裁剪半径随节点 size 与边框宽度变化。
+    const nodeImageTextureKey = [NODE_ICON, 'IMAGE', content, nodeImageRadius].join(DELIMITER);
     if (textureCache.has(nodeImageTextureKey)) {
       applyNodeIcon(textureCache.getOnly(nodeImageTextureKey)!);
     } else {
       // 图片图标由 TextureCache 统一异步烘焙成圆形纹理，避免每个节点都临时挂遮罩。
-      textureCache
-        .loadCircularImage(nodeImageTextureKey, content, nodeStyle.size)
-        .then(baked => {
-          if (!(nodeGfx.children[2] instanceof Sprite)) return;
-          applyNodeIcon(baked);
-        });
+      textureCache.loadCircularImage(nodeImageTextureKey, content, nodeImageRadius).then(baked => {
+        if (!(nodeGfx.children[2] instanceof Sprite)) return;
+        applyNodeIcon(baked);
+      });
     }
   }
 
