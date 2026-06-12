@@ -34,7 +34,14 @@ export class TextureCache {
         target: container,
         frame,
         resolution: this.renderer.resolution * 2,
-        antialias: true
+        antialias: true,
+        // 开 mipmap：纹理以 2× 分辨率烘焙，上屏时必然缩小采样；低 DPI 屏（Windows 上
+        // dpr=1 很常见）或视口缩小（scaled<1）时，无 mipmap 的双线性硬缩会让圆边缘出现
+        // 明显锯齿/闪烁，三线性 mipmap 采样可消除。
+        textureSourceOptions: {
+          autoGenerateMipmaps: true,
+          scaleMode: 'linear'
+        }
       });
       container.destroy({ children: true });
       this.textures.set(key, texture);
