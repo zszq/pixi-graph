@@ -67,8 +67,9 @@ export class GraphRenderController {
     // ⚠️ PERF-CRITICAL（性能关键·勿在此分支里跑逐对象 LOD 循环、勿在此更新 lastZoomStep）：
     // 高性能隐藏态下 node/edge/label 层均不渲染（只渲染 fast 节点层与批量边），对数万个节点/边逐个
     // 跑 LOD 可见性纯属浪费（实测 5 万点跨档位约 45ms 卡顿）。此处只更新批量边的 LOD 档位、跳过逐对象
-    // 循环并提前返回；关键是**保持 lastZoomStep 不变**——这样恢复后的第一个正常帧会因档位“看起来变了”
-    // 而重跑一次完整 LOD 循环，补上隐藏期间的档位变化。若在这里更新了 lastZoomStep，恢复后会漏掉 LOD。
+    // 循环并提前返回。lastZoomStep 表示“逐对象 LOD 上次实际应用到的档位”，本分支没有应用 LOD，
+    // 故不得更新它；隐藏期间档位若发生变化，由恢复路径的 invalidateLodIfZoomStepChanged 作废缓存，
+    // 保证恢复后的第一个正常帧重跑完整 LOD 循环。
     if (options.fastNodeCull) {
       this.layers.batchEdgeLayer?.setZoomStep(zoomStep);
       if (!options.skipBatchEdges) this.rebuildBatchEdges();
@@ -230,6 +231,17 @@ export class GraphRenderController {
   // 仅在恢复时调用一次（非逐帧），O(E) 只做标志赋值，成本可忽略。
   refreshEdgeLod(zoomStep = this.currentZoomStep()): void {
     for (const edge of this.edges.values()) edge.updateVisibility(zoomStep);
+  }
+
+  // 恢复细节层后调用：若隐藏期间缩放档位变了，作废 LOD 档位缓存（置 -1）。
+  // why：恢复路径只把边与“当前可见”的节点刷到新档位，屏外节点仍停留在 lastZoomStep 旧档位，
+  // 此时 lastZoomStep 已不能代表全体对象的真实状态。若不作废，当缩放又回到隐藏前的旧档位
+  // （典型：复位视图把相机拉回最小缩放 fit，而隐藏前正是从最小缩放开始放大的）时，
+  // updateVisibility 的等值判断会误判“档位没变”而跳过完整 LOD 循环，使边线/节点图标
+  // 停留在高档位的可见状态。档位未变时保留缓存——此时对象状态与缓存一致，作废只会让
+  // 恢复后第一个脏帧白跑一次 O(N+E) 全量循环（5 万点约 45ms）。
+  invalidateLodIfZoomStepChanged(zoomStep = this.currentZoomStep()): void {
+    if (zoomStep !== this.lastZoomStep) this.lastZoomStep = -1;
   }
 
   setNodeLabelsRenderable(renderable: boolean): void {

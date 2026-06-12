@@ -405,6 +405,9 @@ export class PixiGraph<
     // 补刷逐边 LOD：节点由下面的 cullViewport 刷新，边没有等价机制，不补会导致缩放后边标签/箭头
     // 停留在旧档位、需点击才显示（见 GraphRenderController.refreshEdgeLod）。
     this.renderController.refreshEdgeLod();
+    // 隐藏期间档位变过的话，作废 LOD 档位缓存：否则之后缩放回隐藏前的档位（典型是复位视图
+    // 回到最小缩放）时，等值判断会跳过完整 LOD 循环，把边/图标留在高档位的可见状态。
+    this.renderController.invalidateLodIfZoomStepChanged();
     this.renderController.setNodeDetailsRenderable(true);
     this.renderController.setInteractionEnabled(true);
     // 性能优化③（见 GraphRenderController.cullViewport）：细节层恢复可见后立即用快速空间剔除
