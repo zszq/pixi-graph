@@ -228,7 +228,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.markBatchEdgesDirty();
   }
 
-  // 刷新某节点所有相邻边的位置（节点移动后边端点要跟随）。的 defer 分支：拖动高密度节点
+  // 刷新某节点所有相邻边的位置（节点移动后边端点要跟随）。defer 分支：拖动高密度节点
   // （度数极大，如星形中心）会瞬间弄脏上千条边，同步全更会卡帧；交给 EdgeUpdateScheduler 分帧
   // 处理。immediate=true 用于必须立即一致的场景（如导出前 flush）。
   updateConnectedEdgesByNodeKey(nodeKey: string, immediate = false): void {
