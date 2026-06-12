@@ -228,7 +228,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.markBatchEdgesDirty();
   }
 
-  // 刷新某节点所有相邻边的位置（节点移动后边端点要跟随）。why 的 defer 分支：拖动高密度节点
+  // 刷新某节点所有相邻边的位置（节点移动后边端点要跟随）。的 defer 分支：拖动高密度节点
   // （度数极大，如星形中心）会瞬间弄脏上千条边，同步全更会卡帧；交给 EdgeUpdateScheduler 分帧
   // 处理。immediate=true 用于必须立即一致的场景（如导出前 flush）。
   updateConnectedEdgesByNodeKey(nodeKey: string, immediate = false): void {
@@ -474,7 +474,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
 
   // 维护"平行边组"：同一对端点之间有多条边时需互相错开（isBilateral=true 触发弧形/侧移偏移），
   // 否则会完全重叠看不清。what：把本边登记进 ParallelEdgeIndex，取回该端点对的全部边；only-one
-  // 时不偏移。why 要刷新整组：新增/删除一条平行边会改变整组的"是否平行"状态，组内每条边的偏移
+  // 时不偏移。要刷新整组：新增/删除一条平行边会改变整组的"是否平行"状态，组内每条边的偏移
   // 都得重算，否则旧成员仍按重叠方式绘制。
   private updateParallelEdgeGroup(edgeKey: string, sourceNodeKey: string, targetNodeKey: string): void {
     const parallelEdgeKeys = this.parallelEdgeIndex.register(edgeKey, sourceNodeKey, targetNodeKey);
@@ -494,7 +494,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   }
 
   // 把被 hover 的元素移到同层最后（绘制在最上层），避免高亮节点/边被相邻元素压住。
-  // why 提前 return：已在末尾时无需移动，省去无谓的子节点重排（hover 是高频事件）。
+  // 提前 return：已在末尾时无需移动，省去无谓的子节点重排（hover 是高频事件）。
   private moveToFront(layer: { children: Array<unknown>; setChildIndex(child: any, index: number): void }, child: unknown): void {
     const lastIndex = layer.children.length - 1;
     if (lastIndex < 0 || layer.children[lastIndex] === child) return;

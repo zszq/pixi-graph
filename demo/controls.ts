@@ -118,7 +118,7 @@ export function bindControls(pixiGraph: PixiGraph<NodeAttrs, EdgeAttrs>) {
   $('add-edge').addEventListener('click', () => addEdge(pixiGraph));
   $('remove-edge').addEventListener('click', () => removeDemoOrLastEdge(pixiGraph));
 
-  // 显隐开关。why 需要"期望状态 + 相机移动后重新强制隐藏"：库内 LOD（applyLabelLayerLod）会在
+  // 显隐开关。需要"期望状态 + 相机移动后重新强制隐藏"：库内 LOD（applyLabelLayerLod）会在
   // 缩放到一定档位的脏帧里重新打开标签层、覆盖一次性的开关；而"隐藏"与 LOD/高性能隐藏天然兼容、
   // 不冲突。故：关 → 持续重申隐藏；开 → 交回 LOD 决定（避免与高性能拖拽相互打架，重新引入闪烁）。
   const vis = { edges: true, nodeLabels: true, edgeLabels: true };

@@ -7,7 +7,7 @@ import type { BaseEdgeAttributes, BaseNodeAttributes } from '../types/attributes
  * 方法。加入 viewport 的顺序即叠放顺序（先加在底）：edge → edgeLabel → nodeLabel → fastNode →
  * node，故节点画在最上、边在最下。watermark 加在 stage（viewport 之外），不随平移缩放移动。
  *
- * why 分这么多层：把"边/边标签/节点标签/节点"拆成独立层，才能按缩放档位(LOD)或高性能模式整层
+ * 分这么多层：把"边/边标签/节点标签/节点"拆成独立层，才能按缩放档位(LOD)或高性能模式整层
  * 开关 renderable（见 GraphRenderController），而不必逐个对象处理；分层也保证绘制顺序稳定。
  */
 export class GraphLayers {

@@ -20,7 +20,7 @@ function bindStats(pixiGraph: AnyGraph): void {
     $nodes.textContent = String(graph.order);
     $edges.textContent = String(graph.size);
   };
-  // 缩放：按 scaled 变化才写 DOM。why 用 frame-end 而非 zoomed/moved——放大/缩小按钮走 viewport.zoom()，
+  // 缩放：按 scaled 变化才写 DOM。用 frame-end 而非 zoomed/moved——放大/缩小按钮走 viewport.zoom()，
   // 它不一定触发 zoomed/moved；frame-end 每帧都有，能覆盖按钮缩放/滚轮/吸附/复位等所有改变缩放的路径。
   let lastZoom = -1;
   const refreshZoom = () => {

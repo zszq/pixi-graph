@@ -1,6 +1,6 @@
 // 样式系统（what）：定义最终样式的完整结构 GraphStyle（node/edge 各项的具体值），以及"样式定义"
 // GraphStyleDefinition——它允许在样式树的任意层级写成 函数 / 部分对象 / 完整值。
-// why 这样设计：数据驱动样式。使用方可写 `color: node => colors[node.group]`，让每个元素按自身
+// 这样设计：数据驱动样式。使用方可写 `color: node => colors[node.group]`，让每个元素按自身
 // 属性算出样式；解析时（resolveStyleDefinitions）在 DEFAULT_STYLE 之上深度合并 base 与 hover 态，
 // 得到该元素的最终样式。函数可出现在任意层级，故需递归解析。
 import type { BaseNodeAttributes, BaseEdgeAttributes } from '../types/attributes';

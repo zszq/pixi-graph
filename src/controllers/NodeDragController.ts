@@ -31,7 +31,7 @@ export interface NodeDragControllerOptions<NodeAttributes extends BaseNodeAttrib
  * 节点拖拽控制器（what）：从节点上按下后，接管 document 级的 mousemove/mouseup，把鼠标位置
  * 转成世界坐标写回图节点的 x/y，并实时更新该节点渲染位置与相邻边；松手收尾。
  *
- * why 监听 document 而非画布：拖拽中鼠标常常移出画布甚至窗口边缘，只有挂在 document 上才能
+ * 监听 document 而非画布：拖拽中鼠标常常移出画布甚至窗口边缘，只有挂在 document 上才能
  * 持续收到移动/松开事件，否则快速拖拽会"丢手"。拖拽期间 viewport.pause=true，避免同一手势
  * 既拖节点又平移画布。
  */

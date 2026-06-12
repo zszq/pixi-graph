@@ -73,7 +73,7 @@ export class TextureCache {
     );
   }
 
-  // 异步纹理（如需先下载图片再烘焙）。why 维护 pending：同一 key 的多个节点会几乎同时请求，
+  // 异步纹理（如需先下载图片再烘焙）。维护 pending：同一 key 的多个节点会几乎同时请求，
   // 用 in-flight Promise 去重，避免同一张图片被并发下载/烘焙多次。
   getAsync(key: string, create: () => Promise<Container>, explicitFrame?: Rectangle): Promise<Texture> {
     const texture = this.textures.get(key);
