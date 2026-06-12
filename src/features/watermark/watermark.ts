@@ -1,4 +1,4 @@
-import { Container, Sprite, Texture, Text } from 'pixi.js';
+import { Assets, Container, Sprite, Texture, Text } from 'pixi.js';
 import type { FontWeight } from '../../utils/text';
 
 export interface WatermarkOption {
@@ -45,9 +45,18 @@ export function makeWatermark(containerWidth: number, containerHeight: number, o
 }
 
 function makeImageWatermark(option: WatermarkOption): Sprite {
-  const sprite = new Sprite(Texture.from(option.content));
+  const sprite = new Sprite();
   sprite.anchor.set(0.5);
   sprite.rotation = option.rotation;
+  // PIXI v8 的 Texture.from(url) 不再隐式发起网络加载（资源必须已在 Assets 缓存中，否则
+  // 仅得到空纹理并告警）。为保持“传 URL 即用”的水印调用方式，这里显式异步加载后再赋纹理；
+  // Assets.load 按 URL 去重，cover 平铺的多个贴片只会触发一次下载。
+  Assets.load<Texture>(option.content)
+    .then(texture => {
+      // 加载完成前水印可能已被 removeWatermark/clearWatermark 销毁
+      if (!sprite.destroyed) sprite.texture = texture;
+    })
+    .catch(() => undefined);
   return sprite;
 }
 
