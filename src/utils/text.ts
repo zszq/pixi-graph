@@ -39,7 +39,7 @@ export function textToPixi(type: TextType, content: string, style: TextStyle, re
         stroke: style.strokeThickness > 0 ? { color: style.stroke, width: style.strokeThickness } : undefined
       }
     });
-    // why 与烘焙分辨率一致：字形先按此分辨率栅格化，再被 generateTexture 二次渲染；
+    // 与烘焙分辨率一致：字形先按此分辨率栅格化，再被 generateTexture 二次渲染；
     // 若低于烘焙分辨率，字形会被放大采样而发虚。
     text.resolution = resolution;
     text.roundPixels = true;

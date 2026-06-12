@@ -29,7 +29,7 @@ export interface GraphOptions<NodeAttributes extends BaseNodeAttributes = BaseNo
   minScale?: number;
   /**
    * 渲染分辨率（画布物理像素 / CSS 像素），默认 `max(window.devicePixelRatio, 2)`。
-   * why 默认下限取 2：Windows 上 100% 缩放的低 DPI 屏 devicePixelRatio=1，按 1× 渲染
+   * 默认下限取 2：Windows 上 100% 缩放的低 DPI 屏 devicePixelRatio=1，按 1× 渲染
    * 边缘锯齿明显；强制 2× 超采样后由浏览器缩回显示，观感接近 Retina。代价是约 4 倍
    * 像素填充量，超大图可显式传 `window.devicePixelRatio` 换性能。
    */

@@ -107,7 +107,7 @@ export class PixiGraph<
     this.dragOffset = options.dragOffset ?? false;
     this.minScale = options.minScale ?? 0.1;
     this.maxScale = options.maxScale ?? 2;
-    // why 默认下限取 2：低 DPI 屏（Windows 100% 缩放时 devicePixelRatio=1）按 1× 渲染
+    // 默认下限取 2：低 DPI 屏（Windows 100% 缩放时 devicePixelRatio=1）按 1× 渲染
     // 锯齿明显，2× 超采样后由浏览器缩回，观感对齐 Retina；超大图可显式传低值换性能。
     this.resolution = options.resolution ?? Math.max(window.devicePixelRatio || 1, 2);
 
