@@ -16,7 +16,7 @@ npm install
 npm run dev          # 打开 http://localhost:5173
 ```
 
-默认加载**中等规模**数据集（1000 点 / 2000 边），秒级加载即可看到渲染与交互效果；左侧可一键切换 50 点～50000 点等不同规模，右侧面板可试用增删节点/边、框选、缩放、重置视图、水印、导出 PNG，左下角显示实时 FPS。
+默认加载**中等规模**数据集（1000 点 / 2000 边），秒级加载即可看到渲染与交互效果。左侧可一键切换 50 点～50000 点等不同规模的数据集，以及渲染分辨率档位（用于对比清晰度与性能）；右侧控制台覆盖视图复位/缩放、增删节点/边、边与标签显隐、框选、水印、导出 PNG/JPG/WEBP；左下角是实时指标条（FPS / 节点数 / 边数 / 缩放），底部的事件检视器会实时显示悬停、点击到的节点与边。
 
 <img src="demo/screenshot@2x.jpg" alt="本地预览 demo" width="640">
 
@@ -183,12 +183,14 @@ export interface GraphOptions<NodeAttributes extends BaseNodeAttributes = BaseNo
   highPerformance?: HighPerformanceThreshold;
   minScale?: number;
   maxScale?: number;
+  resolution?: number;
 }
 
 export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttributes, EdgeAttributes extends BaseEdgeAttributes = BaseEdgeAttributes> {
   static create(options: GraphOptions): Promise<PixiGraph>;
   constructor(options: GraphOptions<NodeAttributes, EdgeAttributes>);
   readonly ready: Promise<this>;
+  readonly resolution: number;
 }
 ```
 
@@ -201,6 +203,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 - `dragOffset` —— 拖拽时保持光标与节点的偏移，而非吸附到节点中心
 - `highPerformance` —— 节点/边数量超过 `{ nodeNumber, edgeNumber }` 阈值时，进入高性能模式：交互（平移/缩放/拖拽）期间隐藏边与节点标签，交互结束后恢复
 - `minScale` / `maxScale` —— 最小/最大缩放比例（默认 `0.1` / `2`）
+- `resolution` —— 渲染分辨率（画布物理像素 / CSS 像素），默认 `max(devicePixelRatio, 2)`：Windows 低 DPI 屏（`devicePixelRatio = 1`）会按 2× 超采样以消除锯齿，代价约 4 倍像素填充量；超大图可显式传 `window.devicePixelRatio` 换性能
 
 ### 实例方法
 
@@ -383,7 +386,7 @@ npm run typecheck  # tsc --noEmit
 
 演示页（`demo/main.ts`）通过 `pixi-graph` 别名（见 `vite.config.ts`）直接引用 `src/` 源码，因此改动源码会经 HMR 立即生效，**无需先 `build`**。`dist/` 仅供外部使用者，且被 gitignore。
 
-演示页提供了控制面板，可验证动态增删节点/边、打开框选、缩放、重置视图、导出图片，并在左下角显示实时 FPS。
+演示页提供了完整的控制面板：左侧切换数据集与渲染分辨率（二者均通过 URL 参数 `?data=` / `?resolution=` 重载页面生效），右侧控制台可验证动态增删节点/边、显隐开关、框选、水印、缩放、复位视图、三种格式导出，左下角实时指标条与底部事件检视器用于观察 FPS 与节点/边事件。
 
 ### 大图 benchmark
 
