@@ -477,6 +477,18 @@ export class PixiGraph<
     return undefined;
   }
 
+  // 样式函数常依赖图属性之外的外部状态（选中集、高亮集等），这类状态变化不会触发
+  // graphology 的 attributesUpdated 事件，因此公开按 key 的主动刷新供外层调用。
+  /** 重新解析并应用指定节点的样式。 */
+  updateNodeStyleByKey(nodeKey: string): void {
+    this.mutationController.updateNodeStyleByKey(nodeKey);
+  }
+
+  /** 重新解析并应用指定边的样式。 */
+  updateEdgeStyleByKey(edgeKey: string): void {
+    this.mutationController.updateEdgeStyleByKey(edgeKey);
+  }
+
   /** 将当前视图导出为 base64 图片。 */
   extract(full = true, format: 'png' | 'jpg' | 'webp' = 'png', quality = 0.92): Promise<string> {
     this.restorePerformanceLayersNow();
