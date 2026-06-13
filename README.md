@@ -20,7 +20,7 @@ npm run dev          # 打开 http://localhost:5173
 
 <img src="demo/screenshot@2x.jpg" alt="本地预览 demo" width="640">
 
-> **v2** 基于 **PIXI.js v8**，以 ESM 形式发布（同时提供 UMD 包）。`pixi.js`、`pixi-viewport`、`color-rgba`、`eventemitter3` 已作为运行时依赖打入产物；`graphology` / `graphology-types` 为 peer 依赖，由你的打包器统一去重。由于 PIXI v8 的渲染器是**异步初始化**的，请使用 `PixiGraph.create()` 工厂方法来构造。
+> **v2** 基于 **PIXI.js v8**，npm 包仅发布 **ESM**（`dist/pixi-graph.js`）：`pixi.js`、`pixi-viewport`、`eventemitter3` 外部化，由你的打包器与自有依赖去重（`color-rgba` 已内联，无需安装）；`graphology` / `graphology-types` 为 peer 依赖（graph 实例由使用方构造后传入）。另提供 `npm run build:umd` 按需构建**自包含 UMD**（`dist-umd/pixi-graph.umd.min.js`，全局名 `PixiGraph`）——全部运行时依赖打进单文件并降级到 ES2017，可直接被 webpack 4 等旧构建链 `require` 或 `<script>` 引入，供手工拷贝集成，不随 npm 包分发。由于 PIXI v8 的渲染器是**异步初始化**的，请使用 `PixiGraph.create()` 工厂方法来构造。
 
 ## 安装
 

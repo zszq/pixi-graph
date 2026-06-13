@@ -12,14 +12,13 @@
   "license": "MIT",
   "author": "Jan Zak <zj@zakjan.cz>",
   "repository": "github:zakjan/pixi-graph",
-  "main": "./dist/pixi-graph.umd.cjs",
+  "main": "./dist/pixi-graph.js",
   "module": "./dist/pixi-graph.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/pixi-graph.js",
-      "require": "./dist/pixi-graph.umd.cjs"
+      "import": "./dist/pixi-graph.js"
     }
   },
   "files": [
@@ -29,6 +28,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:umd": "vite build --config vite.config.umd.ts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -42,13 +42,13 @@
     "graphology-types": "^0.24.0"
   },
   "dependencies": {
-    "color-rgba": "^3.0.0",
     "eventemitter3": "^5.0.1",
     "pixi-viewport": "^6.0.3",
     "pixi.js": "^8.6.0"
   },
   "devDependencies": {
     "@types/color-rgba": "^2.1.2",
+    "color-rgba": "^3.0.0",
     "@types/node": "^22.19.19",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",

@@ -12,7 +12,8 @@
 
 ```bash
 npm run dev        # Vite 开发服务器，默认 http://localhost:5173，带 HMR；服务根目录的 index.html 演示
-npm run build      # tsc --noEmit 类型检查 + Vite 库构建，输出 dist/（ESM + UMD + .d.ts）
+npm run build      # tsc --noEmit 类型检查 + Vite 库构建，输出 dist/（ESM + .d.ts，npm 发布物）
+npm run build:umd  # 按需构建自包含 UMD 到 dist-umd/，手工拷贝给无打包器项目，不进 npm 包
 npm test           # vitest run，跑单元测试（一次性）
 npm run test:watch # vitest 监听模式
 npm run lint       # eslint + prettier --check
@@ -22,7 +23,7 @@ npm run typecheck  # tsc --noEmit
 
 **demo 直连源码**：`demo/main.ts` 从 `pixi-graph` 引入，`vite.config.ts` 把该名称别名指向 `src/index.ts`。因此 `npm run dev` 时改源码会经 HMR 立即反映到演示页，**无需先 `build`**。`dist/` 仅供外部使用者，且被 gitignore。
 
-构建产物：`dist/pixi-graph.js`（ESM）、`dist/pixi-graph.umd.cjs`（UMD，全局名 `PixiGraph`）、`dist/index.d.ts`（由 `vite-plugin-dts` 汇总生成）。运行时依赖在 `rollupOptions.external` 中保持外部化。
+构建产物分两类：**npm 发布物** `dist/`——`pixi-graph.js`（ESM，`pixi.js`/`pixi-viewport`/`eventemitter3` 外部化，`color-rgba` 内联）与 `index.d.ts`（由 `vite-plugin-dts` 汇总生成）；**按需产物** `dist-umd/pixi-graph.umd.min.js`（`npm run build:umd`，自包含 UMD，全局名 `PixiGraph`，全部运行时依赖打入并降级到 ES2017，供 webpack 4 等无现代打包器的项目手工拷贝使用，不随 npm 分发）。`graphology` 仅类型引用，两种产物都不打包。两个输出目录均被 gitignore。
 
 ## 架构
 
