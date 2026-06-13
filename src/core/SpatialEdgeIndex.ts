@@ -160,17 +160,17 @@ export class SpatialEdgeIndex<NodeAttributes extends BaseNodeAttributes = BaseNo
     let tMaxY = stepY === 0 ? Infinity : ((stepY > 0 ? y + 1 : y) * size - a.y) / dy;
 
     this.addToCell(x, y, edgeKey);
+    // 守卫式步进：只对「尚未到达终点」的轴步进。stepX/stepY 恒指向终点方向，故每次迭代必让
+    // |x-endX| 或 |y-endY| 单调减 1，恰好走 |endX-startX|+|endY-startY| 步后停在终点格——
+    // 数学上不可能发散。这修掉了原始 DDA 的角点穿越缺陷：用 tMaxX<tMaxY 裸判方向时，端点恰落
+    // 格子边界处的浮点漂移会让某轴越过终点格后 (x!==endX) 永真，无限灌 cells Map 直至 V8 抛
+    // 「Map maximum size exceeded」。角点处此处走 L 形而非对角双步，多登记一个格无妨（索引允许候选偏多）。
     while (x !== endX || y !== endY) {
-      if (tMaxX < tMaxY) {
+      if (y === endY || (x !== endX && tMaxX < tMaxY)) {
         x += stepX;
         tMaxX += tDeltaX;
-      } else if (tMaxY < tMaxX) {
-        y += stepY;
-        tMaxY += tDeltaY;
       } else {
-        x += stepX;
         y += stepY;
-        tMaxX += tDeltaX;
         tMaxY += tDeltaY;
       }
       this.addToCell(x, y, edgeKey);

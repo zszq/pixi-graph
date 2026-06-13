@@ -68,4 +68,32 @@ describe('SpatialEdgeIndex', () => {
     const index = new SpatialEdgeIndex<BaseNodeAttributes, BaseEdgeAttributes>();
     expect(index.query(graph, { left: 250000, right: 250100, top: -10, bottom: 10 })).toEqual(['ab']);
   });
+
+  // 回归：端点恰落在格子边界、沿对角穿越格子角点时，旧 DDA 用 tMaxX<tMaxY 裸判方向会因浮点漂移
+  // 越过终点格后永不终止，把 cells Map 灌爆抛「Map maximum size exceeded」。守卫式步进后必须正常收敛。
+  // 用例覆盖前能跑完即说明已收敛（发散时此 it 会卡到超时/抛错而失败）。
+  it('端点落在格子边界的对角边能正常收敛且全程可查（角点穿越回归）', () => {
+    const graph = makeGraph();
+    // cellSize 在小图下为 512；端点全取 512 的整数倍，强制每一步都恰好踩在格子角点上。
+    graph.addNode('a', { x: 0, y: 0 });
+    graph.addNode('b', { x: 512 * 8, y: 512 * 8 });
+    graph.addEdgeWithKey('diag', 'a', 'b', {});
+    const index = new SpatialEdgeIndex<BaseNodeAttributes, BaseEdgeAttributes>();
+
+    // 起点、中点、终点三处都应能查到——证明整条对角路径被完整、有界地登记下来。
+    expect(index.query(graph, { left: -10, right: 10, top: -10, bottom: 10 })).toContain('diag');
+    expect(index.query(graph, { left: 512 * 4 - 10, right: 512 * 4 + 10, top: 512 * 4 - 10, bottom: 512 * 4 + 10 })).toContain('diag');
+    expect(index.query(graph, { left: 512 * 8 - 10, right: 512 * 8 + 10, top: 512 * 8 - 10, bottom: 512 * 8 + 10 })).toContain('diag');
+  });
+
+  // 回归：同样踩边界，但用非整除斜率制造浮点漂移——最易触发某轴越过终点格后回不来的发散。
+  it('端点落在格子边界、斜率非整除的边也能收敛（浮点漂移回归）', () => {
+    const graph = makeGraph();
+    graph.addNode('a', { x: 512, y: 512 });
+    graph.addNode('b', { x: 512 * 7, y: 512 * 3 }); // Δ=(3072,1024)，斜率非 1，每格 tMax 步进不对齐
+    graph.addEdgeWithKey('skew', 'a', 'b', {});
+    const index = new SpatialEdgeIndex<BaseNodeAttributes, BaseEdgeAttributes>();
+    expect(index.query(graph, { left: 512 - 10, right: 512 + 10, top: 512 - 10, bottom: 512 + 10 })).toContain('skew');
+    expect(index.query(graph, { left: 512 * 7 - 10, right: 512 * 7 + 10, top: 512 * 3 - 10, bottom: 512 * 3 + 10 })).toContain('skew');
+  });
 });
