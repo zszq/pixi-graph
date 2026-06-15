@@ -160,8 +160,14 @@ export class GraphRenderController {
   }
 
   setBatchEdgesEnabled(enabled: boolean): void {
+    // ⚠️ PERF-CRITICAL（性能关键·勿改回每次 enabled 都 rebuild）：本方法由 updateHighMode 在每次
+    // 节点/边增删时调用。一旦图规模过阈值进入高性能模式，enabled 会持续为 true——若每次都 rebuild，
+    // 增量批量加载（如逐片 addNode/addEdge 上图数万元素）会对每个元素全量重建批量边索引，退化成
+    // O(N·E) 卡死。批量边的实际重建由 markBatchEdgesDirty + viewport.dirty 驱动的 frame-end
+    // updateVisibility 每帧最多做一次即可，故这里只在"禁用→启用"跳变时同步重建一次。
+    const wasEnabled = this.layers.isBatchEdgesEnabled();
     this.layers.setBatchEdgesEnabled(enabled);
-    if (enabled) this.rebuildBatchEdges();
+    if (enabled && !wasEnabled) this.rebuildBatchEdges();
   }
 
   markBatchEdgesDirty(): void {
