@@ -208,15 +208,25 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
       edge.isBilateral
     );
 
+    // 颜色（tint/alpha）必须在这里同步：选中/高亮等纯样式变更只走 updateEdge（不触发整层 rebuild），
+    // 若此处只更新几何而不更新颜色，被高亮的边会保持旧色，直到下次平移/缩放触发 rebuild 才变色。
+    // colorToPixi 内部有颜色串缓存，热路径（拖拽逐边刷新）实际是一次 Map 命中，开销可忽略。
+    const [tint, colorAlpha] = colorToPixi(edgeStyle.color);
+    const alpha = colorAlpha * edgeStyle.alpha;
+
     pair.line.x = geometry.lineX;
     pair.line.y = geometry.lineY;
     pair.line.scaleX = edgeStyle.width;
     pair.line.scaleY = geometry.lineLength;
     pair.line.rotation = geometry.lineRotation;
+    pair.line.tint = tint;
+    pair.line.alpha = alpha;
     if (pair.arrow) {
       pair.arrow.x = geometry.arrowX;
       pair.arrow.y = geometry.arrowY;
       pair.arrow.rotation = geometry.arrowRotation;
+      pair.arrow.tint = tint;
+      pair.arrow.alpha = alpha;
     }
     this.lineLayer.update();
     this.arrowLayer.update();
