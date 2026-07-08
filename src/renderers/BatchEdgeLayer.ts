@@ -116,11 +116,13 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
     this.lastBoundsKey = boundsKey;
   }
 
-  // 处理单条候选边：过滤（自环/hover/隐藏由各自层负责，不入批量）→ 精确视口相交剔除 → 算几何 →
+  // 处理单条候选边：过滤（自环/隐藏由各自层负责，不入批量）→ 精确视口相交剔除 → 算几何 →
   // 写线条/箭头粒子。坐标全部取自实时 graph，保证即便索引候选偏多/偏旧也不会画错位置。
+  // 注意：hover 边仍保留在批量层。高性能模式下独立边层不渲染，若把 hover 边剔除会导致其消失/不变色；
+  // 改为用 edge.edgeStyle（已含 hover 合并色）直接在批量粒子里上色，代价是失去“置顶”z 序（可接受）。
   private appendEdgeParticle(edgeKey: string, renderer: Renderer, cullBounds: { left: number; right: number; top: number; bottom: number } | undefined): void {
     const edge = this.edges.get(edgeKey);
-    if (!edge || edge.isSelfLoop || edge.hovered || !edge.isVisible()) return;
+    if (!edge || edge.isSelfLoop || !edge.isVisible()) return;
     if (!this.graph.hasEdge(edgeKey)) return;
 
     const sourceKey = this.graph.source(edgeKey);
@@ -194,7 +196,8 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
     const targetKey = this.graph.target(edgeKey);
     const sourceNode = this.nodes.get(sourceKey);
     const targetNode = this.nodes.get(targetKey);
-    if (!sourceNode || !targetNode || edge.isSelfLoop || edge.hovered || !edge.isVisible()) {
+    // hover 边不再从批量层剔除（见 appendEdgeParticle 注释），保证高性能模式下 hover 也能即时变色
+    if (!sourceNode || !targetNode || edge.isSelfLoop || !edge.isVisible()) {
       this.dirty = true;
       return;
     }
@@ -230,6 +233,74 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
     }
     this.lineLayer.update();
     this.arrowLayer.update();
+  }
+
+  /**
+   * 游标拾取最近的边（what）：高性能批量模式下边线/箭头是不可交互的 Particle，无法靠 PIXI 命中
+   * 测试触发 hover，故由上层在 pointermove 时调用本方法，按光标世界坐标拾取最近的可见边。
+   * why 复用本层：SpatialEdgeIndex、节点/边映射与绘制几何都在这里，拾取判定与渲染共用同一套坐标，
+   * 不会出现“高亮的边和画出来的边对不上”。先用索引只取光标附近格子的候选，再对每条候选用实际绘制
+   * 几何（含平行边偏移）做精确距离判定：线段命中或箭头命中均可。
+   * toleranceWorld：命中容差（世界单位），由上层按屏幕像素 / 缩放换算后传入。返回边 key 或 null。
+   */
+  pickEdgeAt(point: { x: number; y: number }, toleranceWorld: number): string | null {
+    const candidates = this.spatialEdgeIndex.query(this.graph, {
+      left: point.x - toleranceWorld,
+      right: point.x + toleranceWorld,
+      top: point.y - toleranceWorld,
+      bottom: point.y + toleranceWorld
+    });
+    let bestKey: string | null = null;
+    let bestDistance = Infinity;
+    for (const edgeKey of candidates) {
+      const edge = this.edges.get(edgeKey);
+      // 自环边不入批量层、批量模式下也不可见；LOD/隐藏的边同样不参与拾取。
+      if (!edge || edge.isSelfLoop || !edge.isVisible() || !this.graph.hasEdge(edgeKey)) continue;
+      const sourceKey = this.graph.source(edgeKey);
+      const targetKey = this.graph.target(edgeKey);
+      const sourceNode = this.nodes.get(sourceKey);
+      const targetNode = this.nodes.get(targetKey);
+      if (!sourceNode || !targetNode) continue;
+      const sourceAttributes = this.graph.getNodeAttributes(sourceKey);
+      const targetAttributes = this.graph.getNodeAttributes(targetKey);
+      const edgeStyle = edge.edgeStyle ?? resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, undefined], this.graph.getEdgeAttributes(edgeKey));
+      const geometry = computeEdgeGeometry(
+        { x: sourceAttributes.x, y: sourceAttributes.y },
+        { x: targetAttributes.x, y: targetAttributes.y },
+        edgeStyle,
+        sourceNode.nodeStyle,
+        targetNode.nodeStyle,
+        edge.isBilateral
+      );
+      // 线段命中：由绘制几何还原线段两端点（中心 ± 半长 · 法向单位向量），算点到线段距离；
+      // 容差叠加半个线宽，让粗线更容易命中。
+      if (geometry.lineLength > 0) {
+        const dirX = -Math.sin(geometry.lineRotation);
+        const dirY = Math.cos(geometry.lineRotation);
+        const half = geometry.lineLength / 2;
+        const lineDistance = pointToSegmentDistance(
+          point.x,
+          point.y,
+          geometry.lineX + dirX * half,
+          geometry.lineY + dirY * half,
+          geometry.lineX - dirX * half,
+          geometry.lineY - dirY * half
+        );
+        if (lineDistance <= edgeStyle.width / 2 + toleranceWorld && lineDistance < bestDistance) {
+          bestDistance = lineDistance;
+          bestKey = edgeKey;
+        }
+      }
+      // 箭头命中：箭头画在目标端、不在线段上，单独按到箭头中心的距离判定（容差叠加箭头外接半径）。
+      if (edgeStyle.arrow.show && edgeStyle.arrow.size > 0) {
+        const arrowDistance = Math.hypot(point.x - geometry.arrowX, point.y - geometry.arrowY);
+        if (arrowDistance <= edgeStyle.arrow.size / 2 + toleranceWorld && arrowDistance < bestDistance) {
+          bestDistance = arrowDistance;
+          bestKey = edgeKey;
+        }
+      }
+    }
+    return bestKey;
   }
 
   private getArrowTexture(renderer: Renderer, size: number): Texture {
@@ -302,6 +373,18 @@ function computeEdgeGeometry(
 function syncParticleChildren(target: Particle[], pool: Particle[], count: number): void {
   for (let i = 0; i < count; i += 1) target[i] = pool[i];
   target.length = count;
+}
+
+// 点到线段的最短距离（游标拾取边的判定用）：把点投影到线段上、把参数 t 夹到 [0,1] 得到最近点，
+// 再取欧氏距离。线段退化为一点时直接退化为点距离。
+function pointToSegmentDistance(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const lengthSquared = abx * abx + aby * aby;
+  if (lengthSquared === 0) return Math.hypot(px - ax, py - ay);
+  let t = ((px - ax) * abx + (py - ay) * aby) / lengthSquared;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + t * abx), py - (ay + t * aby));
 }
 
 function padBounds(bounds: { x: number; y: number; width: number; height: number }, padding: number) {

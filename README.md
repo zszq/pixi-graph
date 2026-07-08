@@ -202,6 +202,7 @@ export class PixiGraph<NodeAttributes extends BaseNodeAttributes = BaseNodeAttri
 - `spaceDrag` —— 仅在按住空格时平移（让普通拖拽可用于框选）
 - `dragOffset` —— 拖拽时保持光标与节点的偏移，而非吸附到节点中心
 - `highPerformance` —— 节点/边数量超过 `{ nodeNumber, edgeNumber }` 阈值时，进入高性能模式：交互（平移/缩放/拖拽）期间隐藏边与节点标签，交互结束后恢复
+  - ⚠️ **中大图务必配置 `highPerformance`**：未配置时始终走普通模式（每条边都是独立可交互对象），大图下不仅平移/缩放/拖拽会明显掉帧，边的游标拾取（hover）也会在图持续变动时逐帧重建空间索引而带来额外开销。配置后越过阈值即切换为批量渲染，这些开销随之消除。
 - `minScale` / `maxScale` —— 最小/最大缩放比例（默认 `0.1` / `2`）
 - `resolution` —— 渲染分辨率（画布物理像素 / CSS 像素），默认 `max(devicePixelRatio, 2)`：Windows 低 DPI 屏（`devicePixelRatio = 1`）会按 2× 超采样以消除锯齿，代价约 4 倍像素填充量；超大图可显式传 `window.devicePixelRatio` 换性能
 

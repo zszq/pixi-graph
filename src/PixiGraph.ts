@@ -27,6 +27,11 @@ import { NodeDragController } from './controllers/NodeDragController';
 type SelectionCallback = (selection: SelectionResult) => void;
 type SelectionStateCallback = (active: boolean) => void;
 
+// 游标拾取边的命中容差(屏幕像素)：实际世界容差按当前缩放换算(除以 viewport.scaled),保证不同缩放
+// 下手感一致。给细线一点冗余让其更好 hover——批量模式下边线/箭头是不可命中的粒子只能靠它,普通模式
+// 下边线极细、精确压线困难也靠它补足(见 scheduleEdgePick)。
+const EDGE_PICK_TOLERANCE_PX = 3;
+
 /**
  * 库的核心类：把一张 Graphology 图渲染到 PIXI 画布上，并维护两者的同步。
  *
@@ -85,7 +90,21 @@ export class PixiGraph<
 
   private readonly onDocumentPointerMoveBound = (event: PointerEvent) => {
     this.isCanvasTarget = event.target === this.app.canvas;
+    this.scheduleEdgePick(event);
   };
+
+  // 游标拾取的待处理事件与节流标记:pointermove 高频,合并到下一帧只拾取一次。
+  private pickPointerEvent: PointerEvent | null = null;
+  private edgePickScheduled = false;
+  private destroyed = false;
+  private readonly runEdgePickBound = () => this.runEdgePick();
+
+  // 批量模式下边线/箭头的离散事件:Particle 不可命中,改用 canvas DOM 事件转发给当前 hover 边。
+  // why DOM 而非 viewport:viewport 在空白/粒子上不一定派发 federated 事件,DOM canvas 事件必达。
+  private readonly onCanvasPointerDownBound = (event: PointerEvent) => this.forwardPickedEdgeEvent('edgeMousedown', event);
+  private readonly onCanvasPointerUpBound = (event: PointerEvent) => this.forwardPickedEdgeEvent('edgeMouseup', event);
+  private readonly onCanvasClickBound = (event: MouseEvent) => this.forwardPickedEdgeEvent(event.detail >= 2 ? 'edgeDbclick' : 'edgeClick', event);
+  private readonly onCanvasContextMenuBound = (event: MouseEvent) => this.forwardPickedEdgeEvent('edgeRightclick', event);
 
   private readonly hidePerformanceLayersBound = this.hidePerformanceLayers.bind(this);
   private readonly showPerformanceLayersBound = this.showPerformanceLayers.bind(this);
@@ -260,6 +279,12 @@ export class PixiGraph<
     // hover 穿透的临时变通方案，待 PIXI 提供更干净的钩子后再替换。
     document.addEventListener('pointermove', this.onDocumentPointerMoveBound);
 
+    // 批量模式下边线/箭头离散事件靠 canvas DOM 事件补全(见 forwardPickedEdgeEvent)。
+    this.app.canvas.addEventListener('pointerdown', this.onCanvasPointerDownBound);
+    this.app.canvas.addEventListener('pointerup', this.onCanvasPointerUpBound);
+    this.app.canvas.addEventListener('click', this.onCanvasClickBound);
+    this.app.canvas.addEventListener('contextmenu', this.onCanvasContextMenuBound);
+
     return this;
   }
 
@@ -303,7 +328,12 @@ export class PixiGraph<
   }
 
   destroy(): void {
+    this.destroyed = true; // 拦截可能已排期、在销毁后才触发的 runEdgePick
     document.removeEventListener('pointermove', this.onDocumentPointerMoveBound);
+    this.app.canvas.removeEventListener('pointerdown', this.onCanvasPointerDownBound);
+    this.app.canvas.removeEventListener('pointerup', this.onCanvasPointerUpBound);
+    this.app.canvas.removeEventListener('click', this.onCanvasClickBound);
+    this.app.canvas.removeEventListener('contextmenu', this.onCanvasContextMenuBound);
     this.subscriptions.clear();
     clearTimeout(this.performanceRestoreTimer);
 
@@ -364,6 +394,60 @@ export class PixiGraph<
     this.restorePerformanceLayersNow();
     this.mutationController.flushScheduledEdgeUpdates();
     this.renderController.uncull();
+  }
+
+  // --- 游标拾取边 hover ----------------------------------------
+  // why：高性能批量模式下边线/箭头是不可交互的 Particle，PIXI 命中测试只覆盖标签，导致只能 hover
+  // 标签、hover 线/箭头无反应。这里在指针移动时按光标位置主动拾取最近的边来补上 hover。
+  // 普通（非批量）模式虽然各边自身的指针事件已能 hover，但边线极细、命中测试要求光标精确压在线上，
+  // 很难触发；故这里同样在普通模式跑拾取，用 EDGE_PICK_TOLERANCE_PX 的容差让 hover 更易命中。拾取与
+  // 事件两条 hover 路径由 GraphMutationController 按 activeHoverEdgeKey 去重，不会重复 emit。
+  // 注意：仅补 hover——离散事件（按下/单双击/右键）在普通模式仍由各边自身 PIXI 事件负责（见
+  // forwardPickedEdgeEvent 只在批量模式转发），避免与拾取路径对同一边重复 emit。
+  // 标签优先：光标在某边标签上时，该边已由标签事件高亮，拾取让路，不会越过标签命中其下方另一条边
+  // （见 runEdgePick 的 isEdgeEventHovered 守卫）。
+
+  private scheduleEdgePick(event: PointerEvent): void {
+    if (!this.layers.batchEdgeLayer) return; // 拾取依赖批量层的空间索引/几何，无该层则跳过
+    this.pickPointerEvent = event;
+    if (this.edgePickScheduled) return;
+    this.edgePickScheduled = true;
+    requestAnimationFrame(this.runEdgePickBound);
+  }
+
+  private runEdgePick(): void {
+    this.edgePickScheduled = false;
+    const event = this.pickPointerEvent;
+    this.pickPointerEvent = null;
+    if (this.destroyed || !event) return;
+    const batchLayer = this.layers.batchEdgeLayer;
+    if (!batchLayer) return;
+    // 光标压在某条边的标签上时(该边已由标签的真实 PIXI 事件以 'event' 源高亮),拾取一律让路:直接返回、
+    // 保留标签 hover 不动——绝不能越过标签去命中其下方的另一条边而抢走高亮。移出交给标签自身的 mouseout。
+    // 注意这里不能走下面的 setPickedEdge(null) 清除分支(那会误移出标签 hover),故单独提前返回。
+    if (this.mutationController.isEdgeEventHovered()) return;
+    // 拖拽/缩放隐藏态、画布外、光标落在节点上(节点 hover 优先)时不拾取，并清掉拾取产生的 hover。
+    if (
+      this.performanceLayersHidden ||
+      this.isViewportDragging() ||
+      this.nodeDragController?.isDragging() ||
+      !this.isCanvasTarget ||
+      this.mutationController.isNodeHovered()
+    ) {
+      this.mutationController.setPickedEdge(null, event);
+      return;
+    }
+    const rect = this.app.canvas.getBoundingClientRect();
+    const world = this.viewport.toWorld(event.clientX - rect.left, event.clientY - rect.top);
+    const tolerance = EDGE_PICK_TOLERANCE_PX / this.viewport.scaled;
+    this.mutationController.setPickedEdge(batchLayer.pickEdgeAt(world, tolerance), event);
+  }
+
+  // 把 canvas DOM 离散事件转发给当前 hover 边:仅批量模式(否则边自身 PIXI 事件已处理),且光标不在
+  // 节点上时(节点 hover 优先,避免点节点同时误触发边事件)。当前无 hover 边时 emitPickedEdgeEvent 自身 no-op。
+  private forwardPickedEdgeEvent(type: 'edgeMousedown' | 'edgeMouseup' | 'edgeClick' | 'edgeDbclick' | 'edgeRightclick', event: MouseEvent): void {
+    if (!this.layers.isBatchEdgesEnabled() || this.mutationController.isNodeHovered()) return;
+    this.mutationController.emitPickedEdgeEvent(type, event);
   }
 
   // --- 高性能模式 ----------------------------------------------
