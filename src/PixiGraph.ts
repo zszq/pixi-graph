@@ -202,6 +202,7 @@ export class PixiGraph<
         this.viewport.dirty = true;
       },
       updateFastNodePosition: (nodeKey, position) => this.renderController.updateFastNodePosition(nodeKey, position),
+      updateFastNodeStyle: nodeKey => this.renderController.updateFastNodeStyle(nodeKey),
       markBatchEdgesDirty: () => this.renderController.markBatchEdgesDirty(),
       updateBatchEdge: edgeKey => this.renderController.updateBatchEdge(edgeKey),
       shouldDeferConnectedEdgeUpdates: (_nodeKey, degree) => this.highMode && degree > 64

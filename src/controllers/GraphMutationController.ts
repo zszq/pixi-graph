@@ -32,6 +32,7 @@ export interface GraphMutationControllerOptions<NodeAttributes extends BaseNodeA
   startNodeDrag: (event: MouseEvent, nodeKey: string, node: PixiNode) => void;
   markSpatialIndexDirty?: () => void;
   updateFastNodePosition?: (nodeKey: string, position: PointData) => void;
+  updateFastNodeStyle?: (nodeKey: string) => void;
   markBatchEdgesDirty?: () => void;
   updateBatchEdge?: (edgeKey: string) => void;
   shouldDeferConnectedEdgeUpdates?: (nodeKey: string, degree: number) => boolean;
@@ -73,6 +74,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   private readonly startNodeDrag: (event: MouseEvent, nodeKey: string, node: PixiNode) => void;
   private readonly markSpatialIndexDirty: () => void;
   private readonly updateFastNodePosition: (nodeKey: string, position: PointData) => void;
+  private readonly updateFastNodeStyle: (nodeKey: string) => void;
   private readonly markBatchEdgesDirty: () => void;
   private readonly updateBatchEdge: (edgeKey: string) => void;
   private readonly shouldDeferConnectedEdgeUpdates: (nodeKey: string, degree: number) => boolean;
@@ -104,6 +106,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.startNodeDrag = options.startNodeDrag;
     this.markSpatialIndexDirty = options.markSpatialIndexDirty ?? (() => undefined);
     this.updateFastNodePosition = options.updateFastNodePosition ?? (() => undefined);
+    this.updateFastNodeStyle = options.updateFastNodeStyle ?? (() => undefined);
     this.markBatchEdgesDirty = options.markBatchEdgesDirty ?? (() => undefined);
     this.updateBatchEdge = options.updateBatchEdge ?? (() => undefined);
     this.shouldDeferConnectedEdgeUpdates = options.shouldDeferConnectedEdgeUpdates ?? (() => false);
@@ -450,6 +453,9 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
       node.updateStyle(nodeStyle, this.textureCache);
       node.updateAlpha(nodeStyle);
       this.markBatchEdgesDirty();
+      // 同步 fast 粒子的颜色/透明度，否则纯样式变化（geometryChanged=false 不走标脏路径）后
+      // 再进高性能隐藏态，粒子仍显示旧样式（见 GraphRenderController.updateFastNodeStyle）。
+      this.updateFastNodeStyle(nodeKey);
     }
     return geometryChanged;
   }

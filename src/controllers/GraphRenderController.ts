@@ -204,6 +204,27 @@ export class GraphRenderController {
     this.fastNodesDirty = true;
   }
 
+  // 节点纯样式（颜色/透明度）变化时原地同步对应 fast 粒子。why：粒子在 rebuildFastNodes 时按
+  // 当时的 nodeStyle 烘焙 tint/alpha，若样式变了不同步，下次进入高性能隐藏态会显示过期的颜色/
+  // 透明度（如外部把 alpha 恢复为 1 后拖拽，粒子仍是旧 alpha）。不能改成 markFastNodesDirty 全量
+  // 标脏：hover 高亮也走样式更新路径，高频 hover 会让之后每次拖拽都 O(N) 重建全部粒子。
+  updateFastNodeStyle(nodeKey: string): void {
+    // 已标脏则无需原地更新——下次显示前 rebuildFastNodes 会按最新样式全量重建。
+    if (this.fastNodesDirty) return;
+    const particle = this.fastNodeParticles.get(nodeKey);
+    const node = this.nodes.get(nodeKey);
+    if (!particle || !node) return;
+    const style = node.nodeStyle;
+    const [tint, colorAlpha] = colorToPixi(style.color);
+    const scale = Math.max(1, style.size * 2) / FAST_NODE_TEXTURE_SIZE;
+    particle.tint = tint;
+    particle.alpha = colorAlpha * style.alpha;
+    particle.scaleX = scale;
+    particle.scaleY = scale;
+    // 与 updateFastNodePosition 同理：粒子层视属性为静态，改动后需显式上传。
+    this.layers.fastNodeLayer.update();
+  }
+
   setInteractionEnabled(enabled: boolean): void {
     if (this.interactionDisabled === !enabled) return;
     this.interactionDisabled = !enabled;
