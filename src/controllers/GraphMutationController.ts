@@ -36,6 +36,9 @@ export interface GraphMutationControllerOptions<NodeAttributes extends BaseNodeA
   updateBatchEdge?: (edgeKey: string) => void;
   shouldDeferConnectedEdgeUpdates?: (nodeKey: string, degree: number) => boolean;
   markLodDirty?: () => void;
+  // 仅置 viewport.dirty（不作废 LOD 缓存）：删除元素只需触发一次 frame-end 的批量边重建来清掉
+  // 残留粒子，剩余元素的 LOD/标签烘焙无变化，无需像 markLodDirty 那样强制下一帧跑全量 O(N+E) 循环。
+  markViewportDirty?: () => void;
 }
 
 
@@ -74,6 +77,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   private readonly updateBatchEdge: (edgeKey: string) => void;
   private readonly shouldDeferConnectedEdgeUpdates: (nodeKey: string, degree: number) => boolean;
   private readonly markLodDirty: () => void;
+  private readonly markViewportDirty: () => void;
   private readonly parallelEdgeIndex = new ParallelEdgeIndex();
   private readonly edgeUpdateScheduler = new EdgeUpdateScheduler(edgeKey => this.updateEdgePositionByKey(edgeKey));
 
@@ -104,6 +108,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.updateBatchEdge = options.updateBatchEdge ?? (() => undefined);
     this.shouldDeferConnectedEdgeUpdates = options.shouldDeferConnectedEdgeUpdates ?? (() => false);
     this.markLodDirty = options.markLodDirty ?? (() => undefined);
+    this.markViewportDirty = options.markViewportDirty ?? (() => undefined);
   }
 
   destroy(): void {
@@ -128,6 +133,11 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
   handleGraphNodeDropped(data: { key: string }): void {
     this.markSpatialIndexDirty();
     this.markBatchEdgesDirty();
+    // 删除必须置 viewport.dirty：批量边的实际重建由 frame-end 的 updateVisibility 驱动，而删除后
+    // 若无后续平移/缩放，viewport 永远不脏，被删边的粒子会一直残留在批量缓冲里逐帧绘制（表现为
+    // “删掉节点后连线仍在，拖动画布才消失”）。这里用 markViewportDirty 而非 markLodDirty：删除不
+    // 产生新的待烘焙元素、剩余元素 LOD 不变，只需触发一次批量重建，无需强制全量 O(N+E) LOD 循环。
+    this.markViewportDirty();
     this.dropRenderedNodeEdges(data.key);
     this.dropNode(data.key);
   }
@@ -140,11 +150,13 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
 
   handleGraphEdgeDropped(data: { key: string }): void {
     this.markBatchEdgesDirty();
+    this.markViewportDirty(); // 同 handleGraphNodeDropped：否则批量模式下被删边残留到下次平移才消失
     this.dropEdge(data.key);
   }
 
   handleGraphCleared(): void {
     this.markBatchEdgesDirty();
+    this.markViewportDirty(); // 同 handleGraphNodeDropped：否则批量模式下被删边残留到下次平移才消失
     this.parallelEdgeIndex.clear();
     for (const key of Array.from(this.edgeKeyToEdgeObject.keys())) this.dropEdge(key);
     for (const key of Array.from(this.nodeKeyToNodeObject.keys())) this.dropNode(key);
@@ -152,6 +164,7 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
 
   handleGraphEdgesCleared(): void {
     this.markBatchEdgesDirty();
+    this.markViewportDirty(); // 同 handleGraphNodeDropped：否则批量模式下被删边残留到下次平移才消失
     this.parallelEdgeIndex.clear();
     for (const key of Array.from(this.edgeKeyToEdgeObject.keys())) this.dropEdge(key);
   }

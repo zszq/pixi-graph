@@ -195,6 +195,12 @@ export class PixiGraph<
         this.renderController.invalidateLod();
         this.viewport.dirty = true;
       },
+      // 删除元素专用的轻量置脏：只让 frame-end 补跑一次可见性更新（含批量边重建清残留），
+      // 不作废 LOD 缓存——删除不新增待烘焙元素，故 zoomStep 未变时走 early-return 分支只重建批量边，
+      // 省掉 markLodDirty 会连带触发的全量 O(N+E) LOD 循环（大图逐条删除时的无谓开销）。
+      markViewportDirty: () => {
+        this.viewport.dirty = true;
+      },
       updateFastNodePosition: (nodeKey, position) => this.renderController.updateFastNodePosition(nodeKey, position),
       markBatchEdgesDirty: () => this.renderController.markBatchEdgesDirty(),
       updateBatchEdge: edgeKey => this.renderController.updateBatchEdge(edgeKey),
