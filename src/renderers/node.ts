@@ -2,7 +2,7 @@
 // 节点由三个叠放的 Sprite 组成（圆形填充 / 圆形描边 / 图标），各自的位图先经
 // TextureCache 渲染成纹理再复用。createNode 一次性建好结构，updateNodeStyle 按样式
 // 刷新纹理与着色，updateNodeVisibility 按缩放档位（zoomStep）切换各层是否绘制。
-import { Container, Circle, Sprite, Graphics, Texture } from 'pixi.js';
+import { Container, Circle, Sprite, Graphics, Rectangle, Texture } from 'pixi.js';
 import { colorToPixi } from '../utils/color';
 import type { NodeStyle } from '../style/style';
 import { TextType } from '../utils/text';
@@ -49,11 +49,20 @@ export function updateNodeStyle(nodeGfx: Container, nodeStyle: NodeStyle, textur
   });
 
   const nodeCircleBorderTextureKey = [NODE_CIRCLE_BORDER, nodeStyle.size, nodeStyle.border.width].join(DELIMITER);
-  const nodeCircleBorderTexture = textureCache.get(nodeCircleBorderTextureKey, () => {
-    const graphics = new Graphics();
-    graphics.circle(0, 0, nodeStyle.size).stroke({ width: nodeStyle.border.width, color: WHITE });
-    return graphics;
-  });
+  // 描边以圆路径为中线内外各延伸 width/2，真实包围盒关于圆心对称。若交给 TextureCache 默认按
+  // 包围盒 floor/ceil 取整，奇数 width 会产生半整数边界，floor 只把一侧扩 0.5，frame 中心偏离
+  // 圆心，anchor 0.5 贴图后描边相对填充圆整体错位半像素（width=1 错位、width=2 正常）。故显式传
+  // 一个绕圆心对称、且能容纳外沿的正方形 frame，保证贴图中心始终是圆心。
+  const nodeBorderHalf = Math.ceil(nodeStyle.size + nodeStyle.border.width / 2);
+  const nodeCircleBorderTexture = textureCache.get(
+    nodeCircleBorderTextureKey,
+    () => {
+      const graphics = new Graphics();
+      graphics.circle(0, 0, nodeStyle.size).stroke({ width: nodeStyle.border.width, color: WHITE });
+      return graphics;
+    },
+    new Rectangle(-nodeBorderHalf, -nodeBorderHalf, nodeBorderHalf * 2, nodeBorderHalf * 2)
+  );
 
   const { type, content, fontFamily, fontSize, fontWeight, color, stroke, strokeThickness, align } = nodeStyle.icon;
   const nodeIconTextureKey = [NODE_ICON, content, fontFamily, fontSize, fontWeight, color, stroke, strokeThickness].join(DELIMITER);
