@@ -49,6 +49,16 @@ export interface GraphStyle {
       cross: number;
     };
     gap: number;
+    // 平行边曲线：两点间有 ≥2 条边时把这组边画成扇形散开的二次贝塞尔曲线，
+    // 借曲度区分同向多重边（直线侧移方案下同向多条边会完全重叠）。
+    curve: {
+      enabled: boolean;
+      // 曲度 = 相邻两条平行弧的弧顶间距 / 两节点圆心距（弦长比例）。
+      // 用比例而非固定像素：节点离得越远弧越弯得开，视觉比例恒定。
+      curvature: number;
+      // 批量边模式下曲线用折线近似的段数；段数越高越平滑、粒子越多。普通模式画真贝塞尔，不受此影响。
+      segments: number;
+    };
     arrow: {
       show: boolean;
       size: number;
@@ -82,7 +92,6 @@ export interface GraphStyleDefinition<NodeAttributes extends BaseNodeAttributes 
   node?: NodeStyleDefinition<NodeAttributes>;
   edge?: EdgeStyleDefinition<EdgeAttributes>;
 }
-
 
 // 静态样式定义（整棵子树都没有函数）的解析结果缓存。why：同一份 style 配置对象会被成千上万个
 // 元素反复解析；若其中不含函数，结果与元素属性无关，可按定义对象身份缓存复用，省去重复深拷贝。
@@ -157,7 +166,8 @@ export function resolveStyleDefinitions<Style, Attributes>(styleDefinitions: (St
 }
 
 export function sameNodeStyle(a: NodeStyle | undefined, b: NodeStyle): boolean {
-  return !!a &&
+  return (
+    !!a &&
     a.size === b.size &&
     a.color === b.color &&
     a.alpha === b.alpha &&
@@ -182,17 +192,22 @@ export function sameNodeStyle(a: NodeStyle | undefined, b: NodeStyle): boolean {
     a.label.stroke === b.label.stroke &&
     a.label.strokeThickness === b.label.strokeThickness &&
     a.label.backgroundColor === b.label.backgroundColor &&
-    a.label.padding === b.label.padding;
+    a.label.padding === b.label.padding
+  );
 }
 
 export function sameEdgeStyle(a: EdgeStyle | undefined, b: EdgeStyle): boolean {
-  return !!a &&
+  return (
+    !!a &&
     a.width === b.width &&
     a.color === b.color &&
     a.alpha === b.alpha &&
     a.selefLoop.radius === b.selefLoop.radius &&
     a.selefLoop.cross === b.selefLoop.cross &&
     a.gap === b.gap &&
+    a.curve.enabled === b.curve.enabled &&
+    a.curve.curvature === b.curve.curvature &&
+    a.curve.segments === b.curve.segments &&
     a.arrow.show === b.arrow.show &&
     a.arrow.size === b.arrow.size &&
     a.label.content === b.label.content &&
@@ -206,5 +221,6 @@ export function sameEdgeStyle(a: EdgeStyle | undefined, b: EdgeStyle): boolean {
     a.label.strokeThickness === b.label.strokeThickness &&
     a.label.backgroundColor === b.label.backgroundColor &&
     a.label.padding === b.label.padding &&
-    a.label.parallel === b.label.parallel;
+    a.label.parallel === b.label.parallel
+  );
 }

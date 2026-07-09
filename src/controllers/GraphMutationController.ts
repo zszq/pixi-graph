@@ -4,7 +4,7 @@ import type { EdgeStyle, GraphStyleDefinition, NodeStyle } from '../style/style'
 import { DEFAULT_STYLE } from '../core/constants';
 import { resolveStyleDefinitions, sameEdgeStyle, sameNodeStyle } from '../style/style';
 import { isSamePoint } from '../utils/pointer';
-import { ParallelEdgeIndex } from '../core/ParallelEdgeIndex';
+import { ParallelEdgeIndex, assignParallelSlots } from '../core/ParallelEdgeIndex';
 import { EdgeUpdateScheduler } from '../core/EdgeUpdateScheduler';
 import { PixiNode } from '../elements/PixiNode';
 import { PixiEdge } from '../elements/PixiEdge';
@@ -292,6 +292,14 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     this.markSpatialIndexDirty();
   }
 
+  // 批量边模式开关跳变后全量重摆边。why：批量模式下曲线 Graphics 被抑制（见 PixiEdge.suppressCurveGfx），
+  // 关闭批量恢复普通层渲染时必须重画否则曲线边空白；开启批量时顺带清掉已画几何释放内存。
+  refreshAllEdgePositions(): void {
+    for (const edgeKey of this.edgeKeyToEdgeObject.keys()) {
+      if (this.graph.hasEdge(edgeKey)) this.updateEdgePositionByKey(edgeKey);
+    }
+  }
+
   updateEdgePositionByKey(edgeKey: string): void {
     const edge = this.edgeKeyToEdgeObject.get(edgeKey)!;
     const sourceNodeKey = this.graph.source(edgeKey);
@@ -301,6 +309,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     const sourceNode = this.nodeKeyToNodeObject.get(sourceNodeKey)!;
     const targetNode = this.nodeKeyToNodeObject.get(targetNodeKey)!;
 
+    // 批量模式下抑制曲线 Graphics 构建（普通边层不渲染，几何是纯浪费），摆位前按当前开关同步。
+    edge.suppressCurveGfx = this.layers.isBatchEdgesEnabled();
     edge.updatePosition(
       { x: sourceNodeAttributes.x, y: sourceNodeAttributes.y },
       { x: targetNodeAttributes.x, y: targetNodeAttributes.y },
@@ -566,6 +576,8 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
       this.markBatchEdgesDirty();
     }
 
+    // 同 updateEdgePositionByKey：批量模式下抑制曲线 Graphics 构建。
+    edge.suppressCurveGfx = this.layers.isBatchEdgesEnabled();
     edge.updatePosition(
       { x: sourceNodeAttributes.x, y: sourceNodeAttributes.y },
       { x: targetNodeAttributes.x, y: targetNodeAttributes.y },
@@ -592,10 +604,16 @@ export class GraphMutationController<NodeAttributes extends BaseNodeAttributes =
     const parallelEdgeKeys = this.parallelEdgeIndex.register(edgeKey, sourceNodeKey, targetNodeKey);
     const hasParallelEdges = parallelEdgeKeys.length > 1;
 
-    for (const key of parallelEdgeKeys) {
+    // 槽位按方向构成分配（见 assignParallelSlots）：全同向 → 对称扇形（奇数条含中间直线）；
+    // 存在双向 → 每个方向独占弦的一侧、各自向外扩弧，不出现中间直线。
+    const canonicalFlags = parallelEdgeKeys.map(key => this.graph.source(key) <= this.graph.target(key));
+    const slots = assignParallelSlots(canonicalFlags);
+    for (let i = 0; i < parallelEdgeKeys.length; i += 1) {
+      const key = parallelEdgeKeys[i];
       const edge = this.edgeKeyToEdgeObject.get(key);
       if (!edge) continue;
       edge.isBilateral = hasParallelEdges;
+      edge.parallelSlot = slots[i];
       this.markBatchEdgesDirty();
       if (key === edgeKey) {
         this.updateEdgeStyleByKey(key);

@@ -244,8 +244,13 @@ export class PixiGraph<
       subscriptions: this.subscriptions,
       mutationController: this.mutationController,
       updateHighMode: () => {
+        const wasHighMode = this.highMode;
         this.highMode = this.exceedsHighPerformance();
         this.renderController.setBatchEdgesEnabled(this.highMode);
+        // 批量开关跳变时全量重摆边：批量模式下曲线 Graphics 被抑制（见 PixiEdge.suppressCurveGfx），
+        // 关闭批量恢复普通层渲染时必须重画否则曲线边空白；开启时顺带清几何释放内存。
+        // 跳变只发生在规模跨越阈值的那一次增删，O(E) 一次可接受。
+        if (wasHighMode !== this.highMode) this.mutationController.refreshAllEdgePositions();
       }
     });
 
@@ -318,10 +323,14 @@ export class PixiGraph<
   }
 
   private createGraph(): void {
-    this.graph.forEachNode((nodeKey, attributes) => this.mutationController.handleGraphNodeAdded({ key: nodeKey, attributes }));
-    this.graph.forEachEdge((edgeKey, attributes, source, target) => this.mutationController.handleGraphEdgeAdded({ key: edgeKey, attributes, source, target }));
+    // 先按完整图数据判定高性能模式，再同步渲染对象：exceedsHighPerformance 只读 graph 当前规模，
+    // 而 graph 在构造时就是完整的。批量边先启用后，建图期间创建的每条平行曲线边都会抑制
+    // Graphics 几何构建（见 PixiEdge.suppressCurveGfx）——大图（10 万曲线边）若先画后清，
+    // 建图会白白多耗数秒并瞬时占用 GB 级内存。
     this.highMode = this.exceedsHighPerformance();
     this.renderController.setBatchEdgesEnabled(this.highMode);
+    this.graph.forEachNode((nodeKey, attributes) => this.mutationController.handleGraphNodeAdded({ key: nodeKey, attributes }));
+    this.graph.forEachEdge((edgeKey, attributes, source, target) => this.mutationController.handleGraphEdgeAdded({ key: edgeKey, attributes, source, target }));
     // 可见性更新放到 resetView 把相机定位到最终 fit 缩放之后再做（见 init）。否则此处运行在
     // 初始 zoom=1（zoomStep 高于标签档位）、节点尚未被有效剔除的瞬态，会触发优化⑤把全部
     // 标签误判为“可见”而全量烘焙，使创建退回到未优化的耗时。

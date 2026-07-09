@@ -6,12 +6,60 @@ import type { EdgeStyle, GraphStyleDefinition, NodeStyle } from '../style/style'
 import { resolveStyleDefinitions } from '../style/style';
 import { colorToPixi } from '../utils/color';
 import { SpatialEdgeIndex } from '../core/SpatialEdgeIndex';
+import { computeCurveGeometry, createCurveGeometry, sampleCurvePoints } from '../core/edgeCurve';
 import type { PixiEdge } from '../elements/PixiEdge';
 import type { PixiNode } from '../elements/PixiNode';
 
 interface EdgeParticlePair {
-  line: Particle;
+  // 线条粒子在 linePool 中的连续区间 [lineStart, lineStart+lineCount)。粒子按 rebuild 顺序从池前缀
+  // 连续分配，区间引用到下次 rebuild 前始终有效；比每条边存 Particle[] 省一次数组分配（rebuild 热路径）。
+  lineStart: number;
+  // 直线 1 个；平行曲线边为折线近似的段数（edgeStyle.curve.segments）。
+  lineCount: number;
   arrow: Particle | undefined;
+}
+
+// 曲线几何/采样点/扩边矩形的模块级复用缓冲：rebuild 与拾取都是同步逐边处理，单线程下共用安全，
+// 避免在逐帧热路径里反复分配。
+const scratchCurveGeometry = createCurveGeometry();
+let scratchCurvePoints = new Float64Array((12 + 1) * 2);
+function ensureCurvePointBuffer(segments: number): Float64Array {
+  const needed = (segments + 1) * 2;
+  if (scratchCurvePoints.length < needed) scratchCurvePoints = new Float64Array(needed);
+  return scratchCurvePoints;
+}
+const scratchInflatedRect = { left: 0, right: 0, top: 0, bottom: 0 };
+function inflateRect(rect: { left: number; right: number; top: number; bottom: number }, pad: number) {
+  scratchInflatedRect.left = rect.left - pad;
+  scratchInflatedRect.right = rect.right + pad;
+  scratchInflatedRect.top = rect.top - pad;
+  scratchInflatedRect.bottom = rect.bottom + pad;
+  return scratchInflatedRect;
+}
+const scratchApexPoint = { x: 0, y: 0 };
+
+// 平行边曲线的弧顶偏移（0 = 画直线）。必须与 PixiEdge.updatePosition 的公式完全一致，
+// 否则批量画出的曲线与普通模式/游标拾取的判定会错位。
+function curveApexOffset(edge: PixiEdge, edgeStyle: EdgeStyle, sx: number, sy: number, tx: number, ty: number): number {
+  if (!edgeStyle.curve.enabled || !edge.isBilateral || edge.parallelSlot === 0) return 0;
+  return edge.parallelSlot * edgeStyle.curve.curvature * Math.hypot(tx - sx, ty - sy);
+}
+
+function curveSegmentCount(edgeStyle: EdgeStyle): number {
+  return Math.max(2, Math.round(edgeStyle.curve.segments));
+}
+
+// 折线段粒子：段中点定位、法线旋转、长度多加 1 世界单位——相邻旋转矩形首尾微重叠，遮住拼接缝隙。
+function fillSegmentParticle(particle: Particle, x0: number, y0: number, x1: number, y1: number, width: number, tint: number, alpha: number): void {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  particle.x = (x0 + x1) / 2;
+  particle.y = (y0 + y1) / 2;
+  particle.scaleX = width;
+  particle.scaleY = Math.hypot(dx, dy) + 1;
+  particle.rotation = -Math.atan2(dx, dy);
+  particle.tint = tint;
+  particle.alpha = alpha;
 }
 
 /**
@@ -61,6 +109,23 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
     this.edges = options.edges;
     this.eventMode = 'none';
     this.addChild(this.lineLayer, this.arrowLayer);
+
+    // 曲线边在空间索引里按"弦端点→弧顶→弦端点"两段折线登记：弧最多凸出弦线 |apexOffset|，
+    // 只按弦登记会漏掉"弦在视口外、弧探进视口"的候选，平移时曲线边会闪现/消失。
+    // 这里只读 edge.edgeStyle（已解析缓存），不在 O(E) 的索引重建里做样式解析。
+    this.spatialEdgeIndex.setCurveApexResolver((edgeKey, source, target) => {
+      const edge = this.edges.get(edgeKey);
+      if (!edge || edge.isSelfLoop || !edge.edgeStyle) return null;
+      const apexOffset = curveApexOffset(edge, edge.edgeStyle, source.x, source.y, target.x, target.y);
+      if (apexOffset === 0) return null;
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const chord = Math.hypot(dx, dy);
+      if (chord === 0) return null;
+      scratchApexPoint.x = (source.x + target.x) / 2 - (dy / chord) * apexOffset;
+      scratchApexPoint.y = (source.y + target.y) / 2 + (dx / chord) * apexOffset;
+      return scratchApexPoint;
+    });
   }
 
   markDirty(): void {
@@ -89,6 +154,10 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
   // 平移 rebuild ~36ms→个位数 ms）。几何与精确相交仍用实时 graph 坐标，索引只做空间粗筛（候选为可见边
   // 的超集），故结果与全遍历完全一致。索引新鲜度由 markIndexDirty 维护，勿在此对每条边都过索引。
   rebuild(renderer: Renderer, visibleBounds?: { x: number; y: number; width: number; height: number }): void {
+    // LOD 低档（zoomStep<1，边整层不渲染，见 setZoomStep）时跳过粒子构建：全览大图时重建
+    // 十万级粒子（曲线边还要 ×segments 段）既耗时又占数百 MB，而结果根本不会显示。
+    // 不动 dirty/boundsKey，缩放回边可见档位后 frame-end 的下一次 rebuild 自然补建。
+    if (!this.lineLayer.renderable) return;
     const boundsKey = visibleBounds ? quantizedBoundsKey(visibleBounds, 128) : 'all';
     if (!this.dirty && boundsKey === this.lastBoundsKey) return;
     const cullBounds = visibleBounds ? padBounds(visibleBounds, 128) : undefined;
@@ -133,28 +202,60 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
 
     const sourceAttributes = this.graph.getNodeAttributes(sourceKey);
     const targetAttributes = this.graph.getNodeAttributes(targetKey);
-    if (cullBounds && !segmentIntersectsRect(sourceAttributes, targetAttributes, cullBounds)) return;
 
     const edgeStyle = edge.edgeStyle ?? resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, undefined], this.graph.getEdgeAttributes(edgeKey));
+    if (edgeStyle.width <= 0) return;
+
+    // 曲线边粗剔除：仍用弦线判交，但矩形向外扩 |弧顶偏移|——弧凸出弦线不超过该距离，扩边后不漏画。
+    const apexOffset = curveApexOffset(edge, edgeStyle, sourceAttributes.x, sourceAttributes.y, targetAttributes.x, targetAttributes.y);
+    if (cullBounds) {
+      const rect = apexOffset === 0 ? cullBounds : inflateRect(cullBounds, Math.abs(apexOffset));
+      if (!segmentIntersectsRect(sourceAttributes, targetAttributes, rect)) return;
+    }
+
+    const [tint, colorAlpha] = colorToPixi(edgeStyle.color);
+    const alpha = colorAlpha * edgeStyle.alpha;
+    const arrowHeight = edgeStyle.arrow.show ? (Math.sqrt(3) / 2) * edgeStyle.arrow.size : 0;
+
+    if (apexOffset !== 0) {
+      const geometry = computeCurveGeometry(
+        sourceAttributes.x,
+        sourceAttributes.y,
+        targetAttributes.x,
+        targetAttributes.y,
+        apexOffset,
+        sourceNode.nodeStyle.size + sourceNode.nodeStyle.border.width,
+        targetNode.nodeStyle.size + targetNode.nodeStyle.border.width + arrowHeight,
+        edgeStyle.arrow.show ? (Math.sqrt(3) / 4) * edgeStyle.arrow.size : 0,
+        scratchCurveGeometry
+      );
+      if (geometry.valid) {
+        const segments = curveSegmentCount(edgeStyle);
+        const points = ensureCurvePointBuffer(segments);
+        sampleCurvePoints(geometry, segments, points);
+        const lineStart = this.lineCount;
+        for (let s = 0; s < segments; s += 1) {
+          fillSegmentParticle(this.takeLineParticle(), points[s * 2], points[s * 2 + 1], points[s * 2 + 2], points[s * 2 + 3], edgeStyle.width, tint, alpha);
+        }
+        const arrow = this.writeArrowParticle(renderer, edgeStyle, geometry.arrowX, geometry.arrowY, geometry.arrowRotation, tint, alpha);
+        this.edgeParticles.set(edgeKey, { lineStart, lineCount: segments, arrow });
+        return;
+      }
+      // 裁剪失败（两节点过近弧被吞尽）回退直线，与普通模式 PixiEdge.updatePosition 的回退行为一致。
+    }
+
     const geometry = computeEdgeGeometry(
       { x: sourceAttributes.x, y: sourceAttributes.y },
       { x: targetAttributes.x, y: targetAttributes.y },
       edgeStyle,
       sourceNode.nodeStyle,
       targetNode.nodeStyle,
-      edge.isBilateral
+      edge.isBilateral && !edgeStyle.curve.enabled
     );
-    if (geometry.lineLength <= 0 || edgeStyle.width <= 0) return;
+    if (geometry.lineLength <= 0) return;
 
-    const [tint, colorAlpha] = colorToPixi(edgeStyle.color);
-    const alpha = colorAlpha * edgeStyle.alpha;
-    // PERF-CRITICAL (tag: perf-v8-pan-gc)：从池取（不足才 new），只设属性，勿改成每次 new Particle。
-    // 锚点固定 0.5，建池时设一次即可。
-    let line = this.linePool[this.lineCount];
-    if (!line) {
-      line = new Particle({ texture: Texture.WHITE, anchorX: 0.5, anchorY: 0.5 });
-      this.linePool[this.lineCount] = line;
-    }
+    const lineStart = this.lineCount;
+    const line = this.takeLineParticle();
     line.x = geometry.lineX;
     line.y = geometry.lineY;
     line.scaleX = edgeStyle.width;
@@ -162,26 +263,41 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
     line.rotation = geometry.lineRotation;
     line.tint = tint;
     line.alpha = alpha;
-    this.lineCount += 1;
 
-    let arrow: Particle | undefined;
-    if (edgeStyle.arrow.show && edgeStyle.arrow.size > 0) {
-      const texture = this.getArrowTexture(renderer, edgeStyle.arrow.size);
-      arrow = this.arrowPool[this.arrowCount];
-      if (!arrow) {
-        arrow = new Particle({ texture, anchorX: 0.5, anchorY: 0.5 });
-        this.arrowPool[this.arrowCount] = arrow;
-      } else {
-        arrow.texture = texture;
-      }
-      arrow.x = geometry.arrowX;
-      arrow.y = geometry.arrowY;
-      arrow.rotation = geometry.arrowRotation;
-      arrow.tint = tint;
-      arrow.alpha = alpha;
-      this.arrowCount += 1;
+    const arrow = this.writeArrowParticle(renderer, edgeStyle, geometry.arrowX, geometry.arrowY, geometry.arrowRotation, tint, alpha);
+    this.edgeParticles.set(edgeKey, { lineStart, lineCount: 1, arrow });
+  }
+
+  // PERF-CRITICAL (tag: perf-v8-pan-gc)：从池取（不足才 new），只设属性，勿改成每次 new Particle。
+  // 锚点固定 0.5，建池时设一次即可。
+  private takeLineParticle(): Particle {
+    let line = this.linePool[this.lineCount];
+    if (!line) {
+      line = new Particle({ texture: Texture.WHITE, anchorX: 0.5, anchorY: 0.5 });
+      this.linePool[this.lineCount] = line;
     }
-    this.edgeParticles.set(edgeKey, { line, arrow });
+    this.lineCount += 1;
+    return line;
+  }
+
+  // 需要箭头时从池取一个箭头粒子并写入位置/朝向/颜色；不显示箭头返回 undefined。
+  private writeArrowParticle(renderer: Renderer, edgeStyle: EdgeStyle, x: number, y: number, rotation: number, tint: number, alpha: number): Particle | undefined {
+    if (!edgeStyle.arrow.show || edgeStyle.arrow.size <= 0) return undefined;
+    const texture = this.getArrowTexture(renderer, edgeStyle.arrow.size);
+    let arrow = this.arrowPool[this.arrowCount];
+    if (!arrow) {
+      arrow = new Particle({ texture, anchorX: 0.5, anchorY: 0.5 });
+      this.arrowPool[this.arrowCount] = arrow;
+    } else {
+      arrow.texture = texture;
+    }
+    arrow.x = x;
+    arrow.y = y;
+    arrow.rotation = rotation;
+    arrow.tint = tint;
+    arrow.alpha = alpha;
+    this.arrowCount += 1;
+    return arrow;
   }
 
   updateEdge(edgeKey: string): void {
@@ -202,34 +318,74 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
       return;
     }
     const edgeStyle = edge.edgeStyle ?? resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, undefined], this.graph.getEdgeAttributes(edgeKey));
-    const geometry = computeEdgeGeometry(
-      this.graph.getNodeAttributes(sourceKey),
-      this.graph.getNodeAttributes(targetKey),
-      edgeStyle,
-      sourceNode.nodeStyle,
-      targetNode.nodeStyle,
-      edge.isBilateral
-    );
+    const sourceAttributes = this.graph.getNodeAttributes(sourceKey);
+    const targetAttributes = this.graph.getNodeAttributes(targetKey);
 
     // 颜色（tint/alpha）必须在这里同步：选中/高亮等纯样式变更只走 updateEdge（不触发整层 rebuild），
     // 若此处只更新几何而不更新颜色，被高亮的边会保持旧色，直到下次平移/缩放触发 rebuild 才变色。
     // colorToPixi 内部有颜色串缓存，热路径（拖拽逐边刷新）实际是一次 Map 命中，开销可忽略。
     const [tint, colorAlpha] = colorToPixi(edgeStyle.color);
     const alpha = colorAlpha * edgeStyle.alpha;
+    const arrowHeight = edgeStyle.arrow.show ? (Math.sqrt(3) / 2) * edgeStyle.arrow.size : 0;
 
-    pair.line.x = geometry.lineX;
-    pair.line.y = geometry.lineY;
-    pair.line.scaleX = edgeStyle.width;
-    pair.line.scaleY = geometry.lineLength;
-    pair.line.rotation = geometry.lineRotation;
-    pair.line.tint = tint;
-    pair.line.alpha = alpha;
-    if (pair.arrow) {
-      pair.arrow.x = geometry.arrowX;
-      pair.arrow.y = geometry.arrowY;
-      pair.arrow.rotation = geometry.arrowRotation;
-      pair.arrow.tint = tint;
-      pair.arrow.alpha = alpha;
+    const apexOffset = curveApexOffset(edge, edgeStyle, sourceAttributes.x, sourceAttributes.y, targetAttributes.x, targetAttributes.y);
+    let curveUpdated = false;
+    if (apexOffset !== 0) {
+      const geometry = computeCurveGeometry(
+        sourceAttributes.x,
+        sourceAttributes.y,
+        targetAttributes.x,
+        targetAttributes.y,
+        apexOffset,
+        sourceNode.nodeStyle.size + sourceNode.nodeStyle.border.width,
+        targetNode.nodeStyle.size + targetNode.nodeStyle.border.width + arrowHeight,
+        edgeStyle.arrow.show ? (Math.sqrt(3) / 4) * edgeStyle.arrow.size : 0,
+        scratchCurveGeometry
+      );
+      if (geometry.valid) {
+        const segments = curveSegmentCount(edgeStyle);
+        // 形态/段数与当前粒子区间不符（直线↔曲线切换、segments 变更）：粒子数无法就地增减，交给整层重建。
+        if (pair.lineCount !== segments) {
+          this.dirty = true;
+          return;
+        }
+        const points = ensureCurvePointBuffer(segments);
+        sampleCurvePoints(geometry, segments, points);
+        for (let s = 0; s < segments; s += 1) {
+          fillSegmentParticle(this.linePool[pair.lineStart + s], points[s * 2], points[s * 2 + 1], points[s * 2 + 2], points[s * 2 + 3], edgeStyle.width, tint, alpha);
+        }
+        if (pair.arrow) {
+          pair.arrow.x = geometry.arrowX;
+          pair.arrow.y = geometry.arrowY;
+          pair.arrow.rotation = geometry.arrowRotation;
+          pair.arrow.tint = tint;
+          pair.arrow.alpha = alpha;
+        }
+        curveUpdated = true;
+      }
+    }
+
+    if (!curveUpdated) {
+      if (pair.lineCount !== 1) {
+        this.dirty = true;
+        return;
+      }
+      const geometry = computeEdgeGeometry(sourceAttributes, targetAttributes, edgeStyle, sourceNode.nodeStyle, targetNode.nodeStyle, edge.isBilateral && !edgeStyle.curve.enabled);
+      const line = this.linePool[pair.lineStart];
+      line.x = geometry.lineX;
+      line.y = geometry.lineY;
+      line.scaleX = edgeStyle.width;
+      line.scaleY = geometry.lineLength;
+      line.rotation = geometry.lineRotation;
+      line.tint = tint;
+      line.alpha = alpha;
+      if (pair.arrow) {
+        pair.arrow.x = geometry.arrowX;
+        pair.arrow.y = geometry.arrowY;
+        pair.arrow.rotation = geometry.arrowRotation;
+        pair.arrow.tint = tint;
+        pair.arrow.alpha = alpha;
+      }
     }
     this.lineLayer.update();
     this.arrowLayer.update();
@@ -264,13 +420,52 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
       const sourceAttributes = this.graph.getNodeAttributes(sourceKey);
       const targetAttributes = this.graph.getNodeAttributes(targetKey);
       const edgeStyle = edge.edgeStyle ?? resolveStyleDefinitions([DEFAULT_STYLE.edge, this.style.edge, undefined], this.graph.getEdgeAttributes(edgeKey));
+      const arrowHeight = edgeStyle.arrow.show ? (Math.sqrt(3) / 2) * edgeStyle.arrow.size : 0;
+
+      // 曲线边：用与绘制完全相同的几何采样折线，逐段做点到线段距离——"点得中的"就是"画出来的"。
+      const apexOffset = curveApexOffset(edge, edgeStyle, sourceAttributes.x, sourceAttributes.y, targetAttributes.x, targetAttributes.y);
+      if (apexOffset !== 0) {
+        const curveGeometry = computeCurveGeometry(
+          sourceAttributes.x,
+          sourceAttributes.y,
+          targetAttributes.x,
+          targetAttributes.y,
+          apexOffset,
+          sourceNode.nodeStyle.size + sourceNode.nodeStyle.border.width,
+          targetNode.nodeStyle.size + targetNode.nodeStyle.border.width + arrowHeight,
+          edgeStyle.arrow.show ? (Math.sqrt(3) / 4) * edgeStyle.arrow.size : 0,
+          scratchCurveGeometry
+        );
+        if (curveGeometry.valid) {
+          const segments = curveSegmentCount(edgeStyle);
+          const points = ensureCurvePointBuffer(segments);
+          sampleCurvePoints(curveGeometry, segments, points);
+          for (let s = 0; s < segments; s += 1) {
+            const segmentDistance = pointToSegmentDistance(point.x, point.y, points[s * 2], points[s * 2 + 1], points[s * 2 + 2], points[s * 2 + 3]);
+            if (segmentDistance <= edgeStyle.width / 2 + toleranceWorld && segmentDistance < bestDistance) {
+              bestDistance = segmentDistance;
+              bestKey = edgeKey;
+            }
+          }
+          if (edgeStyle.arrow.show && edgeStyle.arrow.size > 0) {
+            const arrowDistance = Math.hypot(point.x - curveGeometry.arrowX, point.y - curveGeometry.arrowY);
+            if (arrowDistance <= edgeStyle.arrow.size / 2 + toleranceWorld && arrowDistance < bestDistance) {
+              bestDistance = arrowDistance;
+              bestKey = edgeKey;
+            }
+          }
+          continue;
+        }
+        // 曲线裁剪失败时下方按直线判定，与绘制端的回退一致。
+      }
+
       const geometry = computeEdgeGeometry(
         { x: sourceAttributes.x, y: sourceAttributes.y },
         { x: targetAttributes.x, y: targetAttributes.y },
         edgeStyle,
         sourceNode.nodeStyle,
         targetNode.nodeStyle,
-        edge.isBilateral
+        edge.isBilateral && !edgeStyle.curve.enabled
       );
       // 线段命中：由绘制几何还原线段两端点（中心 ± 半长 · 法向单位向量），算点到线段距离；
       // 容差叠加半个线宽，让粗线更容易命中。
@@ -315,8 +510,9 @@ export class BatchEdgeLayer<NodeAttributes extends BaseNodeAttributes = BaseNode
 
 // 计算一条边线段（及箭头）的绘制几何（what）：线条用一个矩形 Particle 表示，需要其中心点、旋转角、
 // 长度；箭头需要其位置与朝向。各种扣减：线段两端要从节点圆"外缘"起止（扣掉两端 size+border，
-// 目标端再扣箭头高度），否则线会插进节点圆里或被箭头盖住；isBilateral（有平行边）时整体沿法向
-// 侧移半个 gap，让来回两条边分开不重叠。三角函数：radian 是端到端方向，rotation 是其法向（线条
+// 目标端再扣箭头高度），否则线会插进节点圆里或被箭头盖住；applyBilateralOffset（有平行边且未启用
+// 曲线扇形）时整体沿法向侧移半个 gap，让来回两条边分开不重叠——曲线模式下分离由弧顶偏移承担，
+// 调用方须传 false。三角函数：radian 是端到端方向，rotation 是其法向（线条
 // Particle 以竖直为基准，故用法向旋转）。
 function computeEdgeGeometry(
   sourceNodePosition: { x: number; y: number },
@@ -324,7 +520,7 @@ function computeEdgeGeometry(
   edgeStyle: EdgeStyle,
   sourceNodeStyle: NodeStyle,
   targetNodeStyle: NodeStyle,
-  isBilateral: boolean
+  applyBilateralOffset: boolean
 ): {
   lineX: number;
   lineY: number;
@@ -345,14 +541,14 @@ function computeEdgeGeometry(
     x: targetNodePosition.x + Math.sin(rotation) * lineLengthHalf,
     y: targetNodePosition.y - Math.cos(rotation) * lineLengthHalf
   };
-  if (isBilateral) {
+  if (applyBilateralOffset) {
     centerPosition.x -= Math.cos(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
     centerPosition.y -= Math.sin(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
   }
 
   const arrowRadius = targetNodeStyle.size + targetNodeStyle.border.width + (Math.sqrt(3) / 4) * edgeStyle.arrow.size;
   const arrowPosition = { x: targetNodePosition.x - Math.cos(radian) * arrowRadius, y: targetNodePosition.y - Math.sin(radian) * arrowRadius };
-  if (isBilateral) {
+  if (applyBilateralOffset) {
     arrowPosition.x -= Math.cos(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
     arrowPosition.y -= Math.sin(rotation) * (edgeStyle.gap / 2 + edgeStyle.width);
   }

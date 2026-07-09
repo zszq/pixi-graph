@@ -9,6 +9,12 @@ export interface SpatialEdgeQueryBounds {
 }
 
 /**
+ * 曲线边弧顶解析器：返回该边（若画成曲线）的弧顶世界坐标，直线边返回 null。
+ * 返回对象允许是复用的 scratch（indexSegment 同步消费坐标，不持有引用）。
+ */
+export type CurveApexResolver = (edgeKey: string, source: { x: number; y: number }, target: { x: number; y: number }) => { x: number; y: number } | null;
+
+/**
  * 边的均匀网格空间索引（what）：按当前节点坐标，把每条边登记进它线段穿过的所有网格格子；
  * query 时只访问视口覆盖到的格子，得到"可能与视口相交"的候选边集（只多不少），由调用方再做
  * 一次精确相交过滤。用于大图批量边重建时，把"遍历全部边"缩小为"只看视口附近的边"。
@@ -42,6 +48,16 @@ export class SpatialEdgeIndex<NodeAttributes extends BaseNodeAttributes = BaseNo
   private maxCellX = 0;
   private minCellY = 0;
   private maxCellY = 0;
+
+  // 曲线边的弧顶解析器（可选）：平行边画成曲线后会凸出弦线，只按弦登记格子会漏掉
+  // “弦在查询范围外、弧探进范围内”的候选，破坏“候选是可见边超集”的不变量。设置后曲线边按
+  // “端点→弧顶→端点”两段折线登记（登记面略大无妨，索引允许候选偏多）。
+  private curveApexResolver: CurveApexResolver | undefined;
+
+  setCurveApexResolver(resolver: CurveApexResolver): void {
+    this.curveApexResolver = resolver;
+    this.fresh = false;
+  }
 
   /** 标记索引过期（节点几何变化、边增删时调用）。下次 query 会重建。 */
   markDirty(): void {
@@ -126,7 +142,16 @@ export class SpatialEdgeIndex<NodeAttributes extends BaseNodeAttributes = BaseNo
     this.minCellY = Infinity;
     this.maxCellY = -Infinity;
     graph.forEachEdge((edgeKey, _edgeAttributes, _sourceKey, _targetKey, sourceAttributes, targetAttributes) => {
-      this.indexSegment(edgeKey, sourceAttributes, targetAttributes);
+      const apex = this.curveApexResolver ? this.curveApexResolver(edgeKey, sourceAttributes, targetAttributes) : null;
+      if (apex) {
+        // 曲线边按弦端点→弧顶的两段折线登记；弧顶解析器可能返回复用对象，先取值再二次调用。
+        const apexX = apex.x;
+        const apexY = apex.y;
+        this.indexSegment(edgeKey, sourceAttributes, { x: apexX, y: apexY });
+        this.indexSegment(edgeKey, { x: apexX, y: apexY }, targetAttributes);
+      } else {
+        this.indexSegment(edgeKey, sourceAttributes, targetAttributes);
+      }
     });
     this.fresh = true;
   }

@@ -73,6 +73,12 @@ export const DEFAULT_STYLE: GraphStyleDefinition = {
       cross: 10
     },
     gap: 15,
+    // 默认关闭：保持既有"平行边直线侧移"行为不变，使用方显式开启后平行边才画曲线。
+    curve: {
+      enabled: false,
+      curvature: 0.15,
+      segments: 12
+    },
     arrow: {
       show: true,
       size: 15
