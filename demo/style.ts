@@ -64,6 +64,8 @@ export const style: GraphStyleDefinition<NodeAttrs, EdgeAttrs> = {
     color: () => palette.edge,
     alpha: palette.edgeAlpha,
     arrow: { show: true, size: edge => (Math.log((edge.value ?? 0) + 1) + 2) * 2 },
+    // 平行边曲线：两点间 ≥2 条边时扇形展开成弧线（buildGraph 里注入了 2/3/4 条的平行边样本供验证）
+    curve: { enabled: true, curvature: 0.15 },
     label: {
       content: edge => edge.label ?? edge.target ?? '',
       type: TextType.TEXT,

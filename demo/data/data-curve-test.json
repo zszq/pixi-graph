@@ -1,0 +1,77 @@
+{
+  "fixedLayout": true,
+  "nodes": [
+    { "id": "c1a", "label": "① 1条边(基准直线)", "x": 0, "y": 0 },
+    { "id": "c1b", "label": "c1b", "x": 300, "y": 0 },
+
+    { "id": "c2a", "label": "② 2条·同向", "x": 550, "y": 0 },
+    { "id": "c2b", "label": "c2b", "x": 850, "y": 0 },
+
+    { "id": "c3a", "label": "③ 2条·双向", "x": 0, "y": 1450 },
+    { "id": "c3b", "label": "c3b", "x": 300, "y": 1450 },
+
+    { "id": "c4a", "label": "④ 3条·同向(斜)", "x": 0, "y": 420 },
+    { "id": "c4b", "label": "c4b", "x": 200, "y": 620 },
+
+    { "id": "c5a", "label": "⑤ 3条·2正1反(斜)", "x": 550, "y": 420 },
+    { "id": "c5b", "label": "c5b", "x": 750, "y": 620 },
+
+    { "id": "c6a", "label": "⑥ 4条·同向(斜)", "x": 1100, "y": 420 },
+    { "id": "c6b", "label": "c6b", "x": 1300, "y": 620 },
+
+    { "id": "c7a", "label": "⑦ 4条·2正2反(垂直)", "x": 80, "y": 900 },
+    { "id": "c7b", "label": "c7b", "x": 80, "y": 1200 },
+
+    { "id": "c8a", "label": "⑧ 5条·3正2反(斜)", "x": 550, "y": 900 },
+    { "id": "c8b", "label": "c8b", "x": 750, "y": 1100 },
+
+    { "id": "c9a", "label": "⑨ 6条·3正3反(水平)", "x": 950, "y": 950 },
+    { "id": "c9b", "label": "c9b", "x": 1300, "y": 950 },
+
+    { "id": "c10", "label": "⑩ 自环对照", "x": 1050, "y": 1450 },
+    { "id": "c10n", "label": "c10n", "x": 1350, "y": 1450 }
+  ],
+  "links": [
+    { "source": "c1a", "target": "c1b", "label": "单边", "value": 20 },
+
+    { "source": "c2a", "target": "c2b", "label": "同向1", "value": 20 },
+    { "source": "c2a", "target": "c2b", "label": "同向2", "value": 20 },
+
+    { "source": "c3a", "target": "c3b", "label": "正向1", "value": 20 },
+    { "source": "c3b", "target": "c3a", "label": "反向1", "value": 20 },
+
+    { "source": "c4a", "target": "c4b", "label": "同向1", "value": 20 },
+    { "source": "c4a", "target": "c4b", "label": "同向2", "value": 20 },
+    { "source": "c4a", "target": "c4b", "label": "同向3", "value": 20 },
+
+    { "source": "c5a", "target": "c5b", "label": "正向1", "value": 20 },
+    { "source": "c5a", "target": "c5b", "label": "正向2", "value": 20 },
+    { "source": "c5b", "target": "c5a", "label": "反向1", "value": 20 },
+
+    { "source": "c6a", "target": "c6b", "label": "同向1", "value": 20 },
+    { "source": "c6a", "target": "c6b", "label": "同向2", "value": 20 },
+    { "source": "c6a", "target": "c6b", "label": "同向3", "value": 20 },
+    { "source": "c6a", "target": "c6b", "label": "同向4", "value": 20 },
+
+    { "source": "c7a", "target": "c7b", "label": "正向1", "value": 20 },
+    { "source": "c7a", "target": "c7b", "label": "正向2", "value": 20 },
+    { "source": "c7b", "target": "c7a", "label": "反向1", "value": 20 },
+    { "source": "c7b", "target": "c7a", "label": "反向2", "value": 20 },
+
+    { "source": "c8a", "target": "c8b", "label": "正向1", "value": 20 },
+    { "source": "c8a", "target": "c8b", "label": "正向2", "value": 20 },
+    { "source": "c8a", "target": "c8b", "label": "正向3", "value": 20 },
+    { "source": "c8b", "target": "c8a", "label": "反向1", "value": 20 },
+    { "source": "c8b", "target": "c8a", "label": "反向2", "value": 20 },
+
+    { "source": "c9a", "target": "c9b", "label": "正向1", "value": 20 },
+    { "source": "c9a", "target": "c9b", "label": "正向2", "value": 20 },
+    { "source": "c9a", "target": "c9b", "label": "正向3", "value": 20 },
+    { "source": "c9b", "target": "c9a", "label": "反向1", "value": 20 },
+    { "source": "c9b", "target": "c9a", "label": "反向2", "value": 20 },
+    { "source": "c9b", "target": "c9a", "label": "反向3", "value": 20 },
+
+    { "source": "c10", "target": "c10", "label": "自环", "value": 20 },
+    { "source": "c10", "target": "c10n", "label": "邻单边", "value": 20 }
+  ]
+}

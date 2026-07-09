@@ -5,7 +5,14 @@ export const DATASETS = [
   { key: 'data-10000-20000', label: '10000点20000边' },
   { key: 'data-50000-100000', label: '50000点100000边' },
   { key: 'data-50000-100000-noicon', label: '50000点100000边(无图)' },
-  { key: 'data-star-1-5000', label: '星形1中心5000边' }
+  { key: 'data-star-1-5000', label: '星形1中心5000边' },
+  { key: 'data-curve-test', label: '曲线验证用例' },
+  // 曲线压测数据（scripts/generate-curve-data.mjs 生成）：点/边数与同规模原始数据集一致，
+  // 边全部组织成平行边组（单条/同向多条/双向混合），孤立点用于补足点数。
+  { key: 'data-curve-50-100', label: '曲线50点100边' },
+  { key: 'data-curve-1000-2000', label: '曲线1000点2000边' },
+  { key: 'data-curve-10000-20000', label: '曲线10000点20000边' },
+  { key: 'data-curve-50000-100000', label: '曲线50000点100000边' }
 ];
 
 // 从 URL ?data= 读取数据集，缺省用指定值；非法值回退到默认数据集。

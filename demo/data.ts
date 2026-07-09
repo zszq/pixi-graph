@@ -32,8 +32,8 @@ export async function fetchJsonWithProgress(url: string, onProgress: (ratio: num
   return JSON.parse(new TextDecoder().decode(buf)) as RawData;
 }
 
-// 把原始数据建成 graphology 图，并给节点随机初始坐标供布局迭代。
-export function buildGraph({ nodes, links }: RawData): Graph<NodeAttrs, EdgeAttrs> {
+// 把原始数据建成 graphology 图，并给节点随机初始坐标供布局迭代（fixedLayout 数据用自带坐标）。
+export function buildGraph({ nodes, links, fixedLayout }: RawData): Graph<NodeAttrs, EdgeAttrs> {
   const graph = new Graph<NodeAttrs, EdgeAttrs>({ multi: true, type: 'undirected' });
   // 数据里的图标用相对路径 ./images/...，但页面根是 /，图片实际由 /demo/ 提供，
   // 这里归一化到实际可访问的地址，避免 Assets.load 命中 SPA 回退的 index.html。
@@ -42,14 +42,19 @@ export function buildGraph({ nodes, links }: RawData): Graph<NodeAttrs, EdgeAttr
     graph.addNode(node.id, { x: 0, y: 0, ...node, icon });
   });
   links.forEach(link => {
-    const key = `${link.source}->${link.target}`;
-    if (!graph.hasEdge(key)) graph.addEdgeWithKey(key, link.source, link.target, { ...link });
+    // 同向多重边会撞 "source->target" key：追加序号让每条都能入图（曲线验证数据依赖同向多条边），
+    // 而不是像过去那样静默丢弃重复项。
+    let key = `${link.source}->${link.target}`;
+    for (let n = 2; graph.hasEdge(key); n += 1) key = `${link.source}->${link.target}#${n}`;
+    graph.addEdgeWithKey(key, link.source, link.target, { ...link });
   });
-  // 先给随机种子位置，再跑力导向布局
-  graph.forEachNode(node => {
-    graph.setNodeAttribute(node, 'x', Math.random());
-    graph.setNodeAttribute(node, 'y', Math.random());
-  });
+  // 先给随机种子位置，再跑力导向布局；fixedLayout 数据保留自带坐标（布局会破坏用例网格排布）。
+  if (!fixedLayout) {
+    graph.forEachNode(node => {
+      graph.setNodeAttribute(node, 'x', Math.random());
+      graph.setNodeAttribute(node, 'y', Math.random());
+    });
+  }
   return graph;
 }
 

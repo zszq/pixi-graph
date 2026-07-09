@@ -61,7 +61,8 @@ async function main() {
   mark('build:end');
 
   mark('layout:start');
-  await runLayout(graph, stage(0.55, 0.9, '布局计算…'));
+  // fixedLayout 数据集（如曲线验证用例）用数据自带坐标，跑布局反而会打乱用例网格。
+  if (!raw.fixedLayout) await runLayout(graph, stage(0.55, 0.9, '布局计算…'));
   mark('layout:end');
 
   setProgress(0.92, '渲染…');
